@@ -4,7 +4,7 @@ import { GoogleGenAI } from "@google/genai";
 import { 
     Send, Bot, X, Sparkles, Minimize2, Loader2, Terminal, Grid, 
     BrainCircuit, Activity, Eye, Database, Share2, Network, 
-    ShieldCheck, Zap, Layers, Leaf, Target, FileText, Briefcase, Globe, Users
+    ShieldCheck, Zap, Layers, Leaf, Target, FileText, Briefcase, Globe, Users, GripVertical
 } from 'lucide-react';
 import { Language, View } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -17,49 +17,39 @@ interface AiAssistantProps {
   currentView: View;
 }
 
-// --- The Thousand Faces Matrix (Whitepaper Implementation) ---
+// ... (AVATAR_MATRIX and SUGGESTIONS_MAP remain the same as previous implementations) ...
+// Re-adding AVATAR_MATRIX & SUGGESTIONS_MAP definitions here for completeness in XML
+// --- The Thousand Faces Matrix ---
 interface AgentPersona {
     core: 'Perception' | 'Cognition' | 'Memory' | 'Expression' | 'Nexus';
-    name: string; // The Avatar Name
-    role: string; // Internal Role Description
+    name: string; 
+    role: string; 
     icon: any;
-    color: string; // Tailwind color class fragment (e.g. 'emerald')
-    accent: string; // Hex for UI borders/glows
+    color: string; 
+    accent: string; 
 }
 
 const AVATAR_MATRIX: Partial<Record<View, AgentPersona>> = {
-    // I. Perception Core (The Eye)
     [View.RESEARCH_HUB]: { core: 'Perception', name: 'Spectral Scanner', role: 'Data Ingestion & OCR Specialist', icon: Eye, color: 'purple', accent: '#a855f7' },
     [View.INTEGRATION]: { core: 'Perception', name: 'Data Lake Sensor', role: 'IoT & ERP Signal Processor', icon: Network, color: 'blue', accent: '#3b82f6' },
     [View.BUSINESS_INTEL]: { core: 'Perception', name: 'Global Crawler', role: 'Competitive Intelligence Scout', icon: Globe, color: 'indigo', accent: '#6366f1' },
-
-    // II. Cognition Core (The Brain)
     [View.STRATEGY]: { core: 'Cognition', name: 'Strategy Oracle', role: 'Game Theory & Risk Analyst', icon: BrainCircuit, color: 'gold', accent: '#fbbf24' },
     [View.CARBON]: { core: 'Cognition', name: 'Carbon Calculator', role: 'GHG Protocol Auditor', icon: Leaf, color: 'emerald', accent: '#10b981' },
     [View.FINANCE]: { core: 'Cognition', name: 'ROI Simulator', role: 'Financial Projection Engine', icon: Activity, color: 'gold', accent: '#fbbf24' },
     [View.HEALTH_CHECK]: { core: 'Cognition', name: 'Health Diagnostician', role: 'Corporate Vitality Analyst', icon: Activity, color: 'rose', accent: '#f43f5e' },
-
-    // III. Memory Core (The Vault)
     [View.RESTORATION]: { core: 'Memory', name: 'Asset Vault', role: 'Knowledge Archivist', icon: Database, color: 'cyan', accent: '#06b6d4' },
     [View.CARD_GAME_ARENA]: { core: 'Memory', name: 'Asset Vault', role: 'Gamification Master', icon: Layers, color: 'cyan', accent: '#06b6d4' },
     [View.TALENT]: { core: 'Memory', name: 'Skill Galaxy', role: 'Talent Vector Mapper', icon: Sparkles, color: 'pink', accent: '#ec4899' },
-
-    // IV. Expression Core (The Voice)
     [View.REPORT]: { core: 'Expression', name: 'The Scribe', role: 'GRI/SASB Report Generator', icon: FileText, color: 'blue', accent: '#3b82f6' },
     [View.DASHBOARD]: { core: 'Expression', name: 'Omni-Cell', role: 'Data Visualization Specialist', icon: Grid, color: 'indigo', accent: '#818cf8' },
     [View.UNIVERSAL_BACKEND]: { core: 'Expression', name: 'GenUI Canvas', role: 'System Architect', icon: Terminal, color: 'slate', accent: '#94a3b8' },
-
-    // V. Nexus Core (The Link)
     [View.UNIVERSAL_AGENT]: { core: 'Nexus', name: 'Universal Synapse', role: 'Orchestrator', icon: Sparkles, color: 'purple', accent: '#8b5cf6' },
     [View.API_ZONE]: { core: 'Nexus', name: 'API Gateway', role: 'Connectivity Manager', icon: Network, color: 'slate', accent: '#64748b' },
     [View.AUDIT]: { core: 'Nexus', name: 'Audit Chain', role: 'Immutable Ledger Keeper', icon: ShieldCheck, color: 'emerald', accent: '#10b981' },
     [View.ALUMNI_ZONE]: { core: 'Nexus', name: 'Role Switcher', role: 'Context Manager', icon: Users, color: 'orange', accent: '#f97316' },
-    
-    // Default Fallback
     [View.MY_ESG]: { core: 'Nexus', name: 'Personal Steward', role: 'Assistant', icon: Bot, color: 'purple', accent: '#8b5cf6' },
 };
 
-// Suggestions Matrix
 const SUGGESTIONS_MAP: Partial<Record<View, string[]>> = {
     [View.MY_ESG]: ["Summarize my progress", "Show pending quests", "Check my ESG score"],
     [View.DASHBOARD]: ["Analyze emission trends", "Identify anomalies", "Forecast Q4 efficiency"],
@@ -92,31 +82,82 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   const scrollLogRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // --- DRAG LOGIC ---
+  // Initial position: Bottom right with some padding (desktop default)
+  // On mobile, it might be better to start slightly higher to avoid navbar
+  const initialX = typeof window !== 'undefined' ? window.innerWidth - 80 : 0;
+  const initialY = typeof window !== 'undefined' ? window.innerHeight - 100 : 0;
+  
+  const [position, setPosition] = useState({ x: initialX, y: initialY });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const startElPos = useRef({ x: 0, y: 0 });
+  const dragThreshold = 5; // Pixels to move before considering it a drag vs click
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      
+      dragStartPos.current = { x: clientX, y: clientY };
+      startElPos.current = { x: position.x, y: position.y };
+      setIsDragging(true);
+  };
+
+  const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
+      if (!isDragging) return;
+      
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      
+      const deltaX = clientX - dragStartPos.current.x;
+      const deltaY = clientY - dragStartPos.current.y;
+      
+      let newX = startElPos.current.x + deltaX;
+      let newY = startElPos.current.y + deltaY;
+
+      // Boundaries (Window size)
+      // Assume button size ~ 60px
+      const btnSize = 60;
+      newX = Math.max(0, Math.min(window.innerWidth - btnSize, newX));
+      newY = Math.max(0, Math.min(window.innerHeight - btnSize, newY));
+
+      setPosition({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
+      if (!isDragging) return;
+      setIsDragging(false);
+      
+      const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
+      const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
+      const dist = Math.sqrt(Math.pow(clientX - dragStartPos.current.x, 2) + Math.pow(clientY - dragStartPos.current.y, 2));
+      
+      // If moved less than threshold, treat as click to open
+      if (dist < dragThreshold && !isOpen) {
+          setIsOpen(true);
+      }
+  };
+
   // Interactions API State
   const [interactionId, setInteractionId] = useState<string | undefined>(undefined);
-
   const client = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   // 1. Determine Current Avatar Persona
   const activePersona = useMemo(() => {
-      // If we are in the Universal Agent Zone, we respect the Tri-Mode (Companion/Captain/Phantom)
       if (currentView === View.UNIVERSAL_AGENT) {
           if (agentMode === 'phantom') return { core: 'Nexus', name: 'Phantom Process', role: 'System Daemon', icon: Terminal, color: 'emerald', accent: '#10b981' };
           if (agentMode === 'captain') return { core: 'Nexus', name: 'Captain Deck', role: 'Strategic Commander', icon: Grid, color: 'gold', accent: '#fbbf24' };
           return AVATAR_MATRIX[View.UNIVERSAL_AGENT]!;
       }
-      // Otherwise, use the Page-Specific Avatar
       return AVATAR_MATRIX[currentView] || AVATAR_MATRIX[View.MY_ESG]!;
   }, [currentView, agentMode]);
 
   // 2. Generate Context-Aware Suggestions
   const activeSuggestions = useMemo(() => {
-      // Mode overrides
       if (currentView === View.UNIVERSAL_AGENT) {
           if (agentMode === 'phantom') return ["tail -f system.log", "status report", "optimize kernel", "clear cache"];
           if (agentMode === 'captain') return ["Strategic Overview", "Risk Assessment", "Resource Allocation", "Market Scan"];
       }
-      // View specific defaults
       return SUGGESTIONS_MAP[currentView] || ["What can you do?", "Help me get started", "System status"];
   }, [currentView, agentMode]);
 
@@ -126,7 +167,6 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   }, [messages]);
 
   useEffect(() => {
-      // Auto-scroll for Phantom Mode logs
       if (currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' && scrollLogRef.current) {
           scrollLogRef.current.scrollTop = scrollLogRef.current.scrollHeight;
       }
@@ -154,7 +194,6 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         if (textareaRef.current) textareaRef.current.style.height = 'auto'; 
     }
     
-    // Phantom Mode Logic (CLI) - Only active in Universal Agent Zone + Phantom Mode
     if (currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom') {
         addLog(`COMMAND > ${userMessage}`, 'info', 'Phantom');
         setTimeout(() => {
@@ -169,28 +208,15 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
     try {
       let inputPayload: any = userMessage;
-      
       if (!interactionId) {
-          // Construct Dynamic System Context based on Active Persona
           const systemContext = `
             [SYSTEM IDENTITY]
             You are the "${activePersona.name}", a specialized AI agent within the ESGss Platform.
             Your Core Function: ${activePersona.role} (${activePersona.core} Core).
-            
-            [CURRENT CONTEXT]
-            User is currently viewing: ${currentView}.
-            Language: ${language}.
-            
-            [BEHAVIOR GUIDELINES]
-            - Stay in character as the ${activePersona.name}.
-            - Focus on topics related to ${activePersona.role}.
-            - Be professional, data-driven, yet helpful.
-            - If user asks for data visualization, use \`\`\`json_ui ... \`\`\`.
-            
-            [TRI-MODE OVERRIDE (Only if applicable)]
-            ${currentView === View.UNIVERSAL_AGENT ? `Current Interaction Mode: ${agentMode.toUpperCase()}. Adjust tone accordingly.` : ''}
+            [CURRENT CONTEXT] User is currently viewing: ${currentView}. Language: ${language}.
+            [BEHAVIOR GUIDELINES] Stay in character. Be professional, data-driven. Use \`\`\`json_ui ... \`\`\` for visualizations.
+            ${currentView === View.UNIVERSAL_AGENT ? `Current Interaction Mode: ${agentMode.toUpperCase()}.` : ''}
           `;
-            
           inputPayload = `${systemContext}\n\nUser Query: ${userMessage}`;
       }
 
@@ -203,14 +229,9 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       const lastOutput = interaction.outputs && interaction.outputs.length > 0 
         ? interaction.outputs[interaction.outputs.length - 1] 
         : null;
-        
       const text = (lastOutput && lastOutput.type === 'text') ? lastOutput.text : "Processing...";
-
       setInteractionId(interaction.id); 
-      
       setMessages(prev => [...prev, { role: 'model', text: text || "Response generated." }]);
-      
-      // Log interaction to system logs
       addLog(`[${activePersona.name}] Interaction processed.`, 'info', 'Assistant');
 
     } catch (error) {
@@ -222,10 +243,8 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
     }
   };
 
-  // --- Theme Generators ---
   const getThemeClasses = () => {
       const c = activePersona.color;
-      // Map 'color name' to Tailwind classes dynamically
       switch(c) {
           case 'emerald': return { bg: 'bg-emerald-900/20', border: 'border-emerald-500/30', text: 'text-emerald-400', button: 'bg-emerald-500 hover:bg-emerald-400' };
           case 'gold': return { bg: 'bg-amber-900/20', border: 'border-amber-500/30', text: 'text-amber-400', button: 'bg-amber-500 hover:bg-amber-400' };
@@ -244,22 +263,34 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
   if (!isOpen) {
     return (
-      <button 
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 z-50 animate-bounce-slow
-            ${theme.button} text-white border border-white/20 shadow-lg`}
-        style={{ boxShadow: `0 0 20px ${activePersona.accent}40` }}
+      <div
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+        onMouseMove={handleDragMove}
+        onTouchMove={handleDragMove}
+        onMouseUp={handleDragEnd}
+        onTouchEnd={handleDragEnd}
+        style={{ left: position.x, top: position.y }}
+        className={`fixed z-[9999] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 cursor-move animate-bounce-slow
+            ${theme.button} text-white border border-white/20 shadow-lg touch-none`}
       >
-        <ModeIcon className="w-7 h-7" />
-      </button>
+        <ModeIcon className="w-7 h-7 pointer-events-none" />
+      </div>
     );
   }
 
+  // When open, position centered on mobile, or bottom-right/custom on desktop
+  // For simplicity, sticking to fixed position when open to ensure usability
+  // But allowing drag of the container
   return (
-    <div className={`fixed bottom-6 right-6 w-96 h-[600px] max-h-[80vh] backdrop-blur-xl border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50 animate-fade-in ring-1 ring-white/10 transition-all duration-500 bg-slate-900/95 ${theme.border}`}>
+    <div 
+        className={`fixed z-[9999] w-full md:w-96 h-full md:h-[600px] md:max-h-[80vh] backdrop-blur-xl border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in ring-1 ring-white/10 transition-all duration-500 bg-slate-900/95 ${theme.border}
+            md:right-6 md:bottom-6 bottom-0 right-0 rounded-b-none md:rounded-b-2xl
+        `}
+    >
       
-      {/* Header */}
-      <div className={`p-4 border-b ${theme.border} bg-white/5 flex justify-between items-center`}>
+      {/* Header - Draggable Handle for Desktop (if we implement free floating window later, for now just close controls) */}
+      <div className={`p-4 border-b ${theme.border} bg-white/5 flex justify-between items-center shrink-0`}>
         <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg bg-white/5 ${theme.text} border border-white/10`}>
                 <ModeIcon className="w-5 h-5" />
@@ -303,7 +334,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
             /* Standard Chat for All Other Personas */
             <div className="space-y-4">
                 {messages.length === 0 && (
-                    <div className="text-center text-gray-500 mt-20 text-sm px-4">
+                    <div className="text-center text-gray-500 mt-12 text-sm px-4">
                         <ModeIcon className={`w-12 h-12 mx-auto mb-4 opacity-20 ${theme.text}`} />
                         <p className="font-bold text-gray-300 mb-1">{isZh ? '我是您的專屬智能代理。' : `I am your ${activePersona.name}.`}</p>
                         <p className="text-xs">{activePersona.role}</p>
@@ -339,7 +370,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
       {/* Suggestions Area */}
       {!(currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom') && (
-          <div className="px-4 pb-2 pt-2 flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade border-t border-white/5 bg-white/5 backdrop-blur-sm">
+          <div className="px-4 pb-2 pt-2 flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade border-t border-white/5 bg-white/5 backdrop-blur-sm shrink-0">
               {activeSuggestions.map((suggestion, idx) => (
                   <button 
                     key={idx}
@@ -355,7 +386,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       )}
 
       {/* Input Area */}
-      <div className={`p-4 border-t bg-white/5 ${theme.border}`}>
+      <div className={`p-4 border-t bg-white/5 ${theme.border} shrink-0`}>
          <div className="flex gap-2 items-end">
             <textarea 
                 ref={textareaRef}

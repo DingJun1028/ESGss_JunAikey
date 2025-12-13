@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   LayoutDashboard, GraduationCap, Search, Settings, Activity, Sun, Bell, Languages,
   Target, UserCheck, Leaf, FileText, Network, Bot, Calculator, ShieldCheck, Coins, Trophy, X, Zap, Star, Home, Radio, Command, Briefcase, Stethoscope, Wrench, Crown, BookOpen, Layers, Heart, Info, Megaphone, Calendar, Lock, Code, Database, UserPlus,
-  Maximize, Minimize, Menu, ChevronLeft, ChevronRight, Library, Book, Hexagon, Swords, AlertOctagon, Terminal, PenTool, Fingerprint, Map, Sparkles
+  Maximize, Minimize, Menu, ChevronLeft, ChevronRight, Library, Book, Hexagon, Swords, AlertOctagon, Terminal, PenTool, Fingerprint, Map, Sparkles, LogOut
 } from 'lucide-react';
 import { View, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
@@ -207,30 +207,32 @@ const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, lab
       <button
         onClick={onClick}
         className={`
-          relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group w-full
+          relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group w-full overflow-hidden
           ${active 
-            ? 'bg-gradient-to-r from-celestial-purple/90 to-celestial-purple/70 text-white shadow-lg shadow-purple-500/20' 
-            : 'text-gray-400 hover:text-white hover:bg-white/5'}
-          ${collapsed ? 'justify-center px-0 w-16 mx-auto' : ''}
+            ? 'bg-gradient-to-r from-celestial-purple/20 to-transparent text-white shadow-[inset_0_0_20px_rgba(139,92,246,0.1)] border-l-2 border-celestial-purple' 
+            : 'text-gray-400 hover:text-white hover:bg-white/5 border-l-2 border-transparent'}
+          ${collapsed ? 'justify-center px-0 w-12 mx-auto' : ''}
         `}
         title={collapsed ? label : undefined}
       >
-        <div className={`transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>
+        {active && <div className="absolute inset-0 bg-celestial-purple/5 animate-pulse pointer-events-none" />}
+        
+        <div className={`transition-transform duration-300 z-10 ${active ? 'scale-110 text-celestial-purple' : 'group-hover:scale-110 group-hover:text-gray-200'}`}>
           {icon}
         </div>
         
         {!collapsed && (
-            <div className={`flex flex-col items-start leading-tight transition-opacity duration-300 ${active ? 'font-bold tracking-wide' : ''}`}>
-               <span className="text-lg font-medium">{zh}</span>
-               {en && <span className="text-xs font-light opacity-60 font-sans tracking-normal mt-0.5">{en}</span>}
+            <div className={`flex flex-col items-start leading-tight transition-opacity duration-300 z-10 ${active ? 'font-bold tracking-wide' : 'font-medium'}`}>
+               <span className="text-sm tracking-tight">{zh}</span>
+               {en && <span className="text-[9px] font-normal opacity-50 font-mono tracking-normal mt-0.5 uppercase">{en}</span>}
             </div>
         )}
         
         {highlight && !collapsed && (
-            <span className="absolute right-4 w-2 h-2 rounded-full bg-celestial-gold animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+            <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-celestial-gold animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)] z-10" />
         )}
         {highlight && collapsed && (
-            <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-celestial-gold animate-pulse" />
+            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-celestial-gold animate-pulse z-10" />
         )}
       </button>
     );
@@ -238,7 +240,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, lab
 
 export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, language, onToggleLanguage, children }) => {
   const t = TRANSLATIONS[language];
-  const { userName, level, xp, totalScore, tier } = useCompany();
+  const { userName, level, xp, totalScore, tier, companyName } = useCompany();
   const { notifications, clearNotifications } = useToast();
   const { systemStatus } = useUniversalAgent();
   
@@ -282,7 +284,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
   // MECE Reorganization - Reorganized per user request
   const navGroups = useMemo(() => [
       {
-          title: language === 'zh-TW' ? '核心' : 'Core',
+          title: language === 'zh-TW' ? '核心 (CORE)' : 'Core',
           items: [
               { id: View.MY_ESG, icon: Home, label: t.nav.myEsg }, 
               { id: View.UNIVERSAL_AGENT, icon: Sparkles, label: language === 'zh-TW' ? '萬能代理 (Universal Agent)' : 'Universal Agent', highlight: true },
@@ -293,7 +295,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           ]
       },
       {
-          title: language === 'zh-TW' ? '運營' : 'Ops',
+          title: language === 'zh-TW' ? '運營 (OPS)' : 'Ops',
           items: [
               { id: View.DASHBOARD, icon: LayoutDashboard, label: t.nav.dashboard },
               { id: View.CARBON, icon: Leaf, label: t.nav.carbon },
@@ -303,7 +305,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           ]
       },
       {
-          title: language === 'zh-TW' ? '洞察' : 'Intel',
+          title: language === 'zh-TW' ? '洞察 (INTEL)' : 'Intel',
           items: [
               { id: View.BUSINESS_INTEL, icon: Briefcase, label: language === 'zh-TW' ? '商情分析 (Market Analysis)' : 'Market Analysis' },
               { id: View.RESEARCH_HUB, icon: Search, label: language === 'zh-TW' ? '研究中心 (Research Center)' : 'Research Center' },
@@ -312,7 +314,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           ]
       },
       {
-          title: language === 'zh-TW' ? '生態' : 'Eco',
+          title: language === 'zh-TW' ? '生態 (ECO)' : 'Eco',
           items: [
               { id: View.GOODWILL, icon: Coins, label: t.nav.goodwill },
               { id: View.FUNDRAISING, icon: Heart, label: t.nav.fundraising },
@@ -321,7 +323,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           ]
       },
       {
-          title: language === 'zh-TW' ? '系統' : 'Sys',
+          title: language === 'zh-TW' ? '系統 (SYS)' : 'Sys',
           items: [
               { id: View.SETTINGS, icon: Settings, label: t.nav.settings },
               { id: View.DIAGNOSTICS, icon: Activity, label: t.nav.diagnostics },
@@ -331,6 +333,11 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           ]
       }
   ], [language, t.nav]);
+
+  // Flatten nav groups for mobile
+  const mobileNavItems = useMemo(() => {
+      return navGroups.flatMap(group => group.items);
+  }, [navGroups]);
 
   return (
     <div className={`min-h-screen bg-celestial-900 text-gray-200 relative overflow-hidden font-sans selection:bg-celestial-emerald/30 
@@ -372,36 +379,36 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
 
       <div className={`relative z-10 flex h-screen transition-all duration-500 ${isZenMode ? 'p-0' : ''}`}>
         
-        {/* Sidebar */}
+        {/* Sidebar (Desktop) */}
         <aside 
             className={`
-                hidden md:flex flex-col border-r border-white/5 bg-slate-900/60 backdrop-blur-xl shrink-0 transition-all duration-300 ease-in-out
+                hidden md:flex flex-col border-r border-white/5 bg-slate-900/80 backdrop-blur-2xl shrink-0 transition-all duration-300 ease-in-out relative z-50
                 ${isZenMode ? '-ml-[320px] opacity-0' : ''}
-                ${isSidebarCollapsed ? 'w-24' : 'w-80'}
+                ${isSidebarCollapsed ? 'w-20' : 'w-64'}
             `}
         >
           {/* Brand */}
-          <div className={`h-28 flex flex-col justify-center ${isSidebarCollapsed ? 'items-center' : 'items-start px-6'} border-b border-white/5 relative group cursor-pointer`} onClick={() => onNavigate(View.MY_ESG)}>
-            <div className={`flex items-center gap-4 transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
+          <div className={`h-20 flex flex-col justify-center ${isSidebarCollapsed ? 'items-center' : 'items-start px-5'} border-b border-white/5 relative group cursor-pointer`} onClick={() => onNavigate(View.MY_ESG)}>
+            <div className={`flex items-center gap-3 transition-all ${isSidebarCollapsed ? 'justify-center' : ''}`}>
                 <div className="relative z-10 transition-transform duration-300 group-hover:scale-110">
-                   <LogoIcon className="w-14 h-14 shadow-lg shadow-celestial-gold/10" />
+                   <LogoIcon className="w-10 h-10 shadow-lg shadow-celestial-gold/10" />
                 </div>
                 
                 <div className={`flex flex-col transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
-                    <span className="font-bold text-3xl tracking-tight text-white font-sans whitespace-nowrap">
+                    <span className="font-bold text-xl tracking-tight text-white font-sans whitespace-nowrap drop-shadow-md">
                       ESGss
                     </span>
-                    <span className="text-sm text-celestial-emerald tracking-[0.2em] uppercase font-bold whitespace-nowrap mt-1">
-                      JunAiKey
+                    <span className="text-[10px] text-celestial-emerald tracking-[0.2em] uppercase font-bold whitespace-nowrap mt-0.5 flex items-center gap-1">
+                      JunAiKey <span className="w-1 h-1 rounded-full bg-celestial-emerald animate-pulse"/>
                     </span>
                 </div>
             </div>
 
             <button 
                 onClick={(e) => { e.stopPropagation(); setIsSidebarCollapsed(!isSidebarCollapsed); }}
-                className={`p-2 mt-2 rounded-lg bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all ${isSidebarCollapsed ? 'hidden' : 'block self-end absolute top-1/2 -translate-y-1/2 right-2'}`}
+                className={`p-1.5 mt-2 rounded-lg bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all ${isSidebarCollapsed ? 'hidden' : 'block self-end absolute top-1/2 -translate-y-1/2 right-2 opacity-0 group-hover:opacity-100'}`}
             >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3 h-3" />
             </button>
           </div>
           
@@ -410,59 +417,60 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                 onClick={() => setIsSidebarCollapsed(false)}
                 className="w-full py-4 flex justify-center text-gray-500 hover:text-white"
              >
-                 <ChevronRight className="w-5 h-5" />
+                 <ChevronRight className="w-4 h-4" />
              </button>
           )}
 
           {/* Navigation - Optimized spacing */}
-          <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-6 custom-scrollbar scroll-smooth">
+          <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 custom-scrollbar scroll-smooth">
             {navGroups.map((group, idx) => (
-                <div key={idx}>
+                <div key={idx} className="relative">
                     {!isSidebarCollapsed && (
-                        <div className="text-sm uppercase text-gray-500 px-4 mb-2 font-bold tracking-wider opacity-70">
+                        <div className="text-[10px] uppercase text-gray-500 px-3 mb-2 font-bold tracking-[0.15em] flex items-center gap-2">
                             {group.title}
+                            <div className="h-[1px] flex-1 bg-white/5" />
                         </div>
                     )}
                     {isSidebarCollapsed && (
-                        <div className="text-xs text-center text-gray-600 mb-2 font-bold">{group.title.substring(0,2)}</div>
+                        <div className="text-[8px] text-center text-gray-600 mb-2 font-bold font-mono border-b border-white/5 pb-1">{group.title.substring(0,3)}</div>
                     )}
-                    <div className="space-y-1.5">
+                    <div className="space-y-0.5">
                         {group.items.map(item => (
                             <NavItem 
                                 key={item.id}
                                 active={currentView === item.id} 
                                 onClick={() => onNavigate(item.id)} 
-                                icon={<item.icon className={`w-6 h-6 ${item.highlight ? 'text-celestial-gold animate-pulse' : ''}`} />} 
+                                icon={<item.icon className={`w-5 h-5 ${item.highlight ? 'text-celestial-gold animate-pulse' : ''}`} />} 
                                 label={item.label} 
                                 highlight={item.highlight}
                                 collapsed={isSidebarCollapsed}
                             />
                         ))}
                     </div>
-                    {isSidebarCollapsed && idx < navGroups.length - 1 && <div className="mx-auto w-8 h-[1px] bg-white/5 my-4" />}
                 </div>
             ))}
           </nav>
 
           {/* User Profile (Compact/Full) */}
-          <div className="p-4 border-t border-white/5 bg-black/10">
-              <div className={`flex items-center gap-4 ${isSidebarCollapsed ? 'justify-center' : ''}`}>
-                  <div className="relative group cursor-pointer" onClick={() => onNavigate(View.RESTORATION)}>
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-celestial-purple to-blue-600 p-[2px]">
+          <div className="p-3 border-t border-white/5 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-xl">
+              <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'justify-center' : ''} group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-colors`} onClick={() => onNavigate(View.RESTORATION)}>
+                  <div className="relative">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-celestial-purple to-blue-600 p-[1.5px] shadow-lg">
                           <img src={avatarUrl} alt="Profile" className="w-full h-full rounded-full bg-slate-900 object-cover" />
                       </div>
-                      <div className={`absolute -bottom-0.5 -right-0.5 bg-slate-900 rounded-full p-1 border border-white/10 ${isCritical ? 'animate-ping' : ''}`}>
-                          <div className={`w-3 h-3 rounded-full ${isCritical ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                      <div className={`absolute -bottom-0.5 -right-0.5 bg-slate-900 rounded-full p-0.5 border border-white/10 ${isCritical ? 'animate-ping' : ''}`}>
+                          <div className={`w-2.5 h-2.5 rounded-full ${isCritical ? 'bg-red-500' : 'bg-emerald-500'} shadow-[0_0_8px_currentColor]`} />
                       </div>
                   </div>
                   
                   {!isSidebarCollapsed && (
                       <div className="flex-1 min-w-0">
-                          <div className="text-lg font-bold text-white truncate">{userName}</div>
-                          <div className="flex items-center gap-3 mt-1">
-                              <span className="text-xs text-celestial-purple font-mono bg-celestial-purple/10 px-2 py-0.5 rounded">Lv.{level}</span>
-                              <div className="h-1.5 flex-1 bg-gray-800 rounded-full overflow-hidden">
-                                  <div className="h-full bg-celestial-purple w-[60%]" style={{ width: `${xpProgress}%` }} />
+                          <div className="text-sm font-bold text-white truncate leading-tight">{userName}</div>
+                          <div className="text-[10px] text-gray-400 truncate mb-1">{companyName}</div>
+                          <div className="flex items-center gap-2">
+                              <span className="text-[9px] text-celestial-purple font-mono font-bold bg-celestial-purple/10 px-1 py-0 rounded border border-celestial-purple/20">Lv.{level}</span>
+                              <div className="h-1 flex-1 bg-gray-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-celestial-purple w-[60%] shadow-[0_0_10px_#8b5cf6]" style={{ width: `${xpProgress}%` }} />
                               </div>
                           </div>
                       </div>
@@ -476,7 +484,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           <header 
             className={`
                 h-24 flex items-center justify-between px-8 shrink-0 z-30 transition-all duration-500 border-b border-white/5
-                ${isZenMode ? '-mt-24 opacity-0' : 'bg-slate-900/40 backdrop-blur-md'}
+                ${isZenMode ? '-mt-24 opacity-0' : 'bg-slate-900/60 backdrop-blur-xl'}
             `}
           >
             {/* Left: Mobile Toggle & Breadcrumbs/Status */}
@@ -486,9 +494,9 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                 </div>
                 
                 <div className="hidden lg:flex items-center gap-3 text-sm">
-                    <button onClick={() => setIsSubModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-celestial-gold/20 to-transparent rounded-full border border-celestial-gold/30 text-celestial-gold hover:bg-celestial-gold/30 transition-all">
+                    <button onClick={() => setIsSubModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-celestial-gold/10 to-transparent rounded-full border border-celestial-gold/20 text-celestial-gold hover:bg-celestial-gold/20 transition-all shadow-[0_0_15px_rgba(251,191,36,0.1)]">
                         <Crown className="w-4 h-4" />
-                        <span className="font-bold">{tier} Plan</span>
+                        <span className="font-bold tracking-wide">{tier} Plan</span>
                     </button>
                 </div>
             </div>
@@ -496,17 +504,17 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
             {/* Center: Search (Optional, prominent) */}
             <button 
                 onClick={() => setIsCommandOpen(true)}
-                className="hidden md:flex items-center gap-4 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition-all w-80 group"
+                className="hidden md:flex items-center gap-4 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition-all w-96 group shadow-inner"
             >
                 <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="text-sm">Search or type command...</span>
+                <span className="text-sm font-medium">Type command or search...</span>
                 <div className="ml-auto flex gap-1">
-                    <span className="text-xs bg-black/30 px-2 py-1 rounded border border-white/5">⌘K</span>
+                    <span className="text-[10px] font-mono bg-black/30 px-2 py-1 rounded border border-white/5 text-gray-500 group-hover:text-gray-300">⌘K</span>
                 </div>
             </button>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setIsNavCenterOpen(true)}
                     className="p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
@@ -531,7 +539,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                     <Maximize className="w-5 h-5" />
                 </button>
 
-                <div className="h-8 w-[1px] bg-white/10 mx-1" />
+                <div className="h-8 w-[1px] bg-white/10 mx-2" />
 
                 <button 
                   onClick={onToggleLanguage}
@@ -551,24 +559,30 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                             <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-celestial-gold animate-ping" />
                         )}
                         {notifications.length > 0 && (
-                            <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-celestial-gold" />
+                            <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-celestial-gold shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                         )}
                     </button>
                     {/* Notifications Dropdown (Simplified for layout brevity) */}
                     {isNotificationsOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-80 bg-slate-900 border border-white/10 rounded-xl shadow-2xl p-2 z-50 animate-fade-in">
-                            <div className="text-xs font-bold text-gray-500 px-3 py-2 uppercase tracking-wider">Notifications</div>
-                            <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-1">
-                                {notifications.length === 0 ? <div className="p-4 text-center text-xs text-gray-500">No new alerts</div> : 
+                        <div className="absolute right-0 top-full mt-4 w-96 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in backdrop-blur-xl ring-1 ring-white/10">
+                            <div className="text-xs font-bold text-gray-500 px-4 py-3 uppercase tracking-wider border-b border-white/5 flex justify-between items-center">
+                                <span>Notifications</span>
+                                <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded">{notifications.length} New</span>
+                            </div>
+                            <div className="max-h-80 overflow-y-auto custom-scrollbar space-y-1 p-2">
+                                {notifications.length === 0 ? <div className="p-8 text-center text-xs text-gray-500">No new alerts</div> : 
                                     notifications.map(n => (
-                                        <div key={n.id} className="p-3 hover:bg-white/5 rounded-lg cursor-pointer">
-                                            <div className={`text-xs font-bold ${n.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>{n.title}</div>
-                                            <div className="text-[10px] text-gray-300 mt-1 line-clamp-2">{n.message}</div>
+                                        <div key={n.id} className="p-4 hover:bg-white/5 rounded-xl cursor-pointer group transition-colors border border-transparent hover:border-white/5">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <div className={`text-xs font-bold ${n.type === 'error' ? 'text-red-400' : n.type === 'success' ? 'text-emerald-400' : 'text-celestial-blue'}`}>{n.title}</div>
+                                                <span className="text-[10px] text-gray-600">Just now</span>
+                                            </div>
+                                            <div className="text-xs text-gray-300 line-clamp-2 group-hover:text-white transition-colors">{n.message}</div>
                                         </div>
                                     ))
                                 }
                             </div>
-                            {notifications.length > 0 && <button onClick={clearNotifications} className="w-full text-center text-[10px] py-2 text-gray-500 hover:text-white border-t border-white/5 mt-2">Clear All</button>}
+                            {notifications.length > 0 && <button onClick={clearNotifications} className="w-full text-center text-[10px] py-3 text-gray-500 hover:text-white border-t border-white/5 mt-1 hover:bg-white/5 transition-colors rounded-b-xl">Clear All</button>}
                         </div>
                     )}
                 </div>
@@ -580,7 +594,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
             {isZenMode && (
                 <button 
                     onClick={() => setIsZenMode(false)}
-                    className="fixed top-6 right-6 z-50 p-3 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition-all opacity-20 hover:opacity-100"
+                    className="fixed top-6 right-6 z-50 p-4 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition-all opacity-20 hover:opacity-100 shadow-2xl border border-white/10"
                 >
                     <Minimize className="w-6 h-6" />
                 </button>
@@ -592,29 +606,36 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           </main>
         </div>
 
-        {/* Mobile Nav */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 z-40 safe-pb">
-            <div className="flex items-center justify-around h-full px-2">
-                {navGroups[0].items.slice(0, 4).map(item => (
+        {/* Mobile Nav - Horizontally Scrollable & Comprehensive */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 z-40 safe-pb shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
+            <div className="flex items-center h-full px-4 pb-2 overflow-x-auto no-scrollbar gap-2 snap-x snap-mandatory">
+                {mobileNavItems.map(item => (
                     <button 
                         key={item.id} 
                         onClick={() => onNavigate(item.id)}
-                        className={`flex flex-col items-center justify-center w-16 py-1 rounded-xl transition-all ${currentView === item.id ? 'text-white' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center justify-center min-w-[70px] py-2 rounded-2xl transition-all snap-center ${currentView === item.id ? 'text-white' : 'text-gray-500'}`}
                     >
-                        <div className={`p-1 rounded-lg ${currentView === item.id ? 'bg-white/10' : ''}`}>
-                            <item.icon className="w-6 h-6" />
+                        <div className={`p-2 rounded-xl mb-1 ${currentView === item.id ? 'bg-white/10 shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]' : ''}`}>
+                            <item.icon className={`w-6 h-6 ${currentView === item.id ? 'text-celestial-gold' : ''}`} />
                         </div>
-                        <span className="text-[10px] mt-1 font-medium">{item.label.split(' ')[0]}</span>
+                        <span className="text-[9px] font-bold tracking-wide truncate max-w-[64px]">{item.label.split(' ')[0]}</span>
                     </button>
                 ))}
-                <button onClick={() => setIsCommandOpen(true)} className="flex flex-col items-center justify-center w-16 text-gray-500">
-                    <Menu className="w-6 h-6" />
-                    <span className="text-[10px] mt-1">Menu</span>
+                
+                {/* Command Palette Trigger at the end */}
+                <button 
+                    onClick={() => setIsCommandOpen(true)} 
+                    className="flex flex-col items-center justify-center min-w-[70px] py-2 rounded-2xl text-gray-500 snap-center"
+                >
+                    <div className="p-2 mb-1 bg-white/5 rounded-xl border border-white/5">
+                        <Menu className="w-6 h-6" />
+                    </div>
+                    <span className="text-[9px] font-medium">Menu</span>
                 </button>
             </div>
         </div>
 
-        {/* AI Assistant */}
+        {/* AI Assistant - Draggable */}
         <AiAssistant language={language} onNavigate={onNavigate} currentView={currentView} />
     </div>
   );

@@ -69,33 +69,71 @@
         color: #e2e8f0;
         font-family: 'Inter', sans-serif;
         overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
-      /* Custom Scrollbar for JunAiKey UX */
+      
+      /* Global Noise Texture for Premium Feel */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9999;
+        mix-blend-mode: overlay;
+      }
+
+      /* Premium Scrollbar */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: rgba(15, 23, 42, 0.5); 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(139, 92, 246, 0.2); 
-        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1); 
+        border-radius: 10px;
+        transition: background 0.3s;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgba(139, 92, 246, 0.5); 
+        background: rgba(255, 255, 255, 0.2); 
       }
       
-      /* 玻璃擬態 2.0 (Glassmorphism 2.0) */
+      /* 玻璃擬態 3.0 (Premium Glassmorphism) */
       .glass-panel {
-        background: rgba(15, 23, 42, 0.65);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        /* Lighting effect: Lighter top border, darker bottom border for depth */
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 1px solid rgba(255, 255, 255, 0.05);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+        box-shadow: 
+          0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+          0 2px 4px -1px rgba(0, 0, 0, 0.06),
+          inset 0 0 20px rgba(255, 255, 255, 0.02);
       }
       
-      /* 3D 翻轉核心 (3D Transform Core) */
+      .glass-panel:hover {
+        box-shadow: 
+          0 10px 15px -3px rgba(0, 0, 0, 0.2), 
+          0 4px 6px -2px rgba(0, 0, 0, 0.1),
+          inset 0 0 30px rgba(255, 255, 255, 0.03);
+      }
+
+      /* Smooth Text Selection */
+      ::selection {
+        background: rgba(16, 185, 129, 0.3);
+        color: white;
+      }
+      
+      /* 3D Transform Utilities */
       .perspective-1000 { perspective: 1000px; }
       .transform-style-3d { transform-style: preserve-3d; }
       .backface-hidden { backface-visibility: hidden; }
@@ -114,15 +152,20 @@
         -webkit-text-fill-color: transparent;
       }
       
-      /* Markdown Styles */
-      .markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.5em; }
-      .markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.5em; }
-      .markdown-content p { margin-bottom: 0.8em; line-height: 1.6; }
-      .markdown-content strong { font-weight: 700; color: #fbbf24; }
-      .markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: 700; margin-top: 1.2em; margin-bottom: 0.5em; color: #f8fafc; }
-      .markdown-content a { color: #34d399; text-decoration: none; border-bottom: 1px dotted #34d399; }
-      .markdown-content code { background: rgba(139,92,246,0.1); padding: 0.2em 0.4em; border-radius: 0.25em; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #d8b4fe; }
-      .markdown-content blockquote { border-left: 3px solid #8b5cf6; padding-left: 1em; color: #94a3b8; font-style: italic; background: rgba(139,92,246,0.05); padding: 0.5em 1em; border-radius: 0 0.5em 0.5em 0; }
+      /* Hide scrollbar for clean UI where needed */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      /* Mask fade for overflow containers */
+      .mask-linear-fade {
+        mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+      }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script type="importmap">

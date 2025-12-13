@@ -24,35 +24,35 @@ const THEMES = {
     glow: 'bg-emerald-500', 
     text: 'text-emerald-400', 
     iconBg: 'bg-emerald-500/10',
-    gradient: 'from-emerald-500/20' 
+    gradient: 'from-emerald-500/10' 
   },
   gold: { 
     border: 'group-hover:border-amber-500/40', 
     glow: 'bg-amber-500', 
     text: 'text-amber-400', 
     iconBg: 'bg-amber-500/10',
-    gradient: 'from-amber-500/20' 
+    gradient: 'from-amber-500/10' 
   },
   purple: { 
     border: 'group-hover:border-purple-500/40', 
     glow: 'bg-purple-500', 
     text: 'text-purple-400', 
     iconBg: 'bg-purple-500/10',
-    gradient: 'from-purple-500/20' 
+    gradient: 'from-purple-500/10' 
   },
   blue: { 
     border: 'group-hover:border-blue-500/40', 
     glow: 'bg-blue-500', 
     text: 'text-blue-400', 
     iconBg: 'bg-blue-500/10',
-    gradient: 'from-blue-500/20' 
+    gradient: 'from-blue-500/10' 
   },
   slate: { 
     border: 'group-hover:border-slate-400/40', 
     glow: 'bg-slate-400', 
     text: 'text-slate-400', 
     iconBg: 'bg-slate-500/10',
-    gradient: 'from-slate-500/20' 
+    gradient: 'from-slate-500/10' 
   },
 };
 
@@ -177,14 +177,14 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
       if (isTooltipVisible) setTimeout(() => setIsTooltipVisible(false), 2500);
   };
 
-  if (loading) return <div className={`h-24 w-full bg-white/5 animate-pulse rounded-xl ${className}`} />;
+  if (loading) return <div className={`h-24 w-full bg-white/5 animate-pulse rounded-2xl ${className}`} />;
 
   const wrapperClasses = `
     group relative overflow-visible transition-all duration-500 ease-out focus:outline-none focus:ring-2 focus:ring-celestial-purple/50
-    ${isSeamless ? 'bg-transparent border-none' : `backdrop-blur-xl bg-slate-900/40 border ${isGapFilling ? 'border-dashed border-amber-500/30' : 'border-white/5'} hover:bg-white/5`}
+    ${isSeamless ? 'bg-transparent border-none' : `glass-panel backdrop-blur-xl bg-slate-900/40 border ${isGapFilling ? 'border-dashed border-amber-500/30' : 'border-white/5'} hover:bg-white/5`}
     ${!isSeamless && theme.border}
-    ${isSeamless ? '' : 'shadow-lg shadow-black/20 hover:shadow-2xl'}
-    ${isHighFrequency ? 'ring-1 ring-celestial-purple/30 shadow-[0_0_15px_rgba(168,85,247,0.15)]' : ''}
+    ${isSeamless ? '' : 'shadow-lg hover:shadow-2xl'}
+    ${isHighFrequency ? 'ring-1 ring-celestial-purple/30 shadow-[0_0_20px_rgba(168,85,247,0.15)]' : ''}
     ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}
     ${className}
   `;
@@ -198,11 +198,11 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-          <span className={`text-gray-400 text-sm font-medium tracking-wide transition-colors ${isRichLabel ? 'border-b border-dashed border-gray-600 hover:text-white cursor-help' : ''}`}>
+          <span className={`text-slate-400 text-sm font-medium tracking-wide transition-colors ${isRichLabel ? 'border-b border-dashed border-gray-600 hover:text-white cursor-help' : ''}`}>
               {labelText}
           </span>
           {isRichLabel && (
-              <HelpCircle className="w-3 h-3 text-gray-600 group-hover:text-celestial-gold transition-colors opacity-50 group-hover:opacity-100" />
+              <HelpCircle className="w-3.5 h-3.5 text-gray-600 group-hover:text-celestial-gold transition-colors opacity-50 group-hover:opacity-100" />
           )}
           {isRichLabel && <InsightTooltip label={resolvedLabel} isVisible={isTooltipVisible} />}
       </div>
@@ -223,8 +223,8 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
         {AgentIndicator}
         {!isSeamless && (
           <>
-            <div className={`absolute -right-12 -top-12 w-48 h-48 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-3xl pointer-events-none ${theme.glow}`} />
-            <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} to-transparent opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none`} />
+            <div className={`absolute -right-12 -top-12 w-48 h-48 rounded-full opacity-0 group-hover:opacity-15 transition-opacity duration-700 blur-3xl pointer-events-none ${theme.glow}`} />
+            <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
           </>
         )}
         
@@ -236,7 +236,7 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
 
         <div className="relative z-10 p-6 flex flex-col h-full justify-between">
           <div className="flex justify-between items-start">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                <div className="flex items-center gap-2">
                   {LabelWithIcon}
                   <QuantumAiTrigger onClick={onAiAnalyze} onInternalTrigger={handleInternalAiTrigger} label={labelText} />
@@ -258,12 +258,12 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
                </div>
             </div>
 
-            <div className={`p-2.5 rounded-xl border border-white/5 ${theme.iconBg} ${theme.text} transition-all duration-300 group-hover:scale-110 shadow-inner`}>
+            <div className={`p-3 rounded-xl border border-white/5 ${theme.iconBg} ${theme.text} transition-all duration-300 group-hover:scale-110 shadow-inner backdrop-blur-sm`}>
                {Icon ? <Icon className="w-5 h-5" /> : <BarChart3 className="w-5 h-5" />}
             </div>
           </div>
 
-          <div className="mt-4 mb-1">
+          <div className="mt-6 mb-2">
              <QuantumValueEditor 
                 value={value || 0} 
                 theme={theme} 
@@ -272,12 +272,12 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
              />
           </div>
           
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between pt-2 border-t border-white/5">
              <div>
-                {subValue && <p className="text-xs text-gray-500 font-medium mb-1">{subValue}</p>}
+                {subValue && <p className="text-xs text-slate-500 font-medium mb-1">{subValue}</p>}
                 <div className="flex items-center gap-2">
                    {trend ? (
-                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${trend.direction === 'up' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
+                      <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold border ${trend.direction === 'up' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20'}`}>
                          {isPerformance && trend.direction === 'up' ? <TrendingUp className="w-3 h-3 animate-pulse text-celestial-gold" /> : (trend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}
                          {Math.abs(trend.value)}%
                       </span>
@@ -299,11 +299,11 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
 
   if (mode === 'list') {
     return (
-      <div className={`${wrapperClasses} p-3 rounded-xl flex items-center justify-between`} onClick={onClick} role={onClick ? "button" : undefined}>
+      <div className={`${wrapperClasses} p-4 rounded-xl flex items-center justify-between`} onClick={onClick} role={onClick ? "button" : undefined}>
           {AgentIndicator}
           <div className="flex items-center gap-4">
-              <div className={`p-2 rounded-lg border border-white/5 ${theme.iconBg} ${theme.text} relative`}>
-                  {Icon ? <Icon className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
+              <div className={`p-2.5 rounded-lg border border-white/5 ${theme.iconBg} ${theme.text} relative shadow-inner`}>
+                  {Icon ? <Icon className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
               </div>
               <div>
                   <div className="flex items-center gap-2">
@@ -311,13 +311,13 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
                     <QuantumAiTrigger onClick={onAiAnalyze} onInternalTrigger={handleInternalAiTrigger} label={labelText} />
                   </div>
                   <div className="flex items-center gap-3 mt-1 text-xs">
-                      {subValue && <span className="text-gray-500">{subValue}</span>}
+                      {subValue && <span className="text-gray-500 font-medium">{subValue}</span>}
                       {dataLink && <DataLinkIndicator type={dataLink} />}
                   </div>
               </div>
           </div>
           <div className="text-right">
-              <div className={`text-sm font-bold font-mono ${theme.text} ${isGapFilling ? 'animate-pulse' : ''}`}>{value}</div>
+              <div className={`text-base font-bold font-mono ${theme.text} ${isGapFilling ? 'animate-pulse' : ''} tracking-tight`}>{value}</div>
               <div className="flex justify-end mt-1 items-center gap-1">
                   <ConfidenceIndicator level={confidence} verified={verified} compact />
               </div>
@@ -328,7 +328,7 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
 
   if (mode === 'cell') {
       return (
-        <div className={`${wrapperClasses} p-4 rounded-xl flex flex-col justify-between h-full`} onClick={onClick} role={onClick ? "button" : undefined}>
+        <div className={`${wrapperClasses} p-5 rounded-2xl flex flex-col justify-between h-full`} onClick={onClick} role={onClick ? "button" : undefined}>
             {AgentIndicator}
             <div className="flex justify-between items-start">
                <div className="relative">
@@ -336,9 +336,9 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
                </div>
                <QuantumAiTrigger onClick={onAiAnalyze} onInternalTrigger={handleInternalAiTrigger} label={labelText} />
             </div>
-            <div className={`text-xl font-bold text-white mt-2 ${theme.text} ${isGapFilling ? 'opacity-80' : ''}`}>{value}</div>
+            <div className={`text-2xl font-bold text-white mt-3 ${theme.text} ${isGapFilling ? 'opacity-80' : ''} tracking-tight`}>{value}</div>
              {trend && (
-                <div className="mt-2 pt-2 border-t border-white/5 flex items-center gap-1 text-[10px]">
+                <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[10px] font-mono">
                    <TrendingUp className="w-3 h-3 text-emerald-400" />
                    <span className="text-emerald-400">+{trend.value}%</span>
                 </div>
@@ -350,7 +350,7 @@ const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
   if (mode === 'badge') {
      return (
         <div className="flex items-center gap-2 group/badge" aria-label={`Badge: ${value}`}>
-           <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden relative border border-white/5">
+           <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden relative border border-white/5 shadow-inner">
                <div className={`h-full absolute left-0 top-0 rounded-full transition-all duration-1000 ${theme.glow} ${confidence === 'high' ? 'w-full' : 'w-1/2'}`} />
            </div>
            <QuantumAiTrigger onClick={onAiAnalyze} onInternalTrigger={handleInternalAiTrigger} />
