@@ -1,0 +1,7 @@
+{
+  "name": "ESGss X JunAiKey 善向永續萬能系統 ",
+  "description": "Enterprise Sustainability Decision Support System (ES-DSS) powered by JunAiKey Deep Reasoning Engine. Features Shadow Carbon Pricing, AI Compliance Auditing, and Strategic Game Theory Simulation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

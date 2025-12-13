@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ESGss x JunAiKey: 善向永續萬能系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // JunAiKey Design System Palette (Singularity Edition)
+              celestial: {
+                900: '#020617', // Deep Space Base
+                800: '#0f172a',
+                emerald: '#10b981', // Sustainability / Growth
+                gold: '#fbbf24',    // Value / Finance
+                purple: '#8b5cf6',  // Intelligence / AI
+                blue: '#3b82f6',    // Integration / Flow
+                glass: 'rgba(255, 255, 255, 0.05)',
+                glassBorder: 'rgba(255, 255, 255, 0.1)',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            animation: {
+              'blob': 'blob 20s infinite',
+              'ai-pulse': 'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'float': 'float 6s ease-in-out infinite',
+              'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'spin-slow': 'spin 10s linear infinite',
+              'shimmer': 'shimmer 2s linear infinite',
+            },
+            keyframes: {
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              },
+              'pulse-glow': {
+                '0%, 100%': { opacity: '1', boxShadow: '0 0 15px #8b5cf6' },
+                '50%': { opacity: '.7', boxShadow: '0 0 30px #10b981' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              shimmer: {
+                '0%': { backgroundPosition: '-1000px 0' },
+                '100%': { backgroundPosition: '1000px 0' }
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #020617;
+        color: #e2e8f0;
+        font-family: 'Inter', sans-serif;
+        overflow-x: hidden;
+      }
+      /* Custom Scrollbar for JunAiKey UX */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.5); 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.2); 
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 92, 246, 0.5); 
+      }
+      
+      /* 玻璃擬態 2.0 (Glassmorphism 2.0) */
+      .glass-panel {
+        background: rgba(15, 23, 42, 0.65);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      }
+      
+      /* 3D 翻轉核心 (3D Transform Core) */
+      .perspective-1000 { perspective: 1000px; }
+      .transform-style-3d { transform-style: preserve-3d; }
+      .backface-hidden { backface-visibility: hidden; }
+      .rotate-y-180 { transform: rotateY(180deg); }
+      .preserve-3d { transform-style: preserve-3d; }
+      
+      .text-gradient-gold {
+        background: linear-gradient(to right, #fbbf24, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .text-gradient-ai {
+        background: linear-gradient(to right, #8b5cf6, #3b82f6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      
+      /* Markdown Styles */
+      .markdown-content ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.5em; }
+      .markdown-content ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 0.5em; }
+      .markdown-content p { margin-bottom: 0.8em; line-height: 1.6; }
+      .markdown-content strong { font-weight: 700; color: #fbbf24; }
+      .markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: 700; margin-top: 1.2em; margin-bottom: 0.5em; color: #f8fafc; }
+      .markdown-content a { color: #34d399; text-decoration: none; border-bottom: 1px dotted #34d399; }
+      .markdown-content code { background: rgba(139,92,246,0.1); padding: 0.2em 0.4em; border-radius: 0.25em; font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: #d8b4fe; }
+      .markdown-content blockquote { border-left: 3px solid #8b5cf6; padding-left: 1em; color: #94a3b8; font-style: italic; background: rgba(139,92,246,0.05); padding: 0.5em 1em; border-radius: 0 0.5em 0.5em 0; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
+    "marked": "https://aistudiocdn.com/marked@^15.0.0",
+    "html2pdf.js": "https://aistudiocdn.com/html2pdf.js@^0.10.1",
+    "react-virtuoso": "https://aistudiocdn.com/react-virtuoso@^4.6.2",
+    "rxjs": "https://aistudiocdn.com/rxjs@^7.8.1",
+    "rxjs/": "https://esm.sh/rxjs@^7.8.2/"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
