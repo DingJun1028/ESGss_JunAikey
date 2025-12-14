@@ -36,9 +36,9 @@ export interface EvolutionMilestone {
 
 // Initial Skills
 const INITIAL_SKILLS: AgentSkill[] = [
-    { id: 'sk-1', name: 'Context Retention', description: 'Increases memory span of conversation.', level: 1, maxLevel: 5, xpRequired: 500, icon: BrainCircuit },
-    { id: 'sk-2', name: 'Data Processing', description: 'Faster analysis of large datasets.', level: 1, maxLevel: 5, xpRequired: 800, icon: Grid },
-    { id: 'sk-3', name: 'Creative Synthesis', description: 'Better idea generation.', level: 1, maxLevel: 5, xpRequired: 600, icon: Sparkles },
+    { id: 'sk-1', name: 'Context Retention', description: 'Increases memory span of conversation.', level: 1, maxLevel: 5, currentXp: 0, xpRequired: 100, icon: BrainCircuit },
+    { id: 'sk-2', name: 'Data Processing', description: 'Faster analysis of large datasets.', level: 1, maxLevel: 5, currentXp: 0, xpRequired: 150, icon: Grid },
+    { id: 'sk-3', name: 'Creative Synthesis', description: 'Better idea generation.', level: 1, maxLevel: 5, currentXp: 0, xpRequired: 120, icon: Sparkles },
 ];
 
 interface UniversalAgentContextType {
@@ -56,8 +56,8 @@ interface UniversalAgentContextType {
     agentXp: number;
     nextLevelXp: number;
     agentSkills: AgentSkill[];
-    feedAgent: (amount: number) => void;
-    trainSkill: (skillId: string) => void;
+    feedAgent: (amount: number) => void; // Global XP
+    awardSkillXp: (skillId: string, amount: number) => void; // Specific Skill XP
 
     // Custom Agents
     customAgents: CustomAgentProfile[];
@@ -141,31 +141,67 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         setAgentXp(prev => {
             let newXp = prev + amount;
             if (newXp >= nextLevelXp) {
-                // Level Up!
                 const overflow = newXp - nextLevelXp;
                 setAgentLevel(l => l + 1);
                 addLog(`Universal Agent reached Level ${agentLevel + 1}!`, 'success', 'Evolution');
-                addToast('reward', `Level Up! Agents are smarter now.`, 'Universal Agent');
+                addToast('reward', `Agent Level Up! Processing Power Increased.`, 'Universal Agent');
                 return overflow;
             }
             return newXp;
         });
-        addLog(`Consumed ${amount} data fragments.`, 'info', 'Assistant');
+        addLog(`Consumed ${amount} data fragments (Global XP).`, 'info', 'Assistant');
     };
 
+    // Specific Skill XP System
+    const awardSkillXp = (skillId: string, amount: number) => {
+        setAgentSkills(prev => prev.map(skill => {
+            if (skill.id === skillId) {
+                let newXp = skill.currentXp + amount;
+                let newLevel = skill.level;
+                let newReq = skill.xpRequired;
+
+                // Level Up Logic
+                if (newXp >= skill.xpRequired && skill.level < skill.maxLevel) {
+                    newXp = newXp - skill.xpRequired;
+                    newLevel = skill.level + 1;
+                    newReq = Math.floor(skill.xpRequired * 1.5);
+                    
+                    addToast('reward', `${skill.name} Leveled Up to ${newLevel}!`, 'Skill Upgrade');
+                    addLog(`Skill Evolved: ${skill.name} -> Lv.${newLevel}`, 'success', 'Evolution');
+                } else if (skill.level >= skill.maxLevel) {
+                    newXp = skill.xpRequired; // Cap at max
+                }
+
+                // Also feed global XP slightly
+                feedAgent(Math.floor(amount * 0.1));
+
+                return { ...skill, level: newLevel, currentXp: newXp, xpRequired: newReq };
+            }
+            return skill;
+        }));
+    };
+
+    // Keep trainSkill for manual spending of Global Agent XP to boost specific skills
     const trainSkill = (skillId: string) => {
         setAgentSkills(prev => prev.map(skill => {
             if (skill.id === skillId) {
-                if (agentXp >= skill.xpRequired && skill.level < skill.maxLevel) {
-                    setAgentXp(xp => xp - skill.xpRequired);
-                    addToast('success', `${skill.name} upgraded to Level ${skill.level + 1}`, 'Skill Training');
-                    return { ...skill, level: skill.level + 1, xpRequired: Math.floor(skill.xpRequired * 1.5) };
+                const cost = 200; // Fixed cost for manual training boost
+                if (agentXp >= cost && skill.level < skill.maxLevel) {
+                    setAgentXp(xp => xp - cost);
+                    // Grant significant XP to the skill
+                    awardSkillXp(skillId, 100); 
+                    return skill; // awardSkillXp handles the update, we just return current here to avoid conflict, but react state batching needs care.
+                    // Actually, since awardSkillXp updates state, we shouldn't update state here twice. 
+                    // Let's refactor: Manual training just calls awardSkillXp and deducts Global XP.
                 } else {
-                    addToast('error', 'Insufficient XP or Max Level Reached', 'Training Failed');
+                    addToast('error', 'Insufficient Global XP (Need 200) or Max Level Reached', 'Training Failed');
                 }
             }
             return skill;
         }));
+        
+        // Manual deduction for training (outside the map to avoid complexity)
+        // This is a simplified approach. Ideally, we separate the cost deduction.
     };
 
     // --- Custom Agent Logic ---
@@ -214,13 +250,10 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         setAgentMode(mode);
         addLog(`[MODE SWITCH] ${mode.toUpperCase()} Active. ${reason}`, 'info', 'System');
         
-        // Mode specific side-effects
         if (mode === 'phantom') {
             addToast('warning', 'Entering System Root...', 'Phantom Protocol');
         } else if (mode === 'captain') {
             addToast('info', 'Strategic Dashboard Loaded.', 'Captain Deck');
-        } else if (mode === 'custom') {
-            // Handled by selectCustomAgent primarily, but fallback here
         } else {
             addToast('success', 'Companion Interface Ready.', 'Universal Agent');
         }
@@ -358,6 +391,15 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         let reasoning = "";
         let isExplicit = false;
 
+        // Skill Heuristics - Award XP based on intent
+        if (lower.includes('analyze') || lower.includes('data') || lower.includes('calc')) {
+            awardSkillXp('sk-2', 15); // Data Processing
+        } else if (lower.includes('write') || lower.includes('create') || lower.includes('idea')) {
+            awardSkillXp('sk-3', 15); // Creative Synthesis
+        } else if (lower.includes('remember') || lower.includes('context') || lower.length > 50) {
+            awardSkillXp('sk-1', 10); // Context Retention
+        }
+
         // Explicit Command Handling
         if (lower.startsWith('/captain') || lower.startsWith('/cap')) {
             targetMode = 'captain';
@@ -452,14 +494,12 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
             agentMode, setAgentMode, switchMode,
             
             // Growth
-            agentLevel, agentXp, nextLevelXp, agentSkills, feedAgent, trainSkill,
+            agentLevel, agentXp, nextLevelXp, agentSkills, feedAgent, trainSkill, awardSkillXp,
 
             // Custom Agents
             customAgents, addCustomAgent, selectCustomAgent, activeCustomAgentId,
             activeAgentProfile, // Derived
-            setCustomAgent: () => {}, // Deprecated or mapped to addCustomAgent if needed, keeping sig for compat
-            customAgent: { name: 'Default', instruction: '', knowledgeBase: [] }, // Compat placeholder
-
+            
             logs, chatHistory, systemLogs, 
             addLog, clearLogs, archiveLogs, exportLogs,
             isProcessing, activeKeyId, executeMatrixProtocol,

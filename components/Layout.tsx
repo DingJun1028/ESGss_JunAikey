@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   LayoutDashboard, GraduationCap, Search, Settings, Activity, Sun, Bell, Languages,
   Target, UserCheck, Leaf, FileText, Network, Bot, Calculator, ShieldCheck, Coins, Trophy, X, Zap, Star, Home, Radio, Command, Briefcase, Stethoscope, Wrench, Crown, BookOpen, Layers, Heart, Info, Megaphone, Calendar, Lock, Code, Database, UserPlus,
-  Maximize, Minimize, Menu, ChevronLeft, ChevronRight, Library, Book, Hexagon, Swords, AlertOctagon, Terminal, PenTool, Fingerprint, Map, Sparkles, LogOut
+  Maximize, Minimize, Menu, ChevronLeft, ChevronRight, Library, Book, Hexagon, Swords, AlertOctagon, Terminal, PenTool, Fingerprint, Map, Sparkles, LogOut, Grid
 } from 'lucide-react';
 import { View, Language } from '../types';
 import { TRANSLATIONS, VIEW_ACCESS_MAP } from '../constants';
@@ -263,7 +263,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
   const xpProgress = Math.min(100, Math.max(0, ((xp - currentLevelBaseXp) / 1000) * 100));
   const isCritical = totalScore < 60 || systemStatus === 'CRITICAL';
 
-  // Better Avatar Seed
   const avatarUrl = `https://api.dicebear.com/9.x/notionists/svg?seed=${userName}&backgroundColor=b6e3f4`;
 
   useEffect(() => {
@@ -287,7 +286,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
     }
   }, [currentView]);
 
-  // MECE Reorganization with Category Colors & PERMISSION CHECK
+  // MECE Reorganization: Consolidated "Universal" items into "Universal Tools" top-level entry
+  // Removed UNIVERSAL_AGENT, UNIVERSAL_BACKEND, UNIVERSAL_TOOLS from sidebar
   const navGroups = useMemo(() => {
       const allGroups = [
           {
@@ -295,7 +295,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
               colors: { text: 'text-amber-400', activeText: 'text-amber-300', activeBg: 'from-amber-500/20', border: 'border-amber-400' },
               items: [
                   { id: View.MY_ESG, icon: Home, label: t.nav.myEsg }, 
-                  { id: View.UNIVERSAL_AGENT, icon: Sparkles, label: language === 'zh-TW' ? '萬能代理 (Universal Agent)' : 'Universal Agent', highlight: true },
                   { id: View.YANG_BO, icon: Crown, label: t.nav.yangBo }, 
                   { id: View.USER_JOURNAL, icon: Book, label: t.nav.userJournal },
                   { id: View.RESTORATION, icon: Hexagon, label: t.nav.restoration, highlight: true },
@@ -340,8 +339,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                   { id: View.SETTINGS, icon: Settings, label: t.nav.settings },
                   { id: View.DIAGNOSTICS, icon: Activity, label: t.nav.diagnostics },
                   { id: View.API_ZONE, icon: Code, label: t.nav.apiZone },
-                  { id: View.UNIVERSAL_BACKEND, icon: Database, label: t.nav.universalBackend },
-                  { id: View.UNIVERSAL_TOOLS, icon: Command, label: t.nav.universalTools }, 
+                  // Universal Backend/Tools moved to Header
+                  { id: View.ABOUT_US, icon: Info, label: t.nav.aboutUs },
               ]
           }
       ];
@@ -354,7 +353,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
 
   }, [language, t.nav, hasPermission]);
 
-  // Flatten nav groups for mobile
   const mobileNavItems = useMemo(() => {
       return navGroups.flatMap(group => group.items.map(item => ({...item, colors: group.colors})));
   }, [navGroups]);
@@ -366,7 +364,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
     `}>
       <SystemCrashOverlay />
       
-      {/* Dynamic Background */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <NeuralFabric />
         <div className={`absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[120px] opacity-10 animate-blob mix-blend-screen ${isCritical ? 'bg-red-900' : 'bg-celestial-purple'}`} />
@@ -441,7 +438,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
              </button>
           )}
 
-          {/* Navigation - Optimized spacing */}
+          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 custom-scrollbar scroll-smooth">
             {navGroups.map((group, idx) => (
                 <div key={idx} className="relative">
@@ -472,7 +469,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
             ))}
           </nav>
 
-          {/* User Profile (Compact/Full) */}
+          {/* User Profile */}
           <div className="p-3 border-t border-white/5 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-xl">
               <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'justify-center' : ''} group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-colors`} onClick={() => onNavigate(View.SETTINGS)}>
                   <div className="relative">
@@ -508,12 +505,28 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                 ${isZenMode ? '-mt-20 opacity-0' : 'bg-slate-900/60 backdrop-blur-xl'}
             `}
           >
-            {/* Left: Mobile Toggle & Breadcrumbs/Status */}
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
                      <LogoIcon className="w-10 h-10" />
                 </div>
                 
+                {/* UNIVERSAL TOOLKIT BUTTON (Prominent) */}
+                <button 
+                    onClick={() => onNavigate(View.UNIVERSAL_TOOLS)}
+                    className={`
+                        hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 group
+                        ${currentView === View.UNIVERSAL_TOOLS || currentView === View.UNIVERSAL_AGENT || currentView === View.UNIVERSAL_BACKEND
+                            ? 'bg-gradient-to-r from-celestial-purple/20 to-indigo-600/20 text-white border-celestial-purple/50 shadow-[0_0_15px_rgba(139,92,246,0.2)]'
+                            : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:text-white'}
+                    `}
+                >
+                    <Command className="w-4 h-4 group-hover:animate-spin-slow" />
+                    <span className="text-sm font-bold tracking-wide">
+                        {language === 'zh-TW' ? '萬能工具' : 'Universal Tools'}
+                    </span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-celestial-purple animate-pulse ml-1" />
+                </button>
+
                 <div className="hidden lg:flex items-center gap-3 text-sm">
                     <button onClick={() => setIsSubModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-celestial-gold/10 to-transparent rounded-full border border-celestial-gold/20 text-celestial-gold hover:bg-celestial-gold/20 transition-all shadow-[0_0_15px_rgba(251,191,36,0.1)]">
                         <Crown className="w-4 h-4" />
@@ -522,10 +535,10 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                 </div>
             </div>
             
-            {/* Center: Search (Optional, prominent) */}
+            {/* Center Search */}
             <button 
                 onClick={() => setIsCommandOpen(true)}
-                className="hidden md:flex items-center gap-4 px-6 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition-all w-96 group shadow-inner"
+                className="hidden xl:flex items-center gap-4 px-6 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition-all w-80 group shadow-inner"
             >
                 <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium">Type command or search...</span>
@@ -534,7 +547,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                 </div>
             </button>
 
-            {/* Right: Actions */}
+            {/* Right Actions */}
             <div className="flex items-center gap-2">
                 <button 
                     onClick={() => setIsNavCenterOpen(true)}
@@ -542,14 +555,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                     title={language === 'zh-TW' ? "導覽中心" : "Tour Center"}
                 >
                     <Map className="w-5 h-5" />
-                </button>
-
-                <button 
-                    onClick={() => onNavigate(View.ABOUT_US)}
-                    className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-                    title={language === 'zh-TW' ? "關於我們" : "About Us"}
-                >
-                    <Info className="w-5 h-5" />
                 </button>
 
                 <button 
@@ -583,7 +588,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-celestial-gold shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                         )}
                     </button>
-                    {/* Notifications Dropdown */}
                     {isNotificationsOpen && (
                         <div className="absolute right-0 top-full mt-4 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in backdrop-blur-xl ring-1 ring-white/10">
                             <div className="text-xs font-bold text-gray-500 px-4 py-3 uppercase tracking-wider border-b border-white/5 flex justify-between items-center">
@@ -611,7 +615,6 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           </header>
 
           <main ref={mainRef} className="flex-1 overflow-y-auto p-2 md:p-4 relative custom-scrollbar scroll-smooth">
-            {/* Zen Mode Exit Button */}
             {isZenMode && (
                 <button 
                     onClick={() => setIsZenMode(false)}
@@ -643,15 +646,15 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                     </button>
                 ))}
                 
-                {/* Command Palette Trigger at the end */}
+                {/* Mobile Universal Tools */}
                 <button 
-                    onClick={() => setIsCommandOpen(true)} 
-                    className="flex flex-col items-center justify-center min-w-[70px] py-2 rounded-2xl text-gray-500 snap-center"
+                    onClick={() => onNavigate(View.UNIVERSAL_TOOLS)} 
+                    className="flex flex-col items-center justify-center min-w-[70px] py-2 rounded-2xl text-celestial-purple snap-center"
                 >
-                    <div className="p-2 mb-1 bg-white/5 rounded-xl border border-white/5">
-                        <Menu className="w-6 h-6" />
+                    <div className="p-2 mb-1 bg-celestial-purple/10 rounded-xl border border-celestial-purple/30">
+                        <Command className="w-6 h-6" />
                     </div>
-                    <span className="text-[9px] font-medium">Menu</span>
+                    <span className="text-[9px] font-medium">Tools</span>
                 </button>
             </div>
         </div>

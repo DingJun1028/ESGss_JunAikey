@@ -1,3 +1,4 @@
+
 import { Metric, Course, SystemHealth, Language, ReportSection, EsgCard, CardSynergy, UniversalCrystal, View, ChangelogEntry, UserJourney, OmniEsgTrait, Role, Permission } from './types';
 
 // --- RBAC CONSTANTS ---
@@ -69,7 +70,8 @@ export const VIEW_ACCESS_MAP: Record<View, Permission> = {
     [View.UNIVERSAL_BACKEND]: 'MANAGE_API',
     [View.UNIVERSAL_TOOLS]: 'VIEW_SYS',
     
-    // Legacy mapping: Removed [View.CARD_GAME] as it duplicates 'RESTORATION' key
+    // Legacy mapping
+    [View.CARD_GAME]: 'VIEW_CORE'
 };
 
 // --- LOGIN SCREEN README CONTENT ---
@@ -521,7 +523,8 @@ export const GLOBAL_SDR_MODULES = [
     { id: 'sdr-cdp', name: 'CDP Database', description: 'Carbon Disclosure Project global dataset.' },
     { id: 'sdr-gri', name: 'GRI Standards', description: 'Global Reporting Initiative standards.' },
     { id: 'sdr-ifrs', name: 'IFRS S1/S2', description: 'International Sustainability Standards Board.' },
-    { id: 'sdr-sasb', name: 'SASB Sector', description: 'Industry-specific sustainability accounting standards.' }
+    { id: 'sdr-sasb', name: 'SASB Sector', description: 'Industry-specific sustainability accounting standards.' },
+    { id: 'sdr-boost', name: 'Boost.Space', description: 'Unified cloud data sync and automation engine.' }
 ];
 
 export const getMockCourses = (language: Language): Course[] => [

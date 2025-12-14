@@ -229,7 +229,7 @@ class AIOSKernel {
       if (node.interactionCount > 50) traits.add('evolution');   
       node.traits = Array.from(traits);
       if (node.memory.history.length >= AIOSKernel.MAX_MEMORY_ITEMS) node.memory.history.shift();
-      node.memory.history.push({ eventType, timestamp: Date.now(), payload });
+      node.memory.history.push({ componentId, eventType, timestamp: Date.now(), payload });
       this.knowledgeGraph.set(componentId, node);
       this.save();
       this.notify(node);

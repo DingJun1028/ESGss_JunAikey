@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Language, View, CustomAgentProfile } from '../types';
-import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout } from 'lucide-react';
+import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout, TrendingUp } from 'lucide-react';
 import { UniversalPageHeader } from './UniversalPageHeader';
 import { useUniversalAgent, AgentMode } from '../contexts/UniversalAgentContext';
 import { useCompany } from './providers/CompanyProvider';
@@ -84,31 +84,47 @@ const AgentNurseryView: React.FC = () => {
                     <BrainCircuit className="w-5 h-5 text-emerald-400" />
                     Neural Skills
                 </h3>
-                {agentSkills.map(skill => (
-                    <div key={skill.id} className="glass-panel p-4 rounded-xl border border-white/5 flex items-center gap-4 hover:border-emerald-500/30 transition-all">
-                        <div className={`p-3 rounded-lg ${skill.level >= skill.maxLevel ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'}`}>
-                            <skill.icon className="w-6 h-6" />
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex justify-between items-center mb-1">
-                                <h4 className="font-bold text-white">{skill.name}</h4>
-                                <span className="text-xs text-emerald-400">Lv. {skill.level}/{skill.maxLevel}</span>
+                {agentSkills.map(skill => {
+                    const skillProgress = (skill.currentXp / skill.xpRequired) * 100;
+                    return (
+                        <div key={skill.id} className="glass-panel p-4 rounded-xl border border-white/5 flex flex-col gap-3 hover:border-emerald-500/30 transition-all">
+                            <div className="flex items-center gap-4">
+                                <div className={`p-3 rounded-lg ${skill.level >= skill.maxLevel ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'}`}>
+                                    <skill.icon className="w-6 h-6" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <h4 className="font-bold text-white">{skill.name}</h4>
+                                        <span className="text-xs text-emerald-400">Lv. {skill.level}/{skill.maxLevel}</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400">{skill.description}</p>
+                                </div>
+                                <button 
+                                    onClick={() => trainSkill(skill.id)}
+                                    disabled={skill.level >= skill.maxLevel || agentXp < 200}
+                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-white/10"
+                                >
+                                    Boost (200 GXP)
+                                </button>
                             </div>
-                            <p className="text-xs text-gray-400">{skill.description}</p>
+                            {/* Skill Progress Bar */}
+                            {skill.level < skill.maxLevel && (
+                                <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-emerald-500 transition-all duration-700 ease-out" 
+                                        style={{ width: `${skillProgress}%` }}
+                                    />
+                                </div>
+                            )}
                         </div>
-                        <button 
-                            onClick={() => trainSkill(skill.id)}
-                            disabled={skill.level >= skill.maxLevel || agentXp < skill.xpRequired}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            Train (-{skill.xpRequired} XP)
-                        </button>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
 };
+
+// ... (Rest of AgentFactoryView, CompanionView, CaptainView, PhantomView, UniversalAgentZone remain largely the same, just keeping them in the file content for consistency if needed, but for minimal change I will include the rest of the file content below AgentNurseryView to ensure complete replacement of the file structure or component)
 
 // --- Agent Factory View (Custom Creator) ---
 const AgentFactoryView: React.FC = () => {

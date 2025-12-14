@@ -85,34 +85,4 @@ ESGss 不僅是一個 SaaS 平台，它是一個運行於 **AIOS (AI Agent Opera
 
 ---
 
-## 4. 角色權限控制 (RBAC System)
-
-### 角色定義 (Role Definitions)
-
-系統採用細粒度的角色權限控制系統 (Role-Based Access Control)，確保企業數據安全與職責分離：
-
-| 角色 (Role) | 中文名稱 | 權限範圍 (Permissions) | 典型使用者 |
-| :--- | :--- | :--- | :--- |
-| **ADMIN** | 超級管理員 | VIEW_ALL, MANAGE_SETTINGS, MANAGE_API, VIEW_FINANCE | 永續長 (CSO)、系統管理員 |
-| **MANAGER** | 永續經理 | VIEW_CORE, VIEW_OPS, EDIT_OPS, VIEW_INTEL, VIEW_ECO, VIEW_FINANCE, VIEW_SYS | 永續部門主管 |
-| **ANALYST** | ESG 分析師 | VIEW_CORE, VIEW_OPS, VIEW_INTEL, VIEW_ECO | 數據分析師、研究員 |
-| **AUDITOR** | 外部稽核員 | VIEW_OPS, VIEW_ECO | 第三方驗證機構 |
-
-### 模組權限矩陣 (Module Access Matrix)
-
-系統模組依職能分為 **Core (核心)**, **Ops (營運)**, **Intel (情報)**, **Eco (生態)**, **Sys (系統)** 五大類別：
-
-*   **Core (核心模組):** 個人化儀表板、遊戲化元素，需 `VIEW_CORE` 權限。
-*   **Ops (營運模組):** 碳盤查、策略制定、財務模擬，需 `VIEW_OPS` 或 `EDIT_OPS` 權限。
-*   **Intel (情報模組):** 研究中心、商業情報、學院，需 `VIEW_INTEL` 權限。
-*   **Eco (生態模組):** 社群經營、募資、人才護照，需 `VIEW_ECO` 權限。
-*   **Sys (系統模組):** 系統設定、API 管理、診斷工具，需 `MANAGE_SETTINGS` 或 `MANAGE_API` 權限。
-
-**安全特性：**
-*   ✅ 前端路由守衛 (`ProtectedModule` 高階組件) 即時驗證權限
-*   ✅ 敏感操作 (如財務報告、API 金鑰) 需雙重驗證
-*   ✅ 稽核追蹤 (`AuditTrail`) 記錄所有關鍵操作
-
----
-
 *本文件由 JunAiKey 系統架構師自動生成，嚴格遵循 MECE 原則。*

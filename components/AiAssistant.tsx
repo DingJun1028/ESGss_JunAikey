@@ -6,7 +6,7 @@ import {
     BrainCircuit, Activity, Eye, Database, Share2, Network, 
     ShieldCheck, Zap, Layers, Leaf, Target, FileText, Briefcase, Globe, Users, GripVertical,
     ArrowRight, Lightbulb, Compass, Bell, CheckSquare, Copy, RotateCcw, ThumbsUp, ThumbsDown, Download, FileSpreadsheet, GripHorizontal,
-    Trash2
+    Trash2, Mic, Camera, Calculator, ScanLine
 } from 'lucide-react';
 import { Language, View } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -81,11 +81,15 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   const isZh = language === 'zh-TW';
   const { addToast, notifications } = useToast();
   // Get active profile from context
-  const { addLog, agentMode, systemLogs, activeAgentProfile } = useUniversalAgent(); 
+  const { addLog, agentMode, systemLogs, activeAgentProfile, awardSkillXp } = useUniversalAgent(); 
   const { quests, tier } = useCompany();
   
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
+  
+  // Interaction State
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [showToolsRing, setShowToolsRing] = useState(false);
   
   // History State
   const [historyCache, setHistoryCache] = useState<Record<string, Message[]>>({});
@@ -99,15 +103,20 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   const chatRef = useRef<any>(null); // Holds the ChatSession
   const client = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
 
-  // --- DRAG LOGIC ---
+  // --- DRAG & INTERACTION LOGIC ---
+  // Default position: Bottom Right
   const initialX = typeof window !== 'undefined' ? window.innerWidth - 80 : 0;
-  const initialY = typeof window !== 'undefined' ? window.innerHeight - 160 : 0;
+  const initialY = typeof window !== 'undefined' ? window.innerHeight - 100 : 0;
+  
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragTarget, setDragTarget] = useState<'button' | 'window'>('button');
+  
   const dragStartPos = useRef({ x: 0, y: 0 });
   const startElPos = useRef({ x: 0, y: 0 });
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLongPressTriggeredRef = useRef(false);
   const dragThreshold = 5;
 
   useEffect(() => {
@@ -129,6 +138,15 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       
       setDragTarget(target);
       setIsDragging(true);
+      
+      // Long Press Logic for Button
+      if (target === 'button') {
+          isLongPressTriggeredRef.current = false;
+          longPressTimerRef.current = setTimeout(() => {
+              isLongPressTriggeredRef.current = true;
+              toggleVoiceMode();
+          }, 800); // 800ms threshold for long press
+      }
   };
 
   const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -137,6 +155,14 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       const deltaX = clientX - dragStartPos.current.x;
       const deltaY = clientY - dragStartPos.current.y;
+      
+      // Cancel long press if moved significantly
+      if (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold) {
+          if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+          }
+      }
       
       let newX = startElPos.current.x + deltaX;
       let newY = startElPos.current.y + deltaY;
@@ -156,17 +182,47 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   };
 
   const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
+      if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+      }
+
       if (!isDragging) return;
       setIsDragging(false);
       
       if (dragTarget === 'button') {
+          if (isLongPressTriggeredRef.current) {
+              // Handled by timer, do not treat as click
+              return;
+          }
+
           const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
           const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
           const dist = Math.sqrt(Math.pow(clientX - dragStartPos.current.x, 2) + Math.pow(clientY - dragStartPos.current.y, 2));
+          
           if (dist < dragThreshold && !isOpen) {
+              // Click logic is handled here if not a double click
+              // We rely on standard click/dblclick separation or simple toggle
+              // For simplicity in React, onClick handles single, but we have drag logic.
+              // Let's open it if it wasn't a drag and wasn't a long press.
               setIsOpen(true);
           }
       }
+  };
+
+  const toggleVoiceMode = () => {
+      setIsVoiceActive(prev => {
+          const newState = !prev;
+          addToast(newState ? 'info' : 'warning', newState ? 'Voice Mode Activated' : 'Voice Mode Deactivated', 'System');
+          if (navigator.vibrate) navigator.vibrate(50);
+          return newState;
+      });
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setShowToolsRing(prev => !prev);
+      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
   };
 
   // 1. Determine Current Avatar Persona (Prioritize Global Context Mode)
@@ -273,9 +329,29 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
     }
   };
 
+  // Heuristic Logic for Skill XP Awarding
+  const checkSkills = (text: string) => {
+      const lower = text.toLowerCase();
+      // Data Processing (sk-2)
+      if (lower.match(/analyze|data|report|calculate|stats|trend/)) {
+          awardSkillXp('sk-2', 10);
+      }
+      // Creative Synthesis (sk-3)
+      if (lower.match(/write|create|draft|idea|suggest|imagine/)) {
+          awardSkillXp('sk-3', 10);
+      }
+      // Context Retention (sk-1) - based on complexity or specific keywords
+      if (text.length > 50 || lower.match(/remember|context|history|previous/)) {
+          awardSkillXp('sk-1', 5);
+      }
+  };
+
   const handleSend = async (overrideText?: string) => {
     const userMessage = overrideText || input;
     if (!userMessage.trim() || isThinking) return;
+
+    // Trigger Skill Check
+    checkSkills(userMessage);
 
     if (!overrideText) {
         setInput('');
@@ -382,19 +458,40 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
   if (!isOpen) {
     return (
-      <div
-        onMouseDown={(e) => handleDragStart(e, 'button')}
-        onTouchStart={(e) => handleDragStart(e, 'button')}
-        onMouseMove={handleDragMove}
-        onTouchMove={handleDragMove}
-        onMouseUp={handleDragEnd}
-        onTouchEnd={handleDragEnd}
-        style={{ left: position.x, top: position.y }}
-        className={`fixed z-[9999] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 cursor-move animate-bounce-slow
-            ${theme.button} text-white border border-white/20 shadow-lg touch-none select-none`}
-      >
-        <ModeIcon className="w-7 h-7 pointer-events-none" />
-      </div>
+      <>
+        <div
+            onMouseDown={(e) => handleDragStart(e, 'button')}
+            onTouchStart={(e) => handleDragStart(e, 'button')}
+            onMouseMove={handleDragMove}
+            onTouchMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onTouchEnd={handleDragEnd}
+            onDoubleClick={handleDoubleClick}
+            style={{ left: position.x, top: position.y }}
+            className={`fixed z-[9999] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 cursor-move
+                ${theme.button} text-white border border-white/20 shadow-lg touch-none select-none ${isVoiceActive ? 'animate-pulse ring-4 ring-celestial-gold/50' : 'animate-bounce-slow'}`}
+        >
+            {isVoiceActive ? <Mic className="w-7 h-7" /> : <ModeIcon className="w-7 h-7 pointer-events-none" />}
+            
+            {/* Tool Ring Orbit */}
+            {showToolsRing && (
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); onNavigate(View.UNIVERSAL_TOOLS); setShowToolsRing(false); }}>
+                        <Terminal className="w-4 h-4 text-celestial-purple" />
+                    </div>
+                    <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); onNavigate(View.MY_ESG); setShowToolsRing(false); }}>
+                        <ArrowRight className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div className="absolute top-1/2 -left-12 -translate-y-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); onNavigate(View.RESEARCH_HUB); setShowToolsRing(false); }}>
+                        <Globe className="w-4 h-4 text-blue-400" />
+                    </div>
+                    <div className="absolute top-1/2 -right-12 -translate-y-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); addToast('info', 'Scanner Ready', 'Vision'); setShowToolsRing(false); }}>
+                        <ScanLine className="w-4 h-4 text-celestial-gold" />
+                    </div>
+                </div>
+            )}
+        </div>
+      </>
     );
   }
 

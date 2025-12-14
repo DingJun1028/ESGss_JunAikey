@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, User, ShieldCheck, ToggleLeft, ToggleRight, ArrowRight, GitCommit, Calendar, Activity, Triangle, Cpu, BrainCircuit, Target } from 'lucide-react';
+import { Lock, User, ShieldCheck, ToggleLeft, ToggleRight, ArrowRight, GitCommit, Calendar, Activity, Triangle, Cpu, BrainCircuit, Target, Building, Mail, Chrome, LogIn, UserPlus } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { LogoIcon } from './Layout';
 import { LOGIN_README } from '../constants';
@@ -12,7 +12,9 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) => {
   const [isDevMode, setIsDevMode] = useState(false);
+  const [companyId, setCompanyId] = useState('');
   const [email, setEmail] = useState('');
+  const [personalEmail, setPersonalEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
@@ -31,6 +33,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) =
       addToast('success', welcomeMsg, welcomeTitle);
       onLogin();
     }, 1500);
+  };
+
+  const handleGoogleAuth = (type: 'signin' | 'signup') => {
+      setLoading(true);
+      setTimeout(() => {
+          setLoading(false);
+          const action = type === 'signin' ? (isZh ? 'Google 登入' : 'Google Sign In') : (isZh ? 'Google 註冊' : 'Google Sign Up');
+          addToast('success', `${action} ${isZh ? '成功' : 'Successful'}`, 'OAuth 2.0');
+          onLogin();
+      }, 1500);
   };
 
   const toggleDevMode = () => {
@@ -88,14 +100,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) =
                 {!isDevMode && (
                 <>
                     <div className="relative group">
+                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-gold transition-colors" />
+                    <input 
+                        type="text" 
+                        value={companyId}
+                        onChange={(e) => setCompanyId(e.target.value)}
+                        placeholder={isZh ? "企業代碼 (Company ID)" : "Company ID"}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-celestial-gold/50 focus:ring-1 focus:ring-celestial-gold/50 transition-all hover:bg-black/60"
+                    />
+                    </div>
+                    <div className="relative group">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-emerald transition-colors" />
                     <input 
                         type="email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder={isZh ? "企業信箱" : "Enterprise Email"}
+                        placeholder={isZh ? "企業信箱 (Enterprise Email)" : "Enterprise Email"}
                         className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-celestial-emerald/50 focus:ring-1 focus:ring-celestial-emerald/50 transition-all hover:bg-black/60"
-                        required
+                        required={!personalEmail} // Requirement logic could be complex, keeping simple for UI
+                    />
+                    </div>
+                    <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-blue transition-colors" />
+                    <input 
+                        type="email" 
+                        value={personalEmail}
+                        onChange={(e) => setPersonalEmail(e.target.value)}
+                        placeholder={isZh ? "個人信箱 (Personal Email)" : "Personal Email"}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-celestial-blue/50 focus:ring-1 focus:ring-celestial-blue/50 transition-all hover:bg-black/60"
                     />
                     </div>
                     <div className="relative group">
@@ -141,6 +173,37 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) =
                     </>
                 )}
                 </button>
+
+                {!isDevMode && (
+                    <>
+                        <div className="flex items-center gap-4 my-4 opacity-50">
+                            <div className="h-px bg-white/20 flex-1" />
+                            <span className="text-[10px] text-gray-400 uppercase tracking-widest">{isZh ? '或使用 Google' : 'OR CONTINUE WITH'}</span>
+                            <div className="h-px bg-white/20 flex-1" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button 
+                                type="button"
+                                onClick={() => handleGoogleAuth('signin')}
+                                disabled={loading}
+                                className="py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 text-xs font-bold text-gray-300 hover:text-white"
+                            >
+                                <Chrome className="w-4 h-4" />
+                                {isZh ? 'Google 登入' : 'Sign In'}
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => handleGoogleAuth('signup')}
+                                disabled={loading}
+                                className="py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-2 text-xs font-bold text-gray-300 hover:text-white"
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                {isZh ? 'Google 註冊' : 'Sign Up'}
+                            </button>
+                        </div>
+                    </>
+                )}
             </form>
 
             <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-between">
@@ -222,7 +285,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) =
 
               {/* Footer */}
               <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center text-[10px] text-gray-600 font-mono">
-                  <div>© 2025 ESGss Corp.</div>
+                  <div>© 2025 ESGss Corp. All rights reserved.</div>
                   <div className="flex items-center gap-2">
                       <GitCommit className="w-3 h-3" />
                       <span>Last Commit: {new Date().toLocaleDateString()}</span>

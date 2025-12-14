@@ -13,6 +13,7 @@ import { useToast } from '../contexts/ToastContext';
 import { OmniEsgCell } from './OmniEsgCell';
 import { UniversalPageHeader } from './UniversalPageHeader';
 import { streamChat } from '../services/ai-service';
+import { useCompany } from './providers/CompanyProvider';
 
 interface AlumniZoneProps {
   language: Language;
@@ -46,8 +47,11 @@ interface CanvasHistoryState {
 
 const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh, onClose }) => {
     const { addToast } = useToast();
+    const { addNote } = useCompany(); // Integration with Universal Notes
+    
+    // Default positioning adjusted to x: 280 to avoid overlap with left sidebar (w-64 = 256px)
     const [elements, setElements] = useState<CanvasElement[]>([
-        { id: 'el-1', type: 'text', content: isZh ? '在此輸入您的品牌標語...' : 'Insert Brand Slogan Here...', x: 50, y: 150, width: 300, height: 60, style: { fontSize: '24px', fontWeight: 'bold', color: '#fbbf24' } }
+        { id: 'el-1', type: 'text', content: isZh ? '在此輸入您的品牌標語...' : 'Insert Brand Slogan Here...', x: 280, y: 150, width: 400, height: 60, style: { fontSize: '24px', fontWeight: 'bold', color: '#fbbf24' } }
     ]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -79,7 +83,11 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        const newEls = elements.map(el => el.id === id ? { ...el, x: x - el.width / 2, y: y - el.height / 2 } : el);
+        // Ensure drop doesn't put element completely off screen or under sidebar
+        const safeX = Math.max(0, x);
+        const safeY = Math.max(0, y);
+
+        const newEls = elements.map(el => el.id === id ? { ...el, x: safeX - el.width / 2, y: safeY - el.height / 2 } : el);
         setElements(newEls);
         saveHistory(newEls);
     };
@@ -89,13 +97,13 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
         setIsGenerating(true);
         addToast('info', isZh ? 'AI 正在設計您的畫布內容...' : 'AI designing your canvas content...', 'AI Designer');
 
-        // Simulate AI Generation with fixed layout adjustments (Layout Fix)
+        // Simulate AI Generation with safe layout
         setTimeout(() => {
             const newElements: CanvasElement[] = [
-                { id: `gen-title-${Date.now()}`, type: 'text', content: prompt.toUpperCase(), x: 40, y: 100, width: 400, height: 50, style: { fontSize: '32px', fontWeight: 'bold', color: '#ffffff' } },
-                { id: `gen-sub-${Date.now()}`, type: 'text', content: "Sustainable Innovation Partner", x: 40, y: 160, width: 300, height: 30, style: { fontSize: '16px', color: '#10b981' } },
-                { id: `gen-img-${Date.now()}`, type: 'image', content: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80', x: 40, y: 220, width: 300, height: 200, style: { borderRadius: '12px' } },
-                { id: `gen-badge-${Date.now()}`, type: 'shape', content: 'Verified Partner', x: 360, y: 220, width: 120, height: 40, style: { backgroundColor: '#8b5cf6', color: 'white', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' } }
+                { id: `gen-title-${Date.now()}`, type: 'text', content: prompt.toUpperCase(), x: 280, y: 100, width: 400, height: 50, style: { fontSize: '32px', fontWeight: 'bold', color: '#ffffff' } },
+                { id: `gen-sub-${Date.now()}`, type: 'text', content: "Sustainable Innovation Partner", x: 280, y: 160, width: 300, height: 30, style: { fontSize: '16px', color: '#10b981' } },
+                { id: `gen-img-${Date.now()}`, type: 'image', content: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80', x: 280, y: 220, width: 300, height: 200, style: { borderRadius: '12px' } },
+                { id: `gen-badge-${Date.now()}`, type: 'shape', content: 'Verified Partner', x: 600, y: 220, width: 120, height: 40, style: { backgroundColor: '#8b5cf6', color: 'white', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' } }
             ];
             const updated = [...elements, ...newElements];
             setElements(updated);
@@ -103,6 +111,24 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
             setIsGenerating(false);
             addToast('success', isZh ? '內容生成完畢' : 'Content Generated', 'AI Canvas');
         }, 2000);
+    };
+
+    // Save to Universal Notes Logic
+    const handleSaveDesign = () => {
+        const title = `Brand Canvas Design - ${new Date().toLocaleDateString()}`;
+        
+        // Convert canvas state to Markdown representation for the note
+        let noteContent = `### ${title}\n\n**Generated via Partner AI Brand Canvas**\n\n`;
+        noteContent += `| Element Type | Content | Position |\n|---|---|---|\n`;
+        
+        elements.forEach(el => {
+            noteContent += `| ${el.type} | ${el.content.substring(0, 30)}... | (${Math.round(el.x)}, ${Math.round(el.y)}) |\n`;
+        });
+
+        noteContent += `\n**JSON Data:**\n\`\`\`json\n${JSON.stringify(elements, null, 2)}\n\`\`\``;
+
+        addNote(noteContent, ['Design', 'Brand', 'Canvas'], title);
+        addToast('success', isZh ? '設計已儲存至萬能筆記' : 'Design saved to Universal Notes', 'System');
     };
 
     return (
@@ -126,8 +152,8 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
                         <span>POWER</span>
                     </div>
 
-                    <button onClick={() => addToast('success', 'Saved to Cloud', 'System')} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300">
-                        <Save className="w-4 h-4" /> {isZh ? '保存設計' : 'Save Design'}
+                    <button onClick={handleSaveDesign} className="flex items-center gap-2 text-xs font-bold text-emerald-400 hover:text-emerald-300">
+                        <Save className="w-4 h-4" /> {isZh ? '保存至筆記' : 'Save to Notes'}
                     </button>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-gray-400">
                         <X className="w-5 h-5" />
@@ -137,7 +163,7 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Tools Sidebar */}
-                <div className="w-64 bg-slate-900 border-r border-white/10 p-4 flex flex-col gap-6">
+                <div className="w-64 bg-slate-900 border-r border-white/10 p-4 flex flex-col gap-6 shrink-0 z-20">
                     <div>
                         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{isZh ? 'AI 生成器' : 'AI Generator'}</h4>
                         <textarea 
@@ -180,9 +206,9 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
                 </div>
 
                 {/* Canvas Area */}
-                <div className="flex-1 flex flex-col relative">
+                <div className="flex-1 flex flex-col relative overflow-hidden">
                     <div 
-                        className="flex-1 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-slate-950 relative overflow-hidden"
+                        className="flex-1 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-slate-950 relative"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                     >
@@ -226,7 +252,7 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
                     </div>
 
                     {/* Version Time Machine Bar */}
-                    <div className="h-12 bg-slate-900 border-t border-white/10 flex items-center px-4 gap-4">
+                    <div className="h-12 bg-slate-900 border-t border-white/10 flex items-center px-4 gap-4 z-20">
                         <div className="flex items-center gap-2 text-celestial-gold text-xs font-bold uppercase tracking-wider">
                             <Clock className="w-4 h-4" />
                             {isZh ? '版本時光機' : 'Time Machine'}
@@ -246,7 +272,7 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
                 </div>
 
                 {/* Properties Panel */}
-                <div className="w-64 bg-slate-900 border-l border-white/10 p-4">
+                <div className="w-64 bg-slate-900 border-l border-white/10 p-4 z-20">
                     <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">{isZh ? '屬性' : 'Properties'}</h4>
                     {selectedId ? (
                         <div className="space-y-4">
@@ -275,6 +301,7 @@ const PartnerCanvas: React.FC<{ isZh: boolean, onClose: () => void }> = ({ isZh,
 export const AlumniZone: React.FC<AlumniZoneProps> = ({ language }) => {
   const isZh = language === 'zh-TW';
   const { addToast } = useToast();
+  const { setUserName } = useCompany();
   
   // State for Role Switching
   const [currentRole, setCurrentRole] = useState<UserRole>('Student');
