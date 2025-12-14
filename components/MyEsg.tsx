@@ -14,7 +14,7 @@ interface MyEsgProps {
   onNavigate: (view: View) => void;
 }
 
-// --- Berkeley Hero Banner ---
+// ... (Rest of component implementations: BerkeleyHeroBanner, WidgetContainer) ...
 const BerkeleyHeroBanner: React.FC<{ isZh: boolean, onNavigate: (view: View) => void }> = ({ isZh, onNavigate }) => (
     <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl shadow-amber-900/20 border border-celestial-gold/30 group cursor-pointer h-full min-h-[220px]" onClick={() => onNavigate(View.ACADEMY)}>
         <div className="absolute inset-0">
@@ -43,7 +43,6 @@ const BerkeleyHeroBanner: React.FC<{ isZh: boolean, onNavigate: (view: View) => 
     </div>
 );
 
-// --- Widget Component ---
 const WidgetContainer: React.FC<{ 
     widget: DashboardWidget, 
     children: React.ReactNode, 
@@ -107,7 +106,7 @@ export const MyEsg: React.FC<MyEsgProps> = ({ language, onNavigate }) => {
       return 'small';
   };
 
-  // --- Widget Renderers ---
+  // ... (Widget Renderers remain same) ...
   const renderProfileWidget = (size: 'small' | 'medium' | 'large' | 'full' = 'small') => {
       if (size === 'small') {
           return (
@@ -119,7 +118,6 @@ export const MyEsg: React.FC<MyEsgProps> = ({ language, onNavigate }) => {
                   <div className="text-[10px] text-celestial-gold mt-1 bg-celestial-gold/10 px-2 py-0.5 rounded-full border border-celestial-gold/20">
                       Lv.{level}
                   </div>
-                  {/* Progress Bar Mini */}
                   <div className="w-2/3 h-1 bg-gray-800 rounded-full mt-2 overflow-hidden">
                       <div className="h-full bg-celestial-purple w-3/4" />
                   </div>
@@ -291,6 +289,7 @@ export const MyEsg: React.FC<MyEsgProps> = ({ language, onNavigate }) => {
             description={pageData.desc}
             language={language}
             tag={pageData.tag}
+            accentColor="text-amber-400"
         />
 
         {/* Edit Toggle Bar */}
@@ -313,10 +312,8 @@ export const MyEsg: React.FC<MyEsgProps> = ({ language, onNavigate }) => {
             )}
         </div>
 
-        {/* Hero Banner (Integrated as top row if desired, or separate) */}
+        {/* Hero Banner */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 grid-flow-dense auto-rows-[minmax(180px,auto)]">
-            
-            {/* Banner spanning full width on mobile, 4 cols on large */}
             <div className="col-span-1 md:col-span-2 lg:col-span-4 min-h-[220px]">
                 <BerkeleyHeroBanner isZh={isZh} onNavigate={onNavigate} />
             </div>

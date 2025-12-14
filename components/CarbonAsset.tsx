@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { OmniEsgCell } from './OmniEsgCell';
 import { Language } from '../types';
-import { Leaf, TrendingUp, PieChart, MapPin, Loader2, Zap, Calculator, Fuel, Save, DollarSign, AlertTriangle, Cloud, RefreshCw, ExternalLink, Wand2, Power, Link as LinkIcon, Radio } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Leaf, TrendingUp, PieChart, MapPin, Loader2, Zap, Calculator, Fuel, Save, DollarSign, AlertTriangle, Cloud, RefreshCw, ExternalLink, Wand2, Power, Link as LinkIcon, Radio, Download } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { useToast } from '../contexts/ToastContext';
 import { performMapQuery } from '../services/ai-service';
 import { BackendService } from '../services/backend';
@@ -240,6 +240,9 @@ export const CarbonAsset: React.FC<CarbonAssetProps> = ({ language }) => {
                         <div className="flex items-center gap-2 text-xs text-gray-400">
                             <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Scope 1
                             <span className="w-3 h-3 rounded-full bg-amber-400 ml-2"></span> Scope 3
+                            <button onClick={() => addToast('success', 'Chart Exported', 'System')} className="p-1.5 hover:bg-white/10 rounded-lg text-white ml-2 transition-colors" title="Export">
+                                <Download className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                     <div className="flex-1 w-full min-h-[300px]">
@@ -253,8 +256,12 @@ export const CarbonAsset: React.FC<CarbonAssetProps> = ({ language }) => {
                                 <XAxis dataKey="name" stroke="#64748b" tickLine={false} axisLine={false} dy={10} fontSize={12} />
                                 <YAxis stroke="#64748b" tickLine={false} axisLine={false} fontSize={12} />
                                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }} itemStyle={{ color: '#e2e8f0' }} />
-                                <Area type="monotone" dataKey="scope3" stackId="1" stroke="#fbbf24" fill="url(#colorS3)" strokeWidth={2} />
-                                <Area type="monotone" dataKey="scope1" stackId="1" stroke="#10b981" fill="url(#colorS1)" strokeWidth={2} />
+                                <Area type="monotone" dataKey="scope3" stackId="1" stroke="#fbbf24" fill="url(#colorS3)" strokeWidth={2}>
+                                    <LabelList dataKey="scope3" position="top" fill="#fbbf24" fontSize={10} />
+                                </Area>
+                                <Area type="monotone" dataKey="scope1" stackId="1" stroke="#10b981" fill="url(#colorS1)" strokeWidth={2}>
+                                    <LabelList dataKey="scope1" position="top" fill="#10b981" fontSize={10} />
+                                </Area>
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>

@@ -230,87 +230,11 @@ const CardGameArena: React.FC<{ isZh: boolean }> = ({ isZh }) => {
     );
 };
 
-// ... (RestorationProject and other components remain unchanged) ...
-// Re-declaring for context in this file block replacement
-const AiNursery: React.FC<{ isZh: boolean }> = ({ isZh }) => {
-    const { crystals, goodwillBalance, updateGoodwillBalance } = useCompany();
-    const { addToast } = useToast();
-    const [selectedCrystal, setSelectedCrystal] = useState<string | null>(null);
-
-    const handleFeed = (amount: number) => {
-        if (!selectedCrystal) return;
-        if (goodwillBalance < amount) {
-            addToast('error', isZh ? '善向幣不足' : 'Insufficient Goodwill', 'Nursery');
-            return;
-        }
-        updateGoodwillBalance(-amount);
-        addToast('reward', isZh ? `注入 ${amount} 能量！核心穩定度提升。` : `Injected ${amount} Energy! Stability increased.`, 'AI Nursery');
-    };
-
-    return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="glass-panel p-6 rounded-2xl border border-emerald-500/30 bg-emerald-900/10">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                        <FlaskConical className="w-6 h-6 text-emerald-400" />
-                        {isZh ? '萬能培育室 (AI Nursery)' : 'AI Nursery'}
-                    </h3>
-                    <div className="px-3 py-1 bg-black/40 rounded-full text-xs text-celestial-gold font-mono border border-celestial-gold/30">
-                        {goodwillBalance} GWC Available
-                    </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {crystals.map(crystal => (
-                        <div 
-                            key={crystal.id} 
-                            onClick={() => setSelectedCrystal(crystal.id)}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden group
-                                ${selectedCrystal === crystal.id 
-                                    ? 'bg-emerald-500/20 border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
-                                    : 'bg-white/5 border-white/10 hover:border-white/30'}
-                            `}
-                        >
-                            <div className="flex justify-between items-start mb-2 relative z-10">
-                                <span className="text-xs font-bold text-white">{crystal.name}</span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded ${crystal.integrity > 80 ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
-                                    {crystal.integrity}%
-                                </span>
-                            </div>
-                            
-                            <div className="h-24 flex items-center justify-center relative my-2">
-                                <div className={`absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent bottom-0 transition-all duration-1000`} style={{ height: `${crystal.integrity}%` }} />
-                                <Dna className={`w-12 h-12 text-white/50 ${selectedCrystal === crystal.id ? 'animate-pulse text-emerald-200' : ''}`} />
-                            </div>
-
-                            {selectedCrystal === crystal.id && (
-                                <div className="flex gap-2 mt-2 relative z-10">
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleFeed(100); }}
-                                        className="flex-1 py-1 bg-emerald-500 text-black text-xs font-bold rounded hover:bg-emerald-400 transition-colors"
-                                    >
-                                        Feed (100G)
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                    
-                    <div className="p-4 rounded-xl border border-dashed border-white/10 flex flex-col items-center justify-center text-gray-500 hover:text-white hover:border-white/30 transition-all cursor-pointer min-h-[180px]">
-                        <Plus className="w-8 h-8 mb-2" />
-                        <span className="text-xs">{isZh ? '擴充培育槽' : 'Add Slot'}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
     const { crystals, restoreCrystal, collectCrystalFragment } = useCompany();
     const { addToast } = useToast();
-    const [activeTab, setActiveTab] = useState<'crystals' | 'nursery'>('crystals');
-
+    
+    // Updated: Only 'crystals' tab, nursery moved to Universal Agent
     const totalRestored = crystals.filter(c => c.state === 'Restored' || c.state === 'Perfected').length;
     const systemLevel = Math.floor((totalRestored / crystals.length) * 100);
 
@@ -357,95 +281,75 @@ const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => setActiveTab('crystals')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'crystals' ? 'bg-celestial-purple text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        {isZh ? '核心矩陣' : 'Crystal Matrix'}
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('nursery')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'nursery' ? 'bg-emerald-500 text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        {isZh ? 'AI 培育室' : 'AI Nursery'}
-                    </button>
+            </div>
+
+            <div className="relative py-12">
+                <div className="absolute inset-0 pointer-events-none">
+                    <svg className="w-full h-full opacity-20">
+                        <defs>
+                            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="transparent" />
+                                <stop offset="50%" stopColor="#8b5cf6" />
+                                <stop offset="100%" stopColor="transparent" />
+                            </linearGradient>
+                        </defs>
+                        <line x1="10%" y1="50%" x2="90%" y2="50%" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" />
+                        <circle cx="50%" cy="50%" r="150" fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.3" className="animate-[spin_20s_linear_infinite]" />
+                    </svg>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 justify-items-center relative z-10">
+                    {crystals.map((crystal, idx) => (
+                        <div key={crystal.id} className={`transform transition-all duration-700 hover:-translate-y-4`} style={{ animationDelay: `${idx * 200}ms` }}>
+                            <UniversalCrystal 
+                                crystal={crystal}
+                                onRestore={() => handleRestore(crystal.id, crystal.name)}
+                                onClick={() => {}}
+                            />
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            {activeTab === 'crystals' && (
-                <>
-                    <div className="relative py-12">
-                        <div className="absolute inset-0 pointer-events-none">
-                            <svg className="w-full h-full opacity-20">
-                                <defs>
-                                    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                        <stop offset="0%" stopColor="transparent" />
-                                        <stop offset="50%" stopColor="#8b5cf6" />
-                                        <stop offset="100%" stopColor="transparent" />
-                                    </linearGradient>
-                                </defs>
-                                <line x1="10%" y1="50%" x2="90%" y2="50%" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" />
-                                <circle cx="50%" cy="50%" r="150" fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.3" className="animate-[spin_20s_linear_infinite]" />
-                            </svg>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 justify-items-center relative z-10">
-                            {crystals.map((crystal, idx) => (
-                                <div key={crystal.id} className={`transform transition-all duration-700 hover:-translate-y-4`} style={{ animationDelay: `${idx * 200}ms` }}>
-                                    <UniversalCrystal 
-                                        crystal={crystal}
-                                        onRestore={() => handleRestore(crystal.id, crystal.name)}
-                                        onClick={() => {}}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 to-transparent">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Dna className="w-5 h-5 text-emerald-400" />
+                        {isZh ? '自他覺零幻覺機制' : 'Zero Hallucination Protocol'}
+                    </h3>
+                    <p className="text-gray-300 leading-relaxed mb-4">
+                        {isZh 
+                            ? 'JunAiKey 核心具備自我監控能力。當「核心完整度」低於 70% 時，AI 輸出可能出現幻覺。系統將自動鎖定高風險功能，直到您透過「稽核 (Audit)」或「外部驗證 (Oracle)」修復水晶。' 
+                            : 'JunAiKey monitors integrity. If < 70%, AI might hallucinate. High-risk features lock until crystal stabilization via Audit/Oracle.'}
+                    </p>
+                    <div className="flex gap-2">
+                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
+                            <Activity className="w-3 h-3" /> Active Monitoring
+                        </span>
                     </div>
+                </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 to-transparent">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                <Dna className="w-5 h-5 text-emerald-400" />
-                                {isZh ? '自他覺零幻覺機制' : 'Zero Hallucination Protocol'}
-                            </h3>
-                            <p className="text-gray-300 leading-relaxed mb-4">
-                                {isZh 
-                                    ? 'JunAiKey 核心具備自我監控能力。當「核心完整度」低於 70% 時，AI 輸出可能出現幻覺。系統將自動鎖定高風險功能，直到您透過「稽核 (Audit)」或「外部驗證 (Oracle)」修復水晶。' 
-                                    : 'JunAiKey monitors integrity. If < 70%, AI might hallucinate. High-risk features lock until crystal stabilization via Audit/Oracle.'}
-                            </p>
-                            <div className="flex gap-2">
-                                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
-                                    <Activity className="w-3 h-3" /> Active Monitoring
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-gradient-to-bl from-slate-900 to-transparent">
-                            <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                <Layers className="w-5 h-5 text-celestial-purple" />
-                                {isZh ? '如何收集碎片？' : 'How to Collect Fragments?'}
-                            </h3>
-                            <ul className="space-y-3 text-sm text-gray-300">
-                                <li className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-celestial-gold/20 flex items-center justify-center text-celestial-gold font-bold">1</div>
-                                    <span>{isZh ? '完成每日任務 (My ESG)' : 'Complete Daily Quests'}</span>
-                                </li>
-                                <li className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-celestial-purple/20 flex items-center justify-center text-celestial-purple font-bold">2</div>
-                                    <span>{isZh ? '使用報告生成器 (Expression Core)' : 'Use Report Generator'}</span>
-                                </li>
-                                <li className="flex items-center gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-celestial-blue/20 flex items-center justify-center text-celestial-blue font-bold">3</div>
-                                    <span>{isZh ? '上傳並驗證數據 (Perception Core)' : 'Upload & Verify Data'}</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {activeTab === 'nursery' && <AiNursery isZh={isZh} />}
+                <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-gradient-to-bl from-slate-900 to-transparent">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Layers className="w-5 h-5 text-celestial-purple" />
+                        {isZh ? '如何收集碎片？' : 'How to Collect Fragments?'}
+                    </h3>
+                    <ul className="space-y-3 text-sm text-gray-300">
+                        <li className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-celestial-gold/20 flex items-center justify-center text-celestial-gold font-bold">1</div>
+                            <span>{isZh ? '完成每日任務 (My ESG)' : 'Complete Daily Quests'}</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-celestial-purple/20 flex items-center justify-center text-celestial-purple font-bold">2</div>
+                            <span>{isZh ? '使用報告生成器 (Expression Core)' : 'Use Report Generator'}</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full bg-celestial-blue/20 flex items-center justify-center text-celestial-blue font-bold">3</div>
+                            <span>{isZh ? '上傳並驗證數據 (Perception Core)' : 'Upload & Verify Data'}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     );
 };

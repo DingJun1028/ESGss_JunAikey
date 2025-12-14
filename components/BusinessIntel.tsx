@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { Language, View, IntelligenceItem } from '../types';
-import { Briefcase, Search, Globe, FileText, Loader2, Database, TrendingUp, AlertCircle, CheckCircle, ArrowRightLeft, Activity, Save, BarChart } from 'lucide-react';
+import { Briefcase, Search, Globe, FileText, Loader2, Database, TrendingUp, AlertCircle, CheckCircle, ArrowRightLeft, Activity, Save, BarChart, Split } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { performWebSearch } from '../services/ai-service';
 import { marked } from 'marked';
 import { useCompany } from './providers/CompanyProvider';
 import { UniversalPageHeader } from './UniversalPageHeader';
+import GenerativeUIRenderer from './GenerativeUIRenderer';
 
 interface BusinessIntelProps {
   language: Language;
@@ -69,6 +70,59 @@ export const BusinessIntel: React.FC<BusinessIntelProps> = ({ language, onNaviga
       }
   };
 
+  // New: Compare against top 3
+  const handleCompare = async () => {
+      if (!companyName) {
+          addToast('error', isZh ? '請輸入企業名稱' : 'Please enter company name', 'Error');
+          return;
+      }
+      setIsScanning(true);
+      setScanStep(1);
+      setReport(null);
+      
+      try {
+          addToast('info', 'Identifying top 3 competitors via Knowledge Graph...', 'Market Agent');
+          await new Promise(r => setTimeout(r, 1500));
+          setScanStep(2);
+          addToast('info', 'Aligning ESG metrics columns...', 'Data Normalizer');
+          await new Promise(r => setTimeout(r, 1500));
+
+          // Mock AI Generation of JSON_UI Comparison
+          const mockAiResponse = `
+Here is the detailed comparison of ${companyName} against industry leaders.
+
+\`\`\`json_ui
+{
+  "type": "comparison",
+  "title": "ESG Benchmark: ${companyName} vs Leaders",
+  "headers": ["${companyName}", "Sector Leader A", "Sector Leader B"],
+  "config": {
+    "highlightColumn": "${companyName}"
+  },
+  "data": [
+    { "metric": "MSCI ESG Rating", "${companyName}": "BBB", "Sector Leader A": "AAA", "Sector Leader B": "AA" },
+    { "metric": "Carbon Intensity (tCO2e/$M)", "${companyName}": "125 [[DOWN]]", "Sector Leader A": "85", "Sector Leader B": "92" },
+    { "metric": "SBTi Commitment", "${companyName}": "Committed [[CHECK]]", "Sector Leader A": "Validated [[CHECK]]", "Sector Leader B": "Target Set [[CHECK]]" },
+    { "metric": "Scope 3 Disclosure", "${companyName}": "Partial [[X]]", "Sector Leader A": "Full", "Sector Leader B": "Full" },
+    { "metric": "Renewable Energy %", "${companyName}": "15%", "Sector Leader A": "85% [[UP]]", "Sector Leader B": "60%" }
+  ]
+}
+\`\`\`
+
+**Key Takeaways:**
+1. **Gap in Renewables:** Your renewable energy mix is significantly lower than the sector leader (15% vs 85%).
+2. **Scope 3 Transparency:** Immediate action required to fully disclose Scope 3 to match peers.
+`;
+          setReport(mockAiResponse);
+          setScanStep(3);
+          addToast('success', 'Comparison Matrix Generated', 'System');
+      } catch(e) {
+          addToast('error', 'Comparison Failed', 'Error');
+      } finally {
+          setIsScanning(false);
+      }
+  };
+
   const handleSaveToKnowledge = () => {
       if (!report) return;
       
@@ -112,6 +166,7 @@ export const BusinessIntel: React.FC<BusinessIntelProps> = ({ language, onNaviga
             description={pageData.desc}
             language={language}
             tag={pageData.tag}
+            accentColor="text-sky-400"
         />
 
         {/* Input Section */}
@@ -144,14 +199,24 @@ export const BusinessIntel: React.FC<BusinessIntelProps> = ({ language, onNaviga
                     </div>
                 </div>
             </div>
-            <button 
-                onClick={handleScan}
-                disabled={isScanning || !companyName}
-                className="mt-6 w-full py-4 bg-gradient-to-r from-celestial-blue to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-                {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
-                {isZh ? (isScanning ? '正在掃描全網...' : '啟動全網商情偵測') : (isScanning ? 'Scanning Web...' : 'Start Intelligence Scan')}
-            </button>
+            <div className="mt-6 flex gap-4">
+                <button 
+                    onClick={handleScan}
+                    disabled={isScanning || !companyName}
+                    className="flex-1 py-4 bg-gradient-to-r from-celestial-blue to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
+                    {isZh ? (isScanning ? '正在掃描全網...' : '啟動全網商情偵測') : (isScanning ? 'Scanning Web...' : 'Start Intelligence Scan')}
+                </button>
+                <button 
+                    onClick={handleCompare}
+                    disabled={isScanning || !companyName}
+                    className="flex-1 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:border-celestial-gold/50"
+                >
+                    {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <Split className="w-5 h-5 text-celestial-gold" />}
+                    {isZh ? '比較 3 家競品 (Diff)' : 'Compare 3 Competitors'}
+                </button>
+            </div>
         </div>
 
         {/* Status Display */}
@@ -209,7 +274,9 @@ export const BusinessIntel: React.FC<BusinessIntelProps> = ({ language, onNaviga
                         </button>
                     </div>
                 </div>
-                <div className="markdown-content text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: marked.parse(report) as string }} />
+                
+                {/* Use Generative UI Renderer for structured output */}
+                <GenerativeUIRenderer content={report} />
             </div>
         )}
     </div>

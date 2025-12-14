@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Language } from '../types';
-import { Calculator, TrendingUp, DollarSign, AlertCircle, LineChart, Activity } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Calculator, TrendingUp, DollarSign, AlertCircle, LineChart, Activity, Download } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
 import { QuantumSlider } from './minimal/QuantumSlider';
 import { OmniEsgCell } from './OmniEsgCell';
 import { predictFutureTrends } from '../services/ai-service';
@@ -27,6 +27,7 @@ const MarketOracleBase: React.FC<MarketOracleProps> = ({ data, isZh, adaptiveTra
     // Agent Visuals
     const isCalculating = adaptiveTraits?.includes('optimization');
     const isVolatile = adaptiveTraits?.includes('evolution'); // E.g. High Carbon Price scenario
+    const { addToast } = useToast();
 
     return (
         <div 
@@ -45,11 +46,16 @@ const MarketOracleBase: React.FC<MarketOracleProps> = ({ data, isZh, adaptiveTra
                     <TrendingUp className={`w-5 h-5 ${isVolatile ? 'text-amber-400' : 'text-celestial-emerald'}`} />
                     {isZh ? '情境分析：一切照舊 vs 綠色轉型' : 'Scenario: BAU vs Green Transition'}
                 </h3>
-                {isAgentActive && (
-                    <div className="flex items-center gap-1 text-[10px] text-celestial-emerald border border-celestial-emerald/30 px-2 py-1 rounded bg-celestial-emerald/10">
-                        <Activity className="w-3 h-3" /> Oracle Live
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                    <button onClick={() => addToast('success', 'Chart Exported', 'System')} className="p-1.5 hover:bg-white/5 rounded-lg text-white transition-colors" title="Export">
+                        <Download className="w-4 h-4" />
+                    </button>
+                    {isAgentActive && (
+                        <div className="flex items-center gap-1 text-[10px] text-celestial-emerald border border-celestial-emerald/30 px-2 py-1 rounded bg-celestial-emerald/10">
+                            <Activity className="w-3 h-3" /> Oracle Live
+                        </div>
+                    )}
+                </div>
             </div>
             
             <div style={{ width: '100%', height: 300 }}>
@@ -73,8 +79,12 @@ const MarketOracleBase: React.FC<MarketOracleProps> = ({ data, isZh, adaptiveTra
                             itemStyle={{ color: '#e2e8f0' }}
                         />
                         <Legend verticalAlign="top" height={36} />
-                        <Area name={isZh ? "綠色轉型" : "Green Transition"} type="monotone" dataKey="Green" stroke="#10b981" fill="url(#colorGreen)" strokeWidth={2} />
-                        <Area name={isZh ? "一切照舊 (BAU)" : "Business As Usual"} type="monotone" dataKey="BAU" stroke="#64748b" fill="url(#colorBau)" strokeDasharray="5 5" />
+                        <Area name={isZh ? "綠色轉型" : "Green Transition"} type="monotone" dataKey="Green" stroke="#10b981" fill="url(#colorGreen)" strokeWidth={2}>
+                            <LabelList dataKey="Green" position="top" fill="#10b981" fontSize={10} formatter={(val: number) => val.toFixed(0)} />
+                        </Area>
+                        <Area name={isZh ? "一切照舊 (BAU)" : "Business As Usual"} type="monotone" dataKey="BAU" stroke="#64748b" fill="url(#colorBau)" strokeDasharray="5 5">
+                            <LabelList dataKey="BAU" position="top" fill="#64748b" fontSize={10} formatter={(val: number) => val.toFixed(0)} />
+                        </Area>
                     </AreaChart>
                 </ResponsiveContainer>
             </div>

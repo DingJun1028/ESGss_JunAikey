@@ -1,5 +1,76 @@
+import { Metric, Course, SystemHealth, Language, ReportSection, EsgCard, CardSynergy, UniversalCrystal, View, ChangelogEntry, UserJourney, OmniEsgTrait, Role, Permission } from './types';
 
-import { Metric, Course, SystemHealth, Language, ReportSection, EsgCard, CardSynergy, UniversalCrystal, View, ChangelogEntry, UserJourney, OmniEsgTrait } from './types';
+// --- RBAC CONSTANTS ---
+
+export const ROLE_DEFINITIONS: Record<Role, { label: string; permissions: Permission[] }> = {
+    ADMIN: {
+        label: 'Super Admin (CSO)',
+        permissions: [
+            'VIEW_ALL', 'VIEW_CORE', 'VIEW_OPS', 'EDIT_OPS', 'VIEW_INTEL', 'VIEW_ECO', 'VIEW_SYS', 'MANAGE_SETTINGS', 'MANAGE_API', 'VIEW_FINANCE'
+        ]
+    },
+    MANAGER: {
+        label: 'Sustainability Manager',
+        permissions: [
+            'VIEW_CORE', 'VIEW_OPS', 'EDIT_OPS', 'VIEW_INTEL', 'VIEW_ECO', 'VIEW_FINANCE', 'VIEW_SYS'
+        ]
+    },
+    ANALYST: {
+        label: 'ESG Analyst',
+        permissions: [
+            'VIEW_CORE', 'VIEW_OPS', 'VIEW_INTEL', 'VIEW_ECO'
+        ]
+    },
+    AUDITOR: {
+        label: 'External Auditor',
+        permissions: [
+            'VIEW_OPS', 'VIEW_ECO'
+        ]
+    }
+};
+
+export const VIEW_ACCESS_MAP: Record<View, Permission> = {
+    // Core
+    [View.MY_ESG]: 'VIEW_CORE',
+    [View.YANG_BO]: 'VIEW_CORE',
+    [View.USER_JOURNAL]: 'VIEW_CORE',
+    [View.RESTORATION]: 'VIEW_CORE',
+    [View.CARD_GAME_ARENA]: 'VIEW_CORE',
+    [View.UNIVERSAL_AGENT]: 'VIEW_CORE',
+    [View.ABOUT_US]: 'VIEW_CORE',
+
+    // Ops
+    [View.DASHBOARD]: 'VIEW_OPS',
+    [View.STRATEGY]: 'VIEW_OPS',
+    [View.CARBON]: 'EDIT_OPS', // Requires higher privilege
+    [View.REPORT]: 'EDIT_OPS',
+    [View.INTEGRATION]: 'VIEW_OPS',
+    [View.FINANCE]: 'VIEW_FINANCE',
+    [View.AUDIT]: 'VIEW_OPS',
+    [View.HEALTH_CHECK]: 'VIEW_OPS',
+
+    // Intel
+    [View.BUSINESS_INTEL]: 'VIEW_INTEL',
+    [View.RESEARCH_HUB]: 'VIEW_INTEL',
+    [View.ACADEMY]: 'VIEW_INTEL',
+    [View.LIBRARY]: 'VIEW_INTEL',
+
+    // Eco
+    [View.GOODWILL]: 'VIEW_ECO',
+    [View.FUNDRAISING]: 'VIEW_ECO',
+    [View.ALUMNI_ZONE]: 'VIEW_ECO',
+    [View.TALENT]: 'VIEW_ECO',
+    [View.CULTURE]: 'VIEW_ECO',
+
+    // Sys
+    [View.SETTINGS]: 'MANAGE_SETTINGS',
+    [View.DIAGNOSTICS]: 'VIEW_SYS',
+    [View.API_ZONE]: 'MANAGE_API',
+    [View.UNIVERSAL_BACKEND]: 'MANAGE_API',
+    [View.UNIVERSAL_TOOLS]: 'VIEW_SYS',
+    
+    // Legacy mapping: Removed [View.CARD_GAME] as it duplicates 'RESTORATION' key
+};
 
 // --- LOGIN SCREEN README CONTENT ---
 export const LOGIN_README = [

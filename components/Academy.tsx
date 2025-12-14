@@ -192,20 +192,25 @@ export const Academy: React.FC<AcademyProps> = ({ language }) => {
                             </p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                                <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10">
-                                    <Award className="w-8 h-8 text-celestial-gold mb-2" />
-                                    <h4 className="font-bold text-white mb-1">{isZh ? '雙證書制度' : 'Dual Certification'}</h4>
-                                    <p className="text-xs text-gray-300">Berkeley IBI Certificate + TSISDA Strategy Talent Certification.</p>
+                                {/* Card 1: Gold Theme */}
+                                <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-amber-500/30 hover:bg-amber-500/10 transition-colors group">
+                                    <Award className="w-8 h-8 text-amber-400 mb-3 group-hover:scale-110 transition-transform" />
+                                    <h4 className="font-bold text-amber-100 mb-1">{isZh ? '雙證書制度' : 'Dual Certification'}</h4>
+                                    <p className="text-xs text-gray-300 leading-relaxed">Berkeley IBI Certificate + TSISDA Strategy Talent Certification.</p>
                                 </div>
-                                <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10">
-                                    <Target className="w-8 h-8 text-emerald-400 mb-2" />
-                                    <h4 className="font-bold text-white mb-1">{isZh ? '三大交付成果' : '3 Key Deliverables'}</h4>
-                                    <p className="text-xs text-gray-300">Strategy Blueprint 2.0, Report Skeleton, Startup Prototype.</p>
+                                
+                                {/* Card 2: Emerald Theme */}
+                                <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-emerald-500/30 hover:bg-emerald-500/10 transition-colors group">
+                                    <Target className="w-8 h-8 text-emerald-400 mb-3 group-hover:scale-110 transition-transform" />
+                                    <h4 className="font-bold text-emerald-100 mb-1">{isZh ? '三大交付成果' : '3 Key Deliverables'}</h4>
+                                    <p className="text-xs text-gray-300 leading-relaxed">Strategy Blueprint 2.0, Report Skeleton, Startup Prototype.</p>
                                 </div>
-                                <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10">
-                                    <Users className="w-8 h-8 text-celestial-purple mb-2" />
-                                    <h4 className="font-bold text-white mb-1">{isZh ? '矽谷業師輔導' : 'Silicon Valley Mentors'}</h4>
-                                    <p className="text-xs text-gray-300">Office Hour with experts from Apple, Google, Siemens.</p>
+                                
+                                {/* Card 3: Purple Theme */}
+                                <div className="p-4 bg-black/40 backdrop-blur-md rounded-xl border border-purple-500/30 hover:bg-purple-500/10 transition-colors group">
+                                    <Users className="w-8 h-8 text-purple-400 mb-3 group-hover:scale-110 transition-transform" />
+                                    <h4 className="font-bold text-purple-100 mb-1">{isZh ? '矽谷業師輔導' : 'Silicon Valley Mentors'}</h4>
+                                    <p className="text-xs text-gray-300 leading-relaxed">Office Hour with experts from Apple, Google, Siemens.</p>
                                 </div>
                             </div>
 

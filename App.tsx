@@ -1,15 +1,17 @@
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { View, Language } from './types';
+import { View, Language, Permission } from './types';
 import { Layout } from './components/Layout';
 import { LoginScreen } from './components/LoginScreen';
 import { ToastProvider } from './contexts/ToastContext';
-import { CompanyProvider } from './components/providers/CompanyProvider';
+import { CompanyProvider, useCompany } from './components/providers/CompanyProvider';
 import { UniversalAgentProvider } from './contexts/UniversalAgentContext';
 import { ToastContainer } from './components/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingScreen } from './components/LoadingScreen';
 import { OnboardingSystem } from './components/OnboardingSystem';
+import { AccessDenied } from './components/AccessDenied';
+import { VIEW_ACCESS_MAP } from './constants';
 
 // Lazy Load Modules
 const MyEsg = lazy(() => import('./components/MyEsg').then(module => ({ default: module.MyEsg })));
@@ -44,8 +46,17 @@ const GoodwillLibrary = lazy(() => import('./components/GoodwillLibrary').then(m
 const UserJournal = lazy(() => import('./components/UserJournal').then(module => ({ default: module.UserJournal })));
 const UniversalAgentZone = lazy(() => import('./components/UniversalAgentZone').then(module => ({ default: module.UniversalAgentZone })));
 
-const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+const ProtectedModule: React.FC<{ view: View; children: React.ReactNode; onNavigate: (view: View) => void }> = ({ view, children, onNavigate }) => {
+    const { hasPermission } = useCompany();
+    const requiredPermission = VIEW_ACCESS_MAP[view];
+
+    if (!hasPermission(requiredPermission)) {
+        return <AccessDenied requiredPermission={requiredPermission} onGoBack={() => onNavigate(View.MY_ESG)} />;
+    }
+    return <>{children}</>;
+};
+
+const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.MY_ESG);
   const [language, setLanguage] = useState<Language>('zh-TW');
 
@@ -61,7 +72,73 @@ const App: React.FC = () => {
     setLanguage(newLang);
     localStorage.setItem('app_language', newLang);
   };
-  
+
+  const wrap = (node: React.ReactNode) => (
+      <ProtectedModule view={currentView} onNavigate={setCurrentView}>
+          {node}
+      </ProtectedModule>
+  );
+
+  return (
+    <>
+        <OnboardingSystem />
+        <Layout 
+          currentView={currentView} 
+          onNavigate={setCurrentView}
+          language={language}
+          onToggleLanguage={handleToggleLanguage}
+        >
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingScreen message="Loading Module Resource..." />}>
+              {(() => {
+                switch (currentView) {
+                  case View.MY_ESG: return wrap(<MyEsg language={language} onNavigate={setCurrentView} />);
+                  case View.DASHBOARD: return wrap(<Dashboard language={language} />);
+                  case View.RESTORATION: return wrap(<UniversalRestoration language={language} />);
+                  case View.CARD_GAME_ARENA: return wrap(<CardGameArenaView language={language} />);
+                  case View.USER_JOURNAL: return wrap(<UserJournal language={language} />);
+                  
+                  case View.FUNDRAISING: return wrap(<Fundraising language={language} />);
+                  case View.ABOUT_US: return wrap(<AboutUs language={language} />);
+                  case View.API_ZONE: return wrap(<ApiZone language={language} />);
+                  case View.UNIVERSAL_BACKEND: return wrap(<UniversalBackend />);
+                  case View.RESEARCH_HUB: return wrap(<ResearchHub language={language} />);
+                  case View.ACADEMY: return wrap(<Academy language={language} />);
+                  case View.DIAGNOSTICS: return wrap(<Diagnostics language={language} />);
+                  case View.STRATEGY: return wrap(<StrategyHub language={language} />);
+                  case View.REPORT: return wrap(<ReportGen language={language} />);
+                  case View.CARBON: return wrap(<CarbonAsset language={language} />);
+                  case View.TALENT: return wrap(<TalentPassport language={language} />);
+                  case View.INTEGRATION: return wrap(<IntegrationHub language={language} />);
+                  case View.CULTURE: return wrap(<CultureBot language={language} />);
+                  case View.FINANCE: return wrap(<FinanceSim language={language} />);
+                  case View.AUDIT: return wrap(<AuditTrail language={language} />);
+                  case View.GOODWILL: return wrap(<GoodwillCoin language={language} />);
+                  case View.SETTINGS: return wrap(<Settings language={language} />);
+                  case View.YANG_BO: return wrap(<YangBoZone language={language} />);
+                  case View.BUSINESS_INTEL: return wrap(<BusinessIntel language={language} onNavigate={setCurrentView} />);
+                  case View.HEALTH_CHECK: return wrap(<HealthCheck language={language} onNavigate={setCurrentView} />);
+                  case View.UNIVERSAL_TOOLS: return wrap(<UniversalTools language={language} />); 
+                  case View.ALUMNI_ZONE: return wrap(<AlumniZone language={language} />);
+                  case View.LIBRARY: return wrap(<GoodwillLibrary language={language} />);
+                  case View.UNIVERSAL_AGENT: return wrap(<UniversalAgentZone language={language} />);
+                  default: return wrap(<MyEsg language={language} onNavigate={setCurrentView} />);
+                }
+              })()}
+            </Suspense>
+          </ErrorBoundary>
+        </Layout>
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Language moved to AppContent or managed via context if needed globally before login, 
+  // but for login screen simplicity kept here for now or duplicate. 
+  // Ideally LoginScreen should just take a callback.
+  const [language, setLanguage] = useState<Language>('zh-TW'); 
+
   return (
     <ToastProvider>
       <UniversalAgentProvider>
@@ -71,53 +148,7 @@ const App: React.FC = () => {
           </ErrorBoundary>
         ) : (
           <CompanyProvider>
-            <OnboardingSystem />
-            <Layout 
-              currentView={currentView} 
-              onNavigate={setCurrentView}
-              language={language}
-              onToggleLanguage={handleToggleLanguage}
-            >
-              <ErrorBoundary>
-                <Suspense fallback={<LoadingScreen message="Loading Module Resource..." />}>
-                  {(() => {
-                    switch (currentView) {
-                      case View.MY_ESG: return <MyEsg language={language} onNavigate={setCurrentView} />;
-                      case View.DASHBOARD: return <Dashboard language={language} />;
-                      case View.RESTORATION: return <UniversalRestoration language={language} />;
-                      case View.CARD_GAME_ARENA: return <CardGameArenaView language={language} />;
-                      case View.USER_JOURNAL: return <UserJournal language={language} />;
-                      
-                      case View.FUNDRAISING: return <Fundraising language={language} />;
-                      case View.ABOUT_US: return <AboutUs language={language} />;
-                      case View.API_ZONE: return <ApiZone language={language} />;
-                      case View.UNIVERSAL_BACKEND: return <UniversalBackend />;
-                      case View.RESEARCH_HUB: return <ResearchHub language={language} />;
-                      case View.ACADEMY: return <Academy language={language} />;
-                      case View.DIAGNOSTICS: return <Diagnostics language={language} />;
-                      case View.STRATEGY: return <StrategyHub language={language} />;
-                      case View.REPORT: return <ReportGen language={language} />;
-                      case View.CARBON: return <CarbonAsset language={language} />;
-                      case View.TALENT: return <TalentPassport language={language} />;
-                      case View.INTEGRATION: return <IntegrationHub language={language} />;
-                      case View.CULTURE: return <CultureBot language={language} />;
-                      case View.FINANCE: return <FinanceSim language={language} />;
-                      case View.AUDIT: return <AuditTrail language={language} />;
-                      case View.GOODWILL: return <GoodwillCoin language={language} />;
-                      case View.SETTINGS: return <Settings language={language} />;
-                      case View.YANG_BO: return <YangBoZone language={language} />;
-                      case View.BUSINESS_INTEL: return <BusinessIntel language={language} onNavigate={setCurrentView} />;
-                      case View.HEALTH_CHECK: return <HealthCheck language={language} onNavigate={setCurrentView} />;
-                      case View.UNIVERSAL_TOOLS: return <UniversalTools language={language} />; 
-                      case View.ALUMNI_ZONE: return <AlumniZone language={language} />;
-                      case View.LIBRARY: return <GoodwillLibrary language={language} />;
-                      case View.UNIVERSAL_AGENT: return <UniversalAgentZone language={language} />; // New Route
-                      default: return <MyEsg language={language} onNavigate={setCurrentView} />;
-                    }
-                  })()}
-                </Suspense>
-              </ErrorBoundary>
-            </Layout>
+             <AppContent />
           </CompanyProvider>
         )}
         <ToastContainer />

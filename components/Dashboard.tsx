@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { getMockMetrics, TRANSLATIONS } from '../constants';
-import { Wind, Activity, FileText, Zap, BrainCircuit, LayoutTemplate, Plus, Trash2, Grid, X, Globe, Map as MapIcon, ScanLine, FileCheck, Triangle, Sparkles, Sun, Loader2, ArrowUpRight, LayoutDashboard } from 'lucide-react';
+import { Wind, Activity, FileText, Zap, BrainCircuit, LayoutTemplate, Plus, Trash2, Grid, X, Globe, Map as MapIcon, ScanLine, FileCheck, Triangle, Sparkles, Sun, Loader2, ArrowUpRight, LayoutDashboard, Download } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
@@ -19,8 +19,8 @@ interface DashboardProps {
   language: Language;
 }
 
-// Reusable Render Components for Widgets (Keep existing)
-const MainChartWidget: React.FC<{ data: any[] }> = React.memo(({ data }) => (
+// ... (Widget Renderers remain same) ...
+const MainChartWidget: React.FC<{ data: any[], onExport: () => void }> = React.memo(({ data, onExport }) => (
   <div style={{ width: '100%', height: 250 }}>
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
@@ -99,7 +99,6 @@ const IdpScannerWidget: React.FC<{ language: Language, isLoading: boolean }> = (
     );
 };
 
-// --- Main Component ---
 export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
   const t = TRANSLATIONS[language].dashboard;
   const metrics = useMemo(() => getMockMetrics(language), [language]);
@@ -109,7 +108,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
   const [viewMode, setViewMode] = useState<'executive' | 'global' | 'custom'>('executive');
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
 
-  // Universal Page Data
   const pageData = {
       title: { zh: '企業決策儀表板', en: 'Executive Dashboard' },
       desc: { zh: '即時監控關鍵 ESG 指標與全域運營狀態', en: 'Real-time monitoring of key ESG metrics and global operations.' },
@@ -134,6 +132,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
   const handleAiAnalyze = async (metricLabel: string) => {
       addToast('info', `AI Analyzing ${metricLabel}...`, 'Intelligence Orchestrator');
       setTimeout(() => addToast('success', 'Analysis Complete. Insights updated.', 'AI Analysis Finished'), 1500);
+  };
+
+  const handleExportChart = () => {
+      addToast('success', 'Chart Exported to PDF', 'System');
   };
 
   const handleAddWidget = (type: WidgetType, title: string, config?: any, gridSize: 'small' | 'medium' | 'large' = 'small') => {
@@ -201,12 +203,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
                       {t.chartTitle}
                   </h3>
                   <div className="flex gap-2">
+                      <button onClick={handleExportChart} className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors" title="Export Chart"><Download className="w-4 h-4" /></button>
                       <button className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"><BrainCircuit className="w-4 h-4" /></button>
                       <button className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"><ArrowUpRight className="w-4 h-4" /></button>
                   </div>
               </div>
               <div className="flex-1 w-full min-h-[220px]">
-                 <MainChartWidget data={dynamicChartData} />
+                 <MainChartWidget data={dynamicChartData} onExport={handleExportChart} />
               </div>
             </>
           )}
@@ -236,6 +239,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
           description={pageData.desc}
           language={language}
           tag={pageData.tag}
+          accentColor="text-emerald-400"
       />
 
       {/* Header & Toggle */}
@@ -310,7 +314,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
                                 <div className="glass-panel p-5 rounded-2xl h-full border-white/5 flex flex-col">
                                     <h3 className="text-base font-semibold text-white mb-4">{widget.title}</h3>
                                     <div className="flex-1 w-full min-h-[200px]">
-                                        <MainChartWidget data={dynamicChartData} />
+                                        <MainChartWidget data={dynamicChartData} onExport={handleExportChart} />
                                     </div>
                                 </div>
                             );

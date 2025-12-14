@@ -1,11 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Language, View } from '../types';
-import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight } from 'lucide-react';
+import { Language, View, CustomAgentProfile } from '../types';
+import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout } from 'lucide-react';
 import { UniversalPageHeader } from './UniversalPageHeader';
 import { useUniversalAgent, AgentMode } from '../contexts/UniversalAgentContext';
 import { useCompany } from './providers/CompanyProvider';
-import { AiAssistant } from './AiAssistant'; // Reusing chat logic for Companion Mode
 import { OmniEsgCell } from './OmniEsgCell';
 import { useToast } from '../contexts/ToastContext';
 
@@ -38,33 +37,231 @@ const GenesisArchive: React.FC<{ isZh: boolean }> = ({ isZh }) => (
     </div>
 );
 
-// --- Mode I: Companion View (Wrapper around AiAssistant logic for fullscreen) ---
-const CompanionView: React.FC<{ language: Language }> = ({ language }) => {
+// --- Agent Nursery View (Leveling System) ---
+const AgentNurseryView: React.FC = () => {
+    const { agentLevel, agentXp, nextLevelXp, agentSkills, feedAgent, trainSkill } = useUniversalAgent();
+    const progress = (agentXp / nextLevelXp) * 100;
+
     return (
-        <div className="flex flex-col items-center justify-center h-[400px] relative overflow-hidden rounded-2xl border border-white/5 bg-slate-900/30">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-celestial-purple/10 via-transparent to-transparent animate-pulse" />
-            
-            {/* Audio Waveform Simulation */}
-            <div className="flex items-center justify-center gap-1 h-32 mb-8">
-                {[...Array(20)].map((_, i) => (
-                    <div 
-                        key={i} 
-                        className="w-1.5 bg-celestial-purple/60 rounded-full animate-[bounce_1s_infinite]" 
-                        style={{ 
-                            height: `${Math.random() * 40 + 20}%`, 
-                            animationDelay: `${i * 0.05}s`,
-                            animationDuration: `${0.8 + Math.random() * 0.5}s`
-                        }} 
-                    />
-                ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
+            {/* Core Stats */}
+            <div className="glass-panel p-8 rounded-2xl border border-white/10 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-celestial-purple/10 to-transparent">
+                <div className="relative w-32 h-32 mb-6">
+                    <div className="absolute inset-0 bg-celestial-purple/30 rounded-full blur-xl animate-pulse" />
+                    <div className="relative w-full h-full border-4 border-celestial-purple/50 rounded-full flex items-center justify-center bg-slate-900 shadow-2xl">
+                        <Bot className="w-16 h-16 text-celestial-purple" />
+                    </div>
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-celestial-gold text-black text-xs font-bold px-3 py-1 rounded-full border border-white">
+                        Lv. {agentLevel}
+                    </div>
+                </div>
+                
+                <h3 className="text-xl font-bold text-white mb-1">Universal Core</h3>
+                <p className="text-sm text-gray-400 mb-6">Sentient & Evolving</p>
+
+                <div className="w-full space-y-2 mb-6">
+                    <div className="flex justify-between text-xs text-gray-300">
+                        <span>XP Progress</span>
+                        <span>{agentXp} / {nextLevelXp}</span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                        <div className="h-full bg-gradient-to-r from-celestial-purple to-celestial-blue transition-all duration-1000" style={{ width: `${progress}%` }} />
+                    </div>
+                </div>
+
+                <button 
+                    onClick={() => feedAgent(100)}
+                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 flex items-center gap-2 transition-all active:scale-95"
+                >
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    Inject Data (100 XP)
+                </button>
             </div>
 
-            <h3 className="text-2xl font-bold text-white mb-4 text-center">
-                {language === 'zh-TW' ? '我正在聆聽。' : 'I am listening.'}
-            </h3>
-            <div className="p-4 bg-white/5 border border-white/10 rounded-xl animate-fade-in max-w-lg w-full text-center relative z-10">
-                <p className="text-xs text-celestial-purple font-mono mb-2">ACTIVE CONTEXT</p>
-                <p className="text-sm text-gray-300">"Analyzing user sentiment... Empathy protocols engaged."</p>
+            {/* Skill Tree */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <BrainCircuit className="w-5 h-5 text-emerald-400" />
+                    Neural Skills
+                </h3>
+                {agentSkills.map(skill => (
+                    <div key={skill.id} className="glass-panel p-4 rounded-xl border border-white/5 flex items-center gap-4 hover:border-emerald-500/30 transition-all">
+                        <div className={`p-3 rounded-lg ${skill.level >= skill.maxLevel ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'}`}>
+                            <skill.icon className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex justify-between items-center mb-1">
+                                <h4 className="font-bold text-white">{skill.name}</h4>
+                                <span className="text-xs text-emerald-400">Lv. {skill.level}/{skill.maxLevel}</span>
+                            </div>
+                            <p className="text-xs text-gray-400">{skill.description}</p>
+                        </div>
+                        <button 
+                            onClick={() => trainSkill(skill.id)}
+                            disabled={skill.level >= skill.maxLevel || agentXp < skill.xpRequired}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Train (-{skill.xpRequired} XP)
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// --- Agent Factory View (Custom Creator) ---
+const AgentFactoryView: React.FC = () => {
+    const { addCustomAgent, customAgents, selectCustomAgent, activeCustomAgentId } = useUniversalAgent();
+    const [name, setName] = useState('');
+    const [role, setRole] = useState('');
+    const [instruction, setInstruction] = useState('');
+    const [color, setColor] = useState('pink');
+
+    const handleCreate = () => {
+        if (!name || !instruction) return;
+        addCustomAgent({
+            name,
+            role: role || 'Assistant',
+            instruction,
+            color,
+            knowledgeBase: [],
+            icon: Bot // Default icon
+        });
+        setName('');
+        setRole('');
+        setInstruction('');
+    };
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+            {/* Create Form */}
+            <div className="lg:col-span-2 glass-panel p-8 rounded-2xl border border-white/10">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-celestial-gold" />
+                    Forge New Agent
+                </h3>
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-400 ml-1">Name</label>
+                            <input 
+                                type="text" value={name} onChange={e => setName(e.target.value)}
+                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-celestial-gold outline-none"
+                                placeholder="e.g. Legal Bot"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs text-gray-400 ml-1">Role</label>
+                            <input 
+                                type="text" value={role} onChange={e => setRole(e.target.value)}
+                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-celestial-gold outline-none"
+                                placeholder="e.g. Compliance Advisor"
+                            />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-xs text-gray-400 ml-1">System Instruction (Prompt)</label>
+                        <textarea 
+                            value={instruction} onChange={e => setInstruction(e.target.value)}
+                            className="w-full h-32 bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-celestial-gold outline-none resize-none"
+                            placeholder="Define the agent's personality, constraints, and expertise..."
+                        />
+                    </div>
+                    
+                    <div className="flex gap-2">
+                        {['pink', 'blue', 'green', 'orange'].map(c => (
+                            <button 
+                                key={c}
+                                onClick={() => setColor(c)}
+                                className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-white' : 'border-transparent'}`}
+                                style={{ backgroundColor: c === 'pink' ? '#ec4899' : c === 'blue' ? '#3b82f6' : c === 'green' ? '#10b981' : '#f97316' }}
+                            />
+                        ))}
+                    </div>
+
+                    <button 
+                        onClick={handleCreate}
+                        disabled={!name || !instruction}
+                        className="w-full py-3 bg-celestial-gold text-black font-bold rounded-xl hover:bg-amber-400 transition-all disabled:opacity-50 mt-4"
+                    >
+                        Initialize Agent
+                    </button>
+                </div>
+            </div>
+
+            {/* Agent List */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">Your Agents</h3>
+                {customAgents.length === 0 && <div className="text-gray-500 text-sm italic">No custom agents yet.</div>}
+                {customAgents.map(agent => (
+                    <div 
+                        key={agent.id} 
+                        onClick={() => selectCustomAgent(agent.id)}
+                        className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center gap-4 group
+                            ${activeCustomAgentId === agent.id 
+                                ? 'bg-white/10 border-white/30 ring-1 ring-white/20' 
+                                : 'bg-white/5 border-white/5 hover:bg-white/10'}
+                        `}
+                    >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm bg-${agent.color}-500/20 text-${agent.color}-400 border border-${agent.color}-500/30`}>
+                            {agent.name.substring(0,2).toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="font-bold text-white text-sm">{agent.name}</h4>
+                            <p className="text-xs text-gray-400">{agent.role}</p>
+                        </div>
+                        {activeCustomAgentId === agent.id && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+// --- Mode I: Companion View (Chat Interface) ---
+const CompanionView: React.FC<{ language: Language }> = ({ language }) => {
+    const { chatHistory } = useUniversalAgent();
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, [chatHistory]);
+
+    return (
+        <div className="flex flex-col h-[400px] relative overflow-hidden rounded-2xl border border-celestial-purple/30 bg-slate-900/30 transition-all duration-500 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-celestial-purple/10 via-transparent to-transparent pointer-events-none" />
+            <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between relative z-10">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-celestial-purple" />
+                    {language === 'zh-TW' ? '萬能對話日誌' : 'Universal Chat Log'}
+                </h3>
+                <span className="text-[10px] text-celestial-purple bg-celestial-purple/10 px-2 py-0.5 rounded border border-celestial-purple/20">Companion Mode Active</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative z-10" ref={scrollRef}>
+                {chatHistory.map(log => (
+                    <div key={log.id} className={`flex gap-3 ${log.source === 'Chat' ? 'justify-end' : 'justify-start'} animate-fade-in`}>
+                        {log.source !== 'Chat' && (
+                            <div className="w-8 h-8 rounded-full bg-celestial-purple/20 flex items-center justify-center shrink-0 border border-celestial-purple/30">
+                                <Bot className="w-4 h-4 text-celestial-purple" />
+                            </div>
+                        )}
+                        <div className={`max-w-[70%] p-3 rounded-2xl text-sm leading-relaxed shadow-lg ${
+                            log.source === 'Chat' 
+                                ? 'bg-celestial-purple text-white rounded-br-none' 
+                                : 'bg-white/10 text-gray-200 rounded-bl-none border border-white/5'
+                        }`}>
+                            {log.message}
+                        </div>
+                        {log.source === 'Chat' && (
+                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center shrink-0 border border-white/10">
+                                <User className="w-4 h-4 text-gray-300" />
+                            </div>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -82,19 +279,17 @@ const CaptainView: React.FC<{ language: Language }> = ({ language }) => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
-            {/* Command Center Stats */}
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <OmniEsgCell mode="cell" label="Active Agents" value="12" color="emerald" icon={BrainCircuit} />
                 <OmniEsgCell mode="cell" label="System Load" value="42%" color="blue" icon={Activity} />
                 <OmniEsgCell mode="cell" label="Tasks Pending" value="5" color="gold" icon={Grid} />
                 <OmniEsgCell mode="cell" label="Neural Latency" value="12ms" color="purple" icon={Zap} />
             </div>
-
-            {/* Active Universal Components Grid */}
-            <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-white/10 bg-slate-900/50">
+            <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-celestial-gold/30 bg-slate-900/50 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-celestial-gold/10 px-3 py-1 rounded-bl-xl border-b border-l border-celestial-gold/20 text-[10px] text-celestial-gold font-bold uppercase">Captain Mode Active</div>
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <Grid className="w-5 h-5 text-celestial-gold" />
-                    {isZh ? '萬能元件矩陣 (Component Matrix)' : 'Universal Component Matrix'}
+                    {isZh ? '萬能元件矩陣' : 'Component Matrix'}
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                     {agents.map(agent => (
@@ -109,15 +304,10 @@ const CaptainView: React.FC<{ language: Language }> = ({ language }) => {
                             <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden relative z-10">
                                 <div className={`h-full transition-all duration-1000 ${agent.load > 70 ? 'bg-amber-500' : 'bg-celestial-blue'}`} style={{ width: `${agent.load}%` }} />
                             </div>
-                            {agent.status === 'Active' && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-[shimmer_2s_infinite] pointer-events-none" />
-                            )}
                         </div>
                     ))}
                 </div>
             </div>
-
-            {/* Prediction/Insight Panel */}
             <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-celestial-purple" />
@@ -125,9 +315,8 @@ const CaptainView: React.FC<{ language: Language }> = ({ language }) => {
                 </h3>
                 <div className="flex-1 bg-black/20 rounded-xl p-4 text-xs text-gray-300 font-mono leading-relaxed overflow-y-auto custom-scrollbar">
                     <p className="mb-2">> Analyzing market trends...</p>
-                    <p className="mb-2 text-emerald-400">> OPPORTUNITY DETECTED: Green hydrogen sector subsidy increased by 15%.</p>
-                    <p className="mb-2">> Simulating impact on Portfolio B...</p>
-                    <p className="mb-2">> Result: Projected ROI +2.4%.</p>
+                    <p className="mb-2 text-emerald-400">> OPPORTUNITY: Green hydrogen sector subsidy +15%.</p>
+                    <p className="mb-2">> Simulating ROI...</p>
                     <p className="animate-pulse">_ Waiting for command.</p>
                 </div>
             </div>
@@ -147,27 +336,23 @@ const PhantomView: React.FC<{ language: Language }> = ({ language }) => {
     }, [systemLogs]);
 
     return (
-        <div className="h-[400px] glass-panel rounded-2xl border border-emerald-500/20 bg-black overflow-hidden flex flex-col font-mono text-xs">
-            <div className="p-3 border-b border-white/10 bg-slate-900 flex justify-between items-center">
+        <div className="h-[400px] glass-panel rounded-2xl border border-emerald-500/30 bg-black overflow-hidden flex flex-col font-mono text-xs shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+            <div className="p-3 border-b border-emerald-500/20 bg-slate-900 flex justify-between items-center">
                 <div className="flex items-center gap-2 text-emerald-500">
                     <Terminal className="w-4 h-4" />
                     <span className="font-bold">PHANTOM_PROCESS_V15.0</span>
                 </div>
-                <div className="flex gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/20" />
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider animate-pulse">Phantom Mode Active</span>
                 </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-1 text-gray-300 custom-scrollbar" ref={scrollRef}>
-                {systemLogs.length === 0 && <div className="opacity-50">Initializing daemon services...</div>}
                 {systemLogs.map((log) => (
-                    <div key={log.id} className="flex gap-2 hover:bg-white/5 p-0.5 rounded">
+                    <div key={log.id} className="flex gap-2 hover:bg-white/5 p-0.5 rounded animate-fade-in">
                         <span className="text-gray-600 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
-                        <span className={`font-bold shrink-0 w-20 ${log.type === 'error' ? 'text-red-500' : log.type === 'success' ? 'text-emerald-400' : log.type === 'warning' ? 'text-amber-400' : 'text-blue-400'}`}>
+                        <span className={`font-bold shrink-0 w-20 ${log.type === 'error' ? 'text-red-500' : 'text-emerald-400'}`}>
                             [{log.type.toUpperCase()}]
                         </span>
-                        <span className="text-gray-400 shrink-0 w-24">@{log.source}:</span>
                         <span className="break-all">{log.message}</span>
                     </div>
                 ))}
@@ -180,9 +365,9 @@ const PhantomView: React.FC<{ language: Language }> = ({ language }) => {
 export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language }) => {
   const isZh = language === 'zh-TW';
   const { addToast } = useToast();
-  // USE GLOBAL CONTEXT
-  const { agentMode, isProcessing, processUniversalInput } = useUniversalAgent(); 
+  const { agentMode, switchMode, isProcessing, processUniversalInput, activeAgentProfile } = useUniversalAgent(); 
   const [input, setInput] = useState('');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'nursery' | 'factory'>('dashboard');
 
   const pageData = {
       title: { zh: '萬能代理千面化身', en: 'Universal Agent Avatar' },
@@ -193,16 +378,24 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
   const handleProcessInput = async () => {
       if (!input.trim()) return;
       await processUniversalInput(input);
-      // Optional: clear input after processing or keep for reference
-      // setInput(''); 
+      setInput(''); 
   };
 
   const getActiveColor = () => {
+      if (agentMode === 'custom') return 'border-pink-500 shadow-[0_0_30px_rgba(236,72,153,0.3)] bg-gradient-to-r from-slate-900 via-pink-900/10 to-slate-900';
       switch(agentMode) {
-          case 'captain': return 'border-celestial-gold shadow-celestial-gold/20';
-          case 'phantom': return 'border-emerald-500 shadow-emerald-500/20';
-          default: return 'border-celestial-purple shadow-celestial-purple/20';
+          case 'captain': return 'border-celestial-gold shadow-[0_0_30px_rgba(251,191,36,0.3)] bg-gradient-to-r from-slate-900 via-amber-900/10 to-slate-900';
+          case 'phantom': return 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.3)] bg-gradient-to-r from-slate-900 via-emerald-900/10 to-slate-900';
+          default: return 'border-celestial-purple shadow-[0_0_30px_rgba(139,92,246,0.3)] bg-gradient-to-r from-slate-900 via-purple-900/10 to-slate-900';
       }
+  };
+
+  const getModeIcon = () => {
+      if (activeAgentProfile && activeAgentProfile.icon) {
+          const Icon = activeAgentProfile.icon;
+          return <Icon className={`w-5 h-5 text-${activeAgentProfile.color}-400`} />;
+      }
+      return <Bot className="w-5 h-5 text-gray-400" />;
   };
 
   return (
@@ -217,48 +410,90 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
 
         <GenesisArchive isZh={isZh} />
 
-        {/* Universal Omni-Input Node */}
-        <div className="flex justify-center mb-8 relative z-20">
-            <div className={`w-full max-w-3xl bg-slate-900/80 backdrop-blur-xl p-2 rounded-3xl border-2 transition-all duration-700 shadow-2xl ${getActiveColor()} ${isProcessing ? 'animate-pulse' : ''}`}>
-                <div className="relative flex items-center">
-                    <div className="absolute left-4 text-gray-500">
-                        {isProcessing ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Command className="w-6 h-6" />}
-                    </div>
-                    <input 
-                        type="text" 
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleProcessInput()}
-                        disabled={isProcessing}
-                        placeholder={isZh ? "輸入指令或對話，系統將自動切換型態..." : "Enter command or chat. System will auto-switch mode..."}
-                        className="w-full bg-transparent border-none outline-none text-lg text-white pl-14 pr-16 py-4 placeholder-gray-500 font-medium"
-                    />
-                    <button 
-                        onClick={handleProcessInput}
-                        disabled={isProcessing || !input.trim()}
-                        className="absolute right-2 p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all disabled:opacity-50"
+        {/* Tab Nav */}
+        <div className="flex justify-center mb-6">
+            <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/10">
+                {[
+                    { id: 'dashboard', label: isZh ? '代理儀表板' : 'Agent Dashboard', icon: Layout },
+                    { id: 'nursery', label: isZh ? 'AI 培育室' : 'AI Nursery', icon: Heart },
+                    { id: 'factory', label: isZh ? '自訂代理' : 'Agent Factory', icon: Plus },
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-white/10 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
                     >
-                        <ArrowRight className="w-5 h-5" />
+                        <tab.icon className="w-4 h-4" />
+                        {tab.label}
                     </button>
-                </div>
-                
-                {/* Active Mode Indicator */}
-                <div className="flex justify-center mt-2 pb-1 gap-4 text-[10px] uppercase font-bold tracking-widest text-gray-500">
-                    <span className={agentMode === 'companion' ? 'text-celestial-purple' : 'opacity-30'}>Companion</span>
-                    <span className="opacity-20">•</span>
-                    <span className={agentMode === 'captain' ? 'text-celestial-gold' : 'opacity-30'}>Captain</span>
-                    <span className="opacity-20">•</span>
-                    <span className={agentMode === 'phantom' ? 'text-emerald-500' : 'opacity-30'}>Phantom</span>
-                </div>
+                ))}
             </div>
         </div>
 
-        {/* Content Area with Transition */}
-        <div className={`transition-all duration-700 ${isProcessing ? 'opacity-50 scale-98 blur-[2px]' : 'opacity-100 scale-100 blur-0'}`}>
-            {agentMode === 'companion' && <CompanionView language={language} />}
-            {agentMode === 'captain' && <CaptainView language={language} />}
-            {agentMode === 'phantom' && <PhantomView language={language} />}
-        </div>
+        {activeTab === 'dashboard' && (
+            <>
+                {/* Universal Omni-Input Node */}
+                <div className="flex justify-center mb-8 relative z-20">
+                    <div className={`w-full max-w-3xl backdrop-blur-xl p-2 rounded-3xl border-2 transition-all duration-700 ${getActiveColor()} ${isProcessing ? 'animate-pulse scale-[0.99]' : ''}`}>
+                        <div className="relative flex items-center">
+                            <div className="absolute left-4">
+                                {isProcessing ? <RefreshCw className="w-6 h-6 animate-spin text-gray-400" /> : getModeIcon()}
+                            </div>
+                            <input 
+                                type="text" 
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleProcessInput()}
+                                disabled={isProcessing}
+                                placeholder={isZh ? `正在與 [${activeAgentProfile.name}] 對話...` : `Chatting with [${activeAgentProfile.name}]...`}
+                                className="w-full bg-transparent border-none outline-none text-lg text-white pl-14 pr-16 py-4 placeholder-gray-500 font-medium"
+                            />
+                            <button 
+                                onClick={handleProcessInput}
+                                disabled={isProcessing || !input.trim()}
+                                className="absolute right-2 p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-all disabled:opacity-50 group"
+                            >
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+                        
+                        {/* Mode Indicator & Switcher */}
+                        <div className="flex justify-center mt-2 pb-1 gap-6 text-[10px] uppercase font-bold tracking-widest text-gray-500 relative">
+                            {[
+                                { id: 'companion', color: 'celestial-purple', label: 'Companion' },
+                                { id: 'captain', color: 'celestial-gold', label: 'Captain' },
+                                { id: 'phantom', color: 'emerald-500', label: 'Phantom' }
+                            ].map(m => (
+                                <button 
+                                    key={m.id}
+                                    onClick={() => switchMode(m.id as any)}
+                                    className={`flex items-center gap-1 transition-all duration-500 hover:scale-110 ${agentMode === m.id ? `text-${m.color} scale-110` : 'opacity-30 hover:opacity-100'}`}
+                                >
+                                    <div className={`w-1.5 h-1.5 rounded-full ${agentMode === m.id ? `bg-${m.color} animate-pulse` : 'bg-gray-700'}`} />
+                                    {m.label}
+                                </button>
+                            ))}
+                            {agentMode === 'custom' && (
+                                <div className="flex items-center gap-1 text-pink-400 scale-110">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
+                                    CUSTOM
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content Area with Transition */}
+                <div className={`transition-all duration-700 ease-in-out transform ${isProcessing ? 'opacity-50 scale-98 blur-[2px]' : 'opacity-100 scale-100 blur-0'}`}>
+                    {(agentMode === 'companion' || agentMode === 'custom') && <CompanionView language={language} />}
+                    {agentMode === 'captain' && <CaptainView language={language} />}
+                    {agentMode === 'phantom' && <PhantomView language={language} />}
+                </div>
+            </>
+        )}
+
+        {activeTab === 'nursery' && <AgentNurseryView />}
+        {activeTab === 'factory' && <AgentFactoryView />}
     </div>
   );
 };

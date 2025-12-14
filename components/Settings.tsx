@@ -2,8 +2,9 @@
 import React, { useState } from 'react';
 import { useCompany } from './providers/CompanyProvider';
 import { useToast } from '../contexts/ToastContext';
-import { Language } from '../types';
-import { Settings as SettingsIcon, Save, RotateCcw, User, Building, CreditCard, Globe, ShieldAlert, Cpu, PlayCircle } from 'lucide-react';
+import { Language, Role } from '../types';
+import { ROLE_DEFINITIONS } from '../constants';
+import { Settings as SettingsIcon, Save, RotateCcw, User, Building, CreditCard, Globe, ShieldAlert, Cpu, PlayCircle, Key, Plus, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { UniversalPageHeader } from './UniversalPageHeader';
 
 interface SettingsProps {
@@ -35,7 +36,7 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
   const [formData, setFormData] = useState({
     companyName,
     userName,
-    userRole,
+    userRole, // Now typed as Role
     budget,
     carbonCredits,
     envScore: esgScores.environmental,
@@ -43,7 +44,15 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
     govScore: esgScores.governance
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // API Key State
+  const [apiKeys, setApiKeys] = useState([
+    { id: '1', service: 'Google Gemini', key: 'sk-********************', status: 'active' },
+    { id: '2', service: 'Custom Model Endpoint', key: 'https://api.custom.com/v1', status: 'inactive' },
+  ]);
+  const [newKeyService, setNewKeyService] = useState('');
+  const [newKeyValue, setNewKeyValue] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -54,7 +63,7 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
   const handleSave = () => {
     setCompanyName(formData.companyName);
     setUserName(formData.userName);
-    setUserRole(formData.userRole);
+    setUserRole(formData.userRole as Role); // Type assertion safely here as we control the select options
     setBudget(formData.budget);
     setCarbonCredits(formData.carbonCredits);
     
@@ -62,7 +71,7 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
     updateEsgScore('social', formData.socScore);
     updateEsgScore('governance', formData.govScore);
     
-    addAuditLog('System Configuration Update', `Modified company profile, budget ($${formData.budget}), and simulation scores.`);
+    addAuditLog('System Configuration Update', `Modified company profile, role to ${formData.userRole}, and simulation scores.`);
     
     setTimeout(() => {
         const newBadges = checkBadges();
@@ -79,6 +88,29 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
       window.location.reload();
   };
 
+  // API Key Handlers
+  const handleAddApiKey = () => {
+      if (!newKeyService || !newKeyValue) return;
+      setApiKeys([...apiKeys, {
+          id: Date.now().toString(),
+          service: newKeyService,
+          key: newKeyValue.length > 8 ? newKeyValue.substring(0, 4) + '********************' + newKeyValue.substring(newKeyValue.length - 4) : '********',
+          status: 'active'
+      }]);
+      setNewKeyService('');
+      setNewKeyValue('');
+      addToast('success', isZh ? '外部服務金鑰已新增' : 'External Service Key Added', 'Integrations');
+  };
+
+  const handleDeleteApiKey = (id: string) => {
+      setApiKeys(prev => prev.filter(k => k.id !== id));
+      addToast('info', isZh ? 'API 金鑰已刪除' : 'API Key Deleted', 'System');
+  };
+
+  const toggleApiKeyStatus = (id: string) => {
+      setApiKeys(prev => prev.map(k => k.id === id ? { ...k, status: k.status === 'active' ? 'inactive' : 'active' } : k));
+  };
+
   return (
     <div className="space-y-8 animate-fade-in max-w-4xl mx-auto pb-24">
       <UniversalPageHeader 
@@ -87,6 +119,7 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
           description={pageData.desc}
           language={language}
           tag={pageData.tag}
+          accentColor="text-indigo-400"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -109,14 +142,20 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
                     />
                 </div>
                 <div className="space-y-1">
-                    <label className="text-xs text-gray-400 font-medium ml-1">{isZh ? '職稱' : 'Job Title'}</label>
-                    <input 
-                        type="text"
+                    <label className="text-xs text-gray-400 font-medium ml-1">{isZh ? '系統角色 (模擬)' : 'System Role (Sim)'}</label>
+                    <select
                         name="userRole"
                         value={formData.userRole}
                         onChange={handleChange}
-                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-1 focus:ring-celestial-purple outline-none transition-all"
-                    />
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-1 focus:ring-celestial-purple outline-none transition-all appearance-none cursor-pointer"
+                    >
+                        {Object.keys(ROLE_DEFINITIONS).map((role) => (
+                            <option key={role} value={role}>{ROLE_DEFINITIONS[role as Role].label}</option>
+                        ))}
+                    </select>
+                    <p className="text-[10px] text-gray-500 mt-1 pl-1">
+                        *Changing this will update your access permissions immediately.
+                    </p>
                 </div>
             </div>
         </div>
@@ -226,6 +265,78 @@ export const Settings: React.FC<SettingsProps> = ({ language }) => {
                         />
                     </div>
                 </div>
+            </div>
+        </div>
+
+        {/* API Key Management */}
+        <div className="glass-panel p-6 rounded-2xl border border-white/10 md:col-span-2">
+            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                <Key className="w-5 h-5 text-indigo-400" />
+                {isZh ? '外部服務整合 (API Keys)' : 'External Integrations (API Keys)'}
+            </h3>
+            
+            <div className="space-y-3 mb-6">
+                {apiKeys.map(key => (
+                    <div key={key.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all group gap-3">
+                        <div className="flex items-center gap-4 min-w-0">
+                            <div className={`p-2 rounded-lg shrink-0 ${key.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-gray-500'}`}>
+                                {key.status === 'active' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-sm font-bold text-white truncate">{key.service}</div>
+                                <div className="text-xs text-gray-500 font-mono truncate">{key.key}</div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 self-end sm:self-auto">
+                            <button 
+                                onClick={() => toggleApiKeyStatus(key.id)}
+                                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border ${
+                                    key.status === 'active' 
+                                    ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
+                                    : 'bg-white/5 text-gray-500 border-white/10'
+                                }`}
+                            >
+                                {key.status === 'active' ? (isZh ? '啟用' : 'Active') : (isZh ? '停用' : 'Inactive')}
+                            </button>
+                            <button 
+                                onClick={() => handleDeleteApiKey(key.id)}
+                                className="p-2 hover:bg-red-500/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 items-end bg-black/20 p-4 rounded-xl border border-white/5">
+                <div className="flex-1 space-y-1 w-full">
+                    <label className="text-xs text-gray-400 ml-1">{isZh ? '服務名稱' : 'Service Name'}</label>
+                    <input 
+                        type="text"
+                        value={newKeyService}
+                        onChange={(e) => setNewKeyService(e.target.value)}
+                        placeholder="e.g. Google Gemini"
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                    />
+                </div>
+                <div className="flex-[2] space-y-1 w-full">
+                    <label className="text-xs text-gray-400 ml-1">{isZh ? 'API 金鑰 / 端點' : 'API Key / Endpoint'}</label>
+                    <input 
+                        type="password"
+                        value={newKeyValue}
+                        onChange={(e) => setNewKeyValue(e.target.value)}
+                        placeholder="sk-..."
+                        className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                    />
+                </div>
+                <button 
+                    onClick={handleAddApiKey}
+                    className="w-full sm:w-auto px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors flex items-center justify-center shadow-lg shadow-indigo-500/20"
+                >
+                    <Plus className="w-5 h-5" />
+                </button>
             </div>
         </div>
 

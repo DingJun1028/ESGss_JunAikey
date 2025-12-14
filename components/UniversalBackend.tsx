@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { universalIntelligence, SystemVital, MCPRegistryItem } from '../services/evolutionEngine';
-import { Activity, Database, Cpu, Network, Zap, Server, BrainCircuit, MemoryStick, HardDrive, Box, ShieldCheck, FileText, CheckCircle } from 'lucide-react';
+import { Activity, Database, Cpu, Network, Zap, Server, BrainCircuit, MemoryStick, HardDrive, Box, ShieldCheck, FileText, CheckCircle, History, RotateCcw, Play, Clock, GitCommit } from 'lucide-react';
 import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy';
 import { useUniversalAgent } from '../contexts/UniversalAgentContext';
+import { useToast } from '../contexts/ToastContext';
 
 // ... (CoreNodeBase and MetricCard components remain the same) ...
 // Re-declaring for context completeness in the replace block
@@ -89,15 +90,33 @@ const UniversalBackend: React.FC = () => {
   const [vitals, setVitals] = useState<SystemVital | null>(null);
   const [registry, setRegistry] = useState<MCPRegistryItem[]>([]);
   const [activeTab, setActiveTab] = useState<'monitor' | 'registry' | 'evolution'>('monitor');
+  
+  // Time Machine State
   const { evolutionPlan } = useUniversalAgent();
+  const [snapshotIndex, setSnapshotIndex] = useState(0);
+  const { addToast } = useToast();
 
   useEffect(() => {
     const sub1 = universalIntelligence.vitals$.subscribe(setVitals);
     const sub2 = universalIntelligence.mcpRegistry$.subscribe(setRegistry);
+    
+    // Init Time Machine to current version
+    const currentIdx = evolutionPlan.findIndex(e => e.status === 'current');
+    if (currentIdx !== -1) setSnapshotIndex(currentIdx);
+
     return () => { sub1.unsubscribe(); sub2.unsubscribe(); };
-  }, []);
+  }, [evolutionPlan]);
+
+  const handleRestoreSnapshot = (version: string) => {
+      addToast('info', `Initializing simulation environment for Kernel ${version}...`, 'Time Machine');
+      setTimeout(() => {
+          addToast('success', `Snapshot ${version} mounted in sandbox mode.`, 'System');
+      }, 1500);
+  };
 
   if (!vitals) return <div className="flex h-screen items-center justify-center text-cyan-500 font-mono animate-pulse">AIOS Kernel Initializing...</div>;
+
+  const currentSnapshot = evolutionPlan[snapshotIndex];
 
   return (
     <div className="relative w-full min-h-screen bg-[#020617] overflow-hidden font-mono text-cyan-400 selection:bg-cyan-500/30 flex flex-col">
@@ -137,7 +156,7 @@ const UniversalBackend: React.FC = () => {
               onClick={() => setActiveTab('evolution')}
               className={`px-4 py-2 text-sm font-bold flex items-center gap-2 transition-all ${activeTab === 'evolution' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-gray-500 hover:text-white'}`}
           >
-              <FileText className="w-4 h-4" /> Evolution Report
+              <History className="w-4 h-4" /> Evolution Report
           </button>
       </div>
 
@@ -235,17 +254,120 @@ const UniversalBackend: React.FC = () => {
 
         {/* Evolution Report Tab */}
         {activeTab === 'evolution' && (
-            <div className="w-full max-w-7xl mx-auto animate-fade-in">
-                <div className="glass-panel p-8 rounded-2xl border border-emerald-500/20 bg-slate-900/50">
-                    <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                        <Zap className="w-6 h-6 text-emerald-400" />
-                        AI Self-Evolution Roadmap
-                    </h3>
-                    <p className="text-gray-400 mb-8 max-w-3xl">
-                        This report details the projected upgrade path for the JunAiKey Kernel.
-                        Based on current entropy levels ({vitals.entropy.toFixed(3)}) and interaction density.
-                    </p>
+            <div className="w-full max-w-7xl mx-auto animate-fade-in space-y-8">
+                
+                {/* Time Machine Header */}
+                <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-4">
+                    <div>
+                        <h3 className="text-2xl font-bold text-white mb-1 flex items-center gap-3">
+                            <History className="w-6 h-6 text-celestial-gold" />
+                            Version Time Machine
+                        </h3>
+                        <p className="text-gray-400 text-sm">Travel through the AIOS Kernel history to inspect past states or simulate future architectures.</p>
+                    </div>
+                    <div className="flex items-center gap-4 bg-white/5 p-2 rounded-xl border border-white/10">
+                        <Clock className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-mono text-emerald-400">
+                            {currentSnapshot.status === 'completed' ? 'ARCHIVED STATE' : currentSnapshot.status === 'current' ? 'LIVE STATE' : 'PROJECTED STATE'}
+                        </span>
+                    </div>
+                </div>
 
+                {/* Time Machine Display */}
+                <div className="glass-panel p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900 to-black relative overflow-hidden group">
+                    {/* Background Ambience based on status */}
+                    <div className={`absolute inset-0 opacity-20 pointer-events-none transition-colors duration-1000
+                        ${currentSnapshot.status === 'completed' ? 'bg-emerald-900' : 
+                          currentSnapshot.status === 'current' ? 'bg-cyan-900' : 'bg-purple-900'}
+                    `} />
+                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
+
+                    <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
+                        {/* Interactive Slider */}
+                        <div className="w-full md:w-1/3 space-y-6">
+                            <div className="flex justify-between text-xs font-mono text-gray-500 uppercase tracking-widest">
+                                <span>Genesis (v1.0)</span>
+                                <span>Omniscience (v17.0)</span>
+                            </div>
+                            <input 
+                                type="range" 
+                                min={0} 
+                                max={evolutionPlan.length - 1} 
+                                value={snapshotIndex} 
+                                onChange={(e) => setSnapshotIndex(Number(e.target.value))}
+                                className="w-full h-2 bg-gray-800 rounded-full appearance-none cursor-pointer accent-celestial-gold hover:accent-amber-400 transition-all"
+                            />
+                            <div className="flex justify-center">
+                                <div className="px-4 py-1 bg-white/10 rounded-full text-xs font-bold text-white border border-white/20">
+                                    Timeline: {currentSnapshot.version}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Holographic Snapshot Card */}
+                        <div className="flex-1 w-full relative perspective-1000">
+                            <div className={`p-8 rounded-2xl border-2 backdrop-blur-xl transition-all duration-500 transform
+                                ${currentSnapshot.status === 'current' 
+                                    ? 'bg-cyan-950/50 border-cyan-500/50 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-100' 
+                                    : currentSnapshot.status === 'completed'
+                                    ? 'bg-emerald-950/30 border-emerald-500/30 grayscale-[0.5] scale-95 hover:grayscale-0 hover:scale-100'
+                                    : 'bg-purple-950/30 border-purple-500/30 border-dashed scale-95 hover:scale-100'}
+                            `}>
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <div className="text-xs font-bold uppercase tracking-widest mb-1 opacity-70 flex items-center gap-2">
+                                            <GitCommit className="w-3 h-3" />
+                                            Codename
+                                        </div>
+                                        <h2 className="text-4xl font-bold text-white tracking-tight">{currentSnapshot.codename}</h2>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-3xl font-mono font-bold opacity-30">{currentSnapshot.version}</div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 mb-8">
+                                    <div>
+                                        <div className="text-xs text-gray-400 uppercase font-bold mb-1">Primary Focus</div>
+                                        <div className="text-lg text-white font-medium">{currentSnapshot.focus}</div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {currentSnapshot.improvements.slice(0, 2).map((imp, i) => (
+                                            <div key={i} className="p-3 bg-black/20 rounded-lg border border-white/5 text-sm text-gray-300 flex items-center gap-2">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${currentSnapshot.status === 'current' ? 'bg-cyan-400' : 'bg-gray-500'}`} />
+                                                {imp}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between border-t border-white/10 pt-6">
+                                    <div className="text-xs font-mono text-gray-400">
+                                        Impact: <span className="text-white font-bold">{currentSnapshot.estimatedImpact}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleRestoreSnapshot(currentSnapshot.version)}
+                                        className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all
+                                            ${currentSnapshot.status === 'current' 
+                                                ? 'bg-cyan-500 text-black hover:bg-cyan-400' 
+                                                : 'bg-white/10 text-white hover:bg-white/20'}
+                                        `}
+                                    >
+                                        {currentSnapshot.status === 'current' ? <Play className="w-3 h-3 fill-current" /> : <RotateCcw className="w-3 h-3" />}
+                                        {currentSnapshot.status === 'current' ? 'Running' : 'Mount Snapshot'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Timeline List (Detailed) */}
+                <div className="glass-panel p-8 rounded-2xl border border-emerald-500/20 bg-slate-900/50">
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                        <Zap className="w-5 h-5 text-emerald-400" />
+                        Full Evolution Roadmap
+                    </h3>
                     <div className="space-y-6">
                         {evolutionPlan.map((milestone, idx) => (
                             <div key={idx} className={`p-6 rounded-xl border flex flex-col md:flex-row gap-6 transition-all ${

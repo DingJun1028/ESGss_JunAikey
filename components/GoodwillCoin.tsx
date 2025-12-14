@@ -13,9 +13,8 @@ interface GoodwillCoinProps {
   language: Language;
 }
 
-// ----------------------------------------------------------------------
-// Agent: Vault (The Treasury)
-// ----------------------------------------------------------------------
+// ... (Rest of component implementations: VaultAgent, etc.) ...
+// Re-declaring VaultBase & Agent for context
 interface VaultProps extends InjectedProxyProps {
     goodwillBalance: number;
     isZh: boolean;
@@ -79,10 +78,6 @@ const VaultBase: React.FC<VaultProps> = ({
 };
 
 const VaultAgent = withUniversalProxy(VaultBase);
-
-// ----------------------------------------------------------------------
-// Main Component
-// ----------------------------------------------------------------------
 
 export const GoodwillCoin: React.FC<GoodwillCoinProps> = ({ language }) => {
   const isZh = language === 'zh-TW';
@@ -157,6 +152,7 @@ export const GoodwillCoin: React.FC<GoodwillCoinProps> = ({ language }) => {
             description={pageData.desc}
             language={language}
             tag={pageData.tag}
+            accentColor="text-rose-400"
         />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

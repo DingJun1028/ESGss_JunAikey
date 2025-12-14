@@ -49,6 +49,21 @@ export enum View {
 export type Language = 'zh-TW' | 'en-US';
 export type UserTier = 'Free' | 'Pro' | 'Enterprise';
 
+// --- RBAC SYSTEM ---
+export type Role = 'ADMIN' | 'MANAGER' | 'ANALYST' | 'AUDITOR';
+
+export type Permission = 
+  | 'VIEW_ALL'
+  | 'VIEW_CORE'
+  | 'VIEW_OPS'
+  | 'EDIT_OPS'
+  | 'VIEW_INTEL'
+  | 'VIEW_ECO'
+  | 'VIEW_SYS'
+  | 'MANAGE_SETTINGS'
+  | 'MANAGE_API'
+  | 'VIEW_FINANCE';
+
 // --- UNIVERSAL CRYSTAL ARCHITECTURE (萬能水晶架構) ---
 
 export type CrystalType = 'Perception' | 'Cognition' | 'Memory' | 'Expression' | 'Nexus';
@@ -145,7 +160,8 @@ export interface MCPMessage {
 
 export interface UserProfile {
   name: string;
-  role: string;
+  role: Role; // Updated to use Role type
+  roleTitle: string; // Display title (e.g. "Chief Sustainability Officer")
   tier: UserTier;
   avatarSeed: string;
 }
@@ -470,4 +486,26 @@ export interface ProactiveInsight {
     targetView?: View;
     confidence: number;
     impact: 'high' | 'medium' | 'low';
+}
+
+// --- Universal Agent Growth & Customization ---
+export interface AgentSkill {
+    id: string;
+    name: string;
+    description: string;
+    level: number;
+    maxLevel: number;
+    xpRequired: number;
+    icon: any; 
+}
+
+export interface CustomAgentProfile {
+    id: string;
+    name: string;
+    role: string;
+    instruction: string;
+    knowledgeBase: string[];
+    color: string;
+    icon: any;
+    created: number;
 }

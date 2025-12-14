@@ -6,7 +6,7 @@ import {
   Maximize, Minimize, Menu, ChevronLeft, ChevronRight, Library, Book, Hexagon, Swords, AlertOctagon, Terminal, PenTool, Fingerprint, Map, Sparkles, LogOut
 } from 'lucide-react';
 import { View, Language } from '../types';
-import { TRANSLATIONS } from '../constants';
+import { TRANSLATIONS, VIEW_ACCESS_MAP } from '../constants';
 import { useCompany } from './providers/CompanyProvider';
 import { useToast } from '../contexts/ToastContext';
 import { CommandPalette } from './CommandPalette';
@@ -195,9 +195,15 @@ interface NavItemProps {
   label: string;
   highlight?: boolean;
   collapsed?: boolean;
+  colors: {
+      text: string;
+      activeText: string;
+      activeBg: string;
+      border: string;
+  };
 }
 
-const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, label, highlight, collapsed }) => {
+const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, label, highlight, collapsed, colors }) => {
     // Bilingual Splitting logic
     const parts = label.split(' (');
     const zh = parts[0];
@@ -209,15 +215,15 @@ const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, lab
         className={`
           relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 group w-full overflow-hidden
           ${active 
-            ? 'bg-gradient-to-r from-celestial-purple/20 to-transparent text-white shadow-[inset_0_0_20px_rgba(139,92,246,0.1)] border-l-2 border-celestial-purple' 
+            ? `bg-gradient-to-r ${colors.activeBg} to-transparent ${colors.activeText} shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] border-l-2 ${colors.border}` 
             : 'text-gray-400 hover:text-white hover:bg-white/5 border-l-2 border-transparent'}
           ${collapsed ? 'justify-center px-0 w-12 mx-auto' : ''}
         `}
         title={collapsed ? label : undefined}
       >
-        {active && <div className="absolute inset-0 bg-celestial-purple/5 animate-pulse pointer-events-none" />}
+        {active && <div className={`absolute inset-0 opacity-10 animate-pulse pointer-events-none ${colors.activeBg}`} />}
         
-        <div className={`transition-transform duration-300 z-10 ${active ? 'scale-110 text-celestial-purple' : 'group-hover:scale-110 group-hover:text-gray-200'}`}>
+        <div className={`transition-transform duration-300 z-10 ${active ? 'scale-110' : 'group-hover:scale-110 group-hover:text-gray-200'}`}>
           {icon}
         </div>
         
@@ -229,10 +235,10 @@ const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, lab
         )}
         
         {highlight && !collapsed && (
-            <span className="absolute right-3 w-1.5 h-1.5 rounded-full bg-celestial-gold animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.8)] z-10" />
+            <span className={`absolute right-3 w-1.5 h-1.5 rounded-full ${colors.border.replace('border-', 'bg-')} animate-pulse shadow-lg z-10`} />
         )}
         {highlight && collapsed && (
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-celestial-gold animate-pulse z-10" />
+            <span className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${colors.border.replace('border-', 'bg-')} animate-pulse z-10`} />
         )}
       </button>
     );
@@ -240,7 +246,7 @@ const NavItem: React.FC<NavItemProps> = React.memo(({ active, onClick, icon, lab
 
 export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, language, onToggleLanguage, children }) => {
   const t = TRANSLATIONS[language];
-  const { userName, level, xp, totalScore, tier, companyName } = useCompany();
+  const { userName, roleTitle, level, xp, totalScore, tier, companyName, hasPermission } = useCompany();
   const { notifications, clearNotifications } = useToast();
   const { systemStatus } = useUniversalAgent();
   
@@ -281,62 +287,76 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
     }
   }, [currentView]);
 
-  // MECE Reorganization - Reorganized per user request
-  const navGroups = useMemo(() => [
-      {
-          title: language === 'zh-TW' ? '核心 (CORE)' : 'Core',
-          items: [
-              { id: View.MY_ESG, icon: Home, label: t.nav.myEsg }, 
-              { id: View.UNIVERSAL_AGENT, icon: Sparkles, label: language === 'zh-TW' ? '萬能代理 (Universal Agent)' : 'Universal Agent', highlight: true },
-              { id: View.YANG_BO, icon: Crown, label: t.nav.yangBo }, 
-              { id: View.USER_JOURNAL, icon: Book, label: t.nav.userJournal },
-              { id: View.RESTORATION, icon: Hexagon, label: t.nav.restoration, highlight: true },
-              { id: View.CARD_GAME_ARENA, icon: Swords, label: t.nav.cardGameArena },
-          ]
-      },
-      {
-          title: language === 'zh-TW' ? '運營 (OPS)' : 'Ops',
-          items: [
-              { id: View.DASHBOARD, icon: LayoutDashboard, label: t.nav.dashboard },
-              { id: View.CARBON, icon: Leaf, label: t.nav.carbon },
-              { id: View.STRATEGY, icon: Target, label: t.nav.strategy },
-              { id: View.REPORT, icon: FileText, label: t.nav.report },
-              { id: View.INTEGRATION, icon: Network, label: t.nav.integration },
-          ]
-      },
-      {
-          title: language === 'zh-TW' ? '洞察 (INTEL)' : 'Intel',
-          items: [
-              { id: View.BUSINESS_INTEL, icon: Briefcase, label: language === 'zh-TW' ? '商情分析 (Market Analysis)' : 'Market Analysis' },
-              { id: View.RESEARCH_HUB, icon: Search, label: language === 'zh-TW' ? '研究中心 (Research Center)' : 'Research Center' },
-              { id: View.ACADEMY, icon: GraduationCap, label: t.nav.academy },
-              { id: View.LIBRARY, icon: Library, label: t.nav.library },
-          ]
-      },
-      {
-          title: language === 'zh-TW' ? '生態 (ECO)' : 'Eco',
-          items: [
-              { id: View.GOODWILL, icon: Coins, label: t.nav.goodwill },
-              { id: View.FUNDRAISING, icon: Heart, label: t.nav.fundraising },
-              { id: View.ALUMNI_ZONE, icon: UserPlus, label: t.nav.alumniZone },
-              { id: View.TALENT, icon: Fingerprint, label: t.nav.talent },
-          ]
-      },
-      {
-          title: language === 'zh-TW' ? '系統 (SYS)' : 'Sys',
-          items: [
-              { id: View.SETTINGS, icon: Settings, label: t.nav.settings },
-              { id: View.DIAGNOSTICS, icon: Activity, label: t.nav.diagnostics },
-              { id: View.API_ZONE, icon: Code, label: t.nav.apiZone },
-              { id: View.UNIVERSAL_BACKEND, icon: Database, label: t.nav.universalBackend },
-              { id: View.UNIVERSAL_TOOLS, icon: Command, label: t.nav.universalTools }, // Added Universal Tools
-          ]
-      }
-  ], [language, t.nav]);
+  // MECE Reorganization with Category Colors & PERMISSION CHECK
+  const navGroups = useMemo(() => {
+      const allGroups = [
+          {
+              title: language === 'zh-TW' ? '核心 (CORE)' : 'Core',
+              colors: { text: 'text-amber-400', activeText: 'text-amber-300', activeBg: 'from-amber-500/20', border: 'border-amber-400' },
+              items: [
+                  { id: View.MY_ESG, icon: Home, label: t.nav.myEsg }, 
+                  { id: View.UNIVERSAL_AGENT, icon: Sparkles, label: language === 'zh-TW' ? '萬能代理 (Universal Agent)' : 'Universal Agent', highlight: true },
+                  { id: View.YANG_BO, icon: Crown, label: t.nav.yangBo }, 
+                  { id: View.USER_JOURNAL, icon: Book, label: t.nav.userJournal },
+                  { id: View.RESTORATION, icon: Hexagon, label: t.nav.restoration, highlight: true },
+                  { id: View.CARD_GAME_ARENA, icon: Swords, label: t.nav.cardGameArena },
+              ]
+          },
+          {
+              title: language === 'zh-TW' ? '運營 (OPS)' : 'Ops',
+              colors: { text: 'text-emerald-400', activeText: 'text-emerald-300', activeBg: 'from-emerald-500/20', border: 'border-emerald-400' },
+              items: [
+                  { id: View.DASHBOARD, icon: LayoutDashboard, label: t.nav.dashboard },
+                  { id: View.CARBON, icon: Leaf, label: t.nav.carbon },
+                  { id: View.STRATEGY, icon: Target, label: t.nav.strategy },
+                  { id: View.REPORT, icon: FileText, label: t.nav.report },
+                  { id: View.INTEGRATION, icon: Network, label: t.nav.integration },
+              ]
+          },
+          {
+              title: language === 'zh-TW' ? '洞察 (INTEL)' : 'Intel',
+              colors: { text: 'text-sky-400', activeText: 'text-sky-300', activeBg: 'from-sky-500/20', border: 'border-sky-400' },
+              items: [
+                  { id: View.BUSINESS_INTEL, icon: Briefcase, label: language === 'zh-TW' ? '商情分析 (Market Analysis)' : 'Market Analysis' },
+                  { id: View.RESEARCH_HUB, icon: Search, label: language === 'zh-TW' ? '研究中心 (Research Center)' : 'Research Center' },
+                  { id: View.ACADEMY, icon: GraduationCap, label: t.nav.academy },
+                  { id: View.LIBRARY, icon: Library, label: t.nav.library },
+              ]
+          },
+          {
+              title: language === 'zh-TW' ? '生態 (ECO)' : 'Eco',
+              colors: { text: 'text-rose-400', activeText: 'text-rose-300', activeBg: 'from-rose-500/20', border: 'border-rose-400' },
+              items: [
+                  { id: View.GOODWILL, icon: Coins, label: t.nav.goodwill },
+                  { id: View.FUNDRAISING, icon: Heart, label: t.nav.fundraising },
+                  { id: View.ALUMNI_ZONE, icon: UserPlus, label: t.nav.alumniZone },
+                  { id: View.TALENT, icon: Fingerprint, label: t.nav.talent },
+              ]
+          },
+          {
+              title: language === 'zh-TW' ? '系統 (SYS)' : 'Sys',
+              colors: { text: 'text-indigo-400', activeText: 'text-indigo-300', activeBg: 'from-indigo-500/20', border: 'border-indigo-400' },
+              items: [
+                  { id: View.SETTINGS, icon: Settings, label: t.nav.settings },
+                  { id: View.DIAGNOSTICS, icon: Activity, label: t.nav.diagnostics },
+                  { id: View.API_ZONE, icon: Code, label: t.nav.apiZone },
+                  { id: View.UNIVERSAL_BACKEND, icon: Database, label: t.nav.universalBackend },
+                  { id: View.UNIVERSAL_TOOLS, icon: Command, label: t.nav.universalTools }, 
+              ]
+          }
+      ];
+
+      // Filter items based on permissions
+      return allGroups.map(group => ({
+          ...group,
+          items: group.items.filter(item => hasPermission(VIEW_ACCESS_MAP[item.id]))
+      })).filter(group => group.items.length > 0);
+
+  }, [language, t.nav, hasPermission]);
 
   // Flatten nav groups for mobile
   const mobileNavItems = useMemo(() => {
-      return navGroups.flatMap(group => group.items);
+      return navGroups.flatMap(group => group.items.map(item => ({...item, colors: group.colors})));
   }, [navGroups]);
 
   return (
@@ -426,13 +446,13 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
             {navGroups.map((group, idx) => (
                 <div key={idx} className="relative">
                     {!isSidebarCollapsed && (
-                        <div className="text-[10px] uppercase text-gray-500 px-3 mb-2 font-bold tracking-[0.15em] flex items-center gap-2">
+                        <div className={`text-[10px] uppercase px-3 mb-2 font-bold tracking-[0.15em] flex items-center gap-2 ${group.colors.text}`}>
                             {group.title}
                             <div className="h-[1px] flex-1 bg-white/5" />
                         </div>
                     )}
                     {isSidebarCollapsed && (
-                        <div className="text-[8px] text-center text-gray-600 mb-2 font-bold font-mono border-b border-white/5 pb-1">{group.title.substring(0,3)}</div>
+                        <div className={`text-[8px] text-center mb-2 font-bold font-mono border-b border-white/5 pb-1 ${group.colors.text}`}>{group.title.substring(0,3)}</div>
                     )}
                     <div className="space-y-0.5">
                         {group.items.map(item => (
@@ -444,6 +464,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                                 label={item.label} 
                                 highlight={item.highlight}
                                 collapsed={isSidebarCollapsed}
+                                colors={group.colors}
                             />
                         ))}
                     </div>
@@ -453,7 +474,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
 
           {/* User Profile (Compact/Full) */}
           <div className="p-3 border-t border-white/5 bg-gradient-to-t from-black/60 to-transparent backdrop-blur-xl">
-              <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'justify-center' : ''} group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-colors`} onClick={() => onNavigate(View.RESTORATION)}>
+              <div className={`flex items-center gap-3 ${isSidebarCollapsed ? 'justify-center' : ''} group cursor-pointer p-2 rounded-xl hover:bg-white/5 transition-colors`} onClick={() => onNavigate(View.SETTINGS)}>
                   <div className="relative">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-celestial-purple to-blue-600 p-[1.5px] shadow-lg">
                           <img src={avatarUrl} alt="Profile" className="w-full h-full rounded-full bg-slate-900 object-cover" />
@@ -466,7 +487,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
                   {!isSidebarCollapsed && (
                       <div className="flex-1 min-w-0">
                           <div className="text-sm font-bold text-white truncate leading-tight">{userName}</div>
-                          <div className="text-[10px] text-gray-400 truncate mb-1">{companyName}</div>
+                          <div className="text-[10px] text-gray-400 truncate mb-1">{roleTitle}</div>
                           <div className="flex items-center gap-2">
                               <span className="text-[9px] text-celestial-purple font-mono font-bold bg-celestial-purple/10 px-1 py-0 rounded border border-celestial-purple/20">Lv.{level}</span>
                               <div className="h-1 flex-1 bg-gray-800 rounded-full overflow-hidden">
@@ -483,8 +504,8 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           {/* Header */}
           <header 
             className={`
-                h-24 flex items-center justify-between px-8 shrink-0 z-30 transition-all duration-500 border-b border-white/5
-                ${isZenMode ? '-mt-24 opacity-0' : 'bg-slate-900/60 backdrop-blur-xl'}
+                h-20 flex items-center justify-between px-6 shrink-0 z-30 transition-all duration-500 border-b border-white/5
+                ${isZenMode ? '-mt-20 opacity-0' : 'bg-slate-900/60 backdrop-blur-xl'}
             `}
           >
             {/* Left: Mobile Toggle & Breadcrumbs/Status */}
@@ -504,20 +525,20 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
             {/* Center: Search (Optional, prominent) */}
             <button 
                 onClick={() => setIsCommandOpen(true)}
-                className="hidden md:flex items-center gap-4 px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition-all w-96 group shadow-inner"
+                className="hidden md:flex items-center gap-4 px-6 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 text-gray-400 hover:text-white transition-all w-96 group shadow-inner"
             >
-                <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-medium">Type command or search...</span>
+                <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Type command or search...</span>
                 <div className="ml-auto flex gap-1">
-                    <span className="text-[10px] font-mono bg-black/30 px-2 py-1 rounded border border-white/5 text-gray-500 group-hover:text-gray-300">⌘K</span>
+                    <span className="text-[10px] font-mono bg-black/30 px-2 py-0.5 rounded border border-white/5 text-gray-500 group-hover:text-gray-300">⌘K</span>
                 </div>
             </button>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                 <button 
                     onClick={() => setIsNavCenterOpen(true)}
-                    className="p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
                     title={language === 'zh-TW' ? "導覽中心" : "Tour Center"}
                 >
                     <Map className="w-5 h-5" />
@@ -525,7 +546,7 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
 
                 <button 
                     onClick={() => onNavigate(View.ABOUT_US)}
-                    className="p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
                     title={language === 'zh-TW' ? "關於我們" : "About Us"}
                 >
                     <Info className="w-5 h-5" />
@@ -533,63 +554,63 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
 
                 <button 
                     onClick={() => setIsZenMode(true)}
-                    className="p-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                    className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
                     title="Enter Zen Mode (⌘.)"
                 >
                     <Maximize className="w-5 h-5" />
                 </button>
 
-                <div className="h-8 w-[1px] bg-white/10 mx-2" />
+                <div className="h-6 w-[1px] bg-white/10 mx-1" />
 
                 <button 
                   onClick={onToggleLanguage}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/5 text-sm font-bold text-gray-300 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/5 text-xs font-bold text-gray-300 transition-colors"
                 >
-                  <Languages className="w-5 h-5" />
+                  <Languages className="w-4 h-4" />
                   <span>{language === 'zh-TW' ? 'EN' : '中'}</span>
                 </button>
 
                 <div className="relative">
                     <button 
                         onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                        className={`p-3 rounded-xl transition-all ${isNotificationsOpen ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-400'}`}
+                        className={`p-2 rounded-xl transition-all ${isNotificationsOpen ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-gray-400'}`}
                     >
-                        <Bell className="w-6 h-6" />
+                        <Bell className="w-5 h-5" />
                         {notifications.length > 0 && (
-                            <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-celestial-gold animate-ping" />
+                            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-celestial-gold animate-ping" />
                         )}
                         {notifications.length > 0 && (
-                            <span className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-celestial-gold shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-celestial-gold shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                         )}
                     </button>
-                    {/* Notifications Dropdown (Simplified for layout brevity) */}
+                    {/* Notifications Dropdown */}
                     {isNotificationsOpen && (
-                        <div className="absolute right-0 top-full mt-4 w-96 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in backdrop-blur-xl ring-1 ring-white/10">
+                        <div className="absolute right-0 top-full mt-4 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in backdrop-blur-xl ring-1 ring-white/10">
                             <div className="text-xs font-bold text-gray-500 px-4 py-3 uppercase tracking-wider border-b border-white/5 flex justify-between items-center">
                                 <span>Notifications</span>
                                 <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded">{notifications.length} New</span>
                             </div>
-                            <div className="max-h-80 overflow-y-auto custom-scrollbar space-y-1 p-2">
+                            <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-1 p-2">
                                 {notifications.length === 0 ? <div className="p-8 text-center text-xs text-gray-500">No new alerts</div> : 
                                     notifications.map(n => (
-                                        <div key={n.id} className="p-4 hover:bg-white/5 rounded-xl cursor-pointer group transition-colors border border-transparent hover:border-white/5">
+                                        <div key={n.id} className="p-3 hover:bg-white/5 rounded-xl cursor-pointer group transition-colors border border-transparent hover:border-white/5">
                                             <div className="flex justify-between items-start mb-1">
                                                 <div className={`text-xs font-bold ${n.type === 'error' ? 'text-red-400' : n.type === 'success' ? 'text-emerald-400' : 'text-celestial-blue'}`}>{n.title}</div>
-                                                <span className="text-[10px] text-gray-600">Just now</span>
+                                                <span className="text-[9px] text-gray-600">Just now</span>
                                             </div>
-                                            <div className="text-xs text-gray-300 line-clamp-2 group-hover:text-white transition-colors">{n.message}</div>
+                                            <div className="text-[10px] text-gray-300 line-clamp-2 group-hover:text-white transition-colors">{n.message}</div>
                                         </div>
                                     ))
                                 }
                             </div>
-                            {notifications.length > 0 && <button onClick={clearNotifications} className="w-full text-center text-[10px] py-3 text-gray-500 hover:text-white border-t border-white/5 mt-1 hover:bg-white/5 transition-colors rounded-b-xl">Clear All</button>}
+                            {notifications.length > 0 && <button onClick={clearNotifications} className="w-full text-center text-[10px] py-2 text-gray-500 hover:text-white border-t border-white/5 mt-1 hover:bg-white/5 transition-colors rounded-b-xl">Clear All</button>}
                         </div>
                     )}
                 </div>
             </div>
           </header>
 
-          <main ref={mainRef} className="flex-1 overflow-y-auto p-6 md:p-8 relative custom-scrollbar scroll-smooth">
+          <main ref={mainRef} className="flex-1 overflow-y-auto p-2 md:p-4 relative custom-scrollbar scroll-smooth">
             {/* Zen Mode Exit Button */}
             {isZenMode && (
                 <button 
@@ -606,17 +627,17 @@ export const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, languag
           </main>
         </div>
 
-        {/* Mobile Nav - Horizontally Scrollable & Comprehensive */}
+        {/* Mobile Nav */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 z-40 safe-pb shadow-[0_-10px_20px_rgba(0,0,0,0.3)]">
-            <div className="flex items-center h-full px-4 pb-2 overflow-x-auto no-scrollbar gap-2 snap-x snap-mandatory">
+            <div className="flex items-center h-full px-4 pb-2 overflow-x-auto no-scrollbar gap-2 snap-x snap-mandatory w-full">
                 {mobileNavItems.map(item => (
                     <button 
                         key={item.id} 
                         onClick={() => onNavigate(item.id)}
-                        className={`flex flex-col items-center justify-center min-w-[70px] py-2 rounded-2xl transition-all snap-center ${currentView === item.id ? 'text-white' : 'text-gray-500'}`}
+                        className={`flex flex-col items-center justify-center min-w-[70px] py-2 rounded-2xl transition-all snap-center ${currentView === item.id ? item.colors.activeText : 'text-gray-500'}`}
                     >
-                        <div className={`p-2 rounded-xl mb-1 ${currentView === item.id ? 'bg-white/10 shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]' : ''}`}>
-                            <item.icon className={`w-6 h-6 ${currentView === item.id ? 'text-celestial-gold' : ''}`} />
+                        <div className={`p-2 rounded-xl mb-1 ${currentView === item.id ? `bg-white/10 shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]` : ''}`}>
+                            <item.icon className={`w-6 h-6 ${currentView === item.id ? 'fill-current' : ''}`} />
                         </div>
                         <span className="text-[9px] font-bold tracking-wide truncate max-w-[64px]">{item.label.split(' ')[0]}</span>
                     </button>

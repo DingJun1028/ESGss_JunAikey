@@ -3,9 +3,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { 
   DashboardWidget, AuditLogEntry, EsgCard, Quest, ToDoItem, NoteItem, BookmarkItem, 
   UserTier, CarbonData, MasteryLevel, Badge, WidgetType, AppFile, IntelligenceItem,
-  UniversalCrystal, UserJournalEntry
+  UniversalCrystal, UserJournalEntry, Role, Permission
 } from '../../types';
-import { UNIVERSAL_CORES } from '../../constants';
+import { UNIVERSAL_CORES, ROLE_DEFINITIONS } from '../../constants';
 import { universalIntelligence } from '../../services/evolutionEngine';
 
 // Initial Mock Data
@@ -18,13 +18,16 @@ const INITIAL_QUESTS: Quest[] = [
 interface CompanyContextType {
   userName: string;
   setUserName: (name: string) => void;
-  userRole: string;
-  setUserRole: (role: string) => void;
+  userRole: Role;
+  setUserRole: (role: Role) => void;
+  roleTitle: string; // The display name
   companyName: string;
   setCompanyName: (name: string) => void;
   tier: UserTier;
   upgradeTier: (tier: UserTier) => void;
   
+  hasPermission: (permission: Permission) => boolean;
+
   xp: number;
   level: number;
   awardXp: (amount: number, reason?: string) => void;
@@ -128,7 +131,7 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // User Profile
   const [userName, setUserName] = useState('DingJun Hong');
-  const [userRole, setUserRole] = useState('CSO');
+  const [userRole, setUserRole] = useState<Role>('ADMIN'); // Default Role
   const [companyName, setCompanyName] = useState('TechFlow Industries');
   const [tier, setTier] = useState<UserTier>('Free');
   
@@ -232,6 +235,13 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Computed
   const level = Math.floor(xp / 1000) + 1;
   const totalScore = parseFloat(((esgScores.environmental + esgScores.social + esgScores.governance) / 3).toFixed(1));
+  const roleTitle = ROLE_DEFINITIONS[userRole]?.label || userRole;
+
+  // Permission Logic
+  const hasPermission = useCallback((permission: Permission) => {
+      const allowed = ROLE_DEFINITIONS[userRole]?.permissions || [];
+      return allowed.includes(permission) || allowed.includes('VIEW_ALL');
+  }, [userRole]);
 
   // Persistence (Load)
   useEffect(() => {
@@ -240,7 +250,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       try {
         const data = JSON.parse(saved);
         setUserName(data.userName || 'DingJun Hong');
-        setUserRole(data.userRole || 'CSO');
+        setUserRole(data.userRole || 'ADMIN');
         setCompanyName(data.companyName || 'TechFlow');
         setTier(data.tier || 'Free');
         setXp(data.xp || 1250);
@@ -563,7 +573,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Optimized Context Value
   const contextValue = useMemo(() => ({
-      userName, setUserName, userRole, setUserRole, companyName, setCompanyName, tier, upgradeTier,
+      userName, setUserName, userRole, setUserRole, roleTitle, companyName, setCompanyName, tier, upgradeTier, hasPermission,
       xp, level, awardXp, goodwillBalance, updateGoodwillBalance, esgScores, updateEsgScore, totalScore,
       carbonData, updateCarbonData, budget, setBudget, carbonCredits, setCarbonCredits,
       quests, updateQuestStatus, completeQuest, auditLogs, addAuditLog,
@@ -590,7 +600,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       addTodo, toggleTodo, deleteTodo, addNote, updateNote, deleteNote, toggleBookmark,
       markBriefingRead, addCustomWidget, removeCustomWidget, addPalaceWidget, removePalaceWidget, checkBadges, resetData,
       addFile, removeFile, updateFile, saveIntelligence, unlockAiTools, collectCrystalFragment, restoreCrystal, addJournalEntry,
-      addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize
+      addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize, hasPermission, roleTitle
   ]);
 
   return (

@@ -2,13 +2,13 @@
 import React, { useMemo } from 'react';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis 
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LabelList 
 } from 'recharts';
-import { AlertCircle, CheckCircle2, FileSpreadsheet, Activity, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileSpreadsheet, Activity, PieChart as PieIcon, BarChart3, Split, ArrowRight, Minus, XCircle, TrendingUp, TrendingDown, Clock, Download, Image as ImageIcon } from 'lucide-react';
 
 // Definition of JSON UI Structure
 interface UIBlock {
-  type: 'chart' | 'table' | 'status';
+  type: 'chart' | 'table' | 'status' | 'comparison';
   chartType?: 'area' | 'bar' | 'pie' | 'radar';
   title?: string;
   description?: string;
@@ -16,8 +16,10 @@ interface UIBlock {
   config?: {
     xKey?: string;
     dataKeys?: { key: string; color?: string; name?: string }[];
+    highlightColumn?: string; // For comparison view
   };
-  columns?: string[];
+  columns?: string[]; // For Table
+  headers?: string[]; // For Comparison
   message?: string;
   status?: 'success' | 'error';
   details?: string;
@@ -25,6 +27,11 @@ interface UIBlock {
 }
 
 const COLORS = ['#06b6d4', '#8b5cf6', '#10b981', '#f43f5e', '#fbbf24'];
+
+const handleExport = (title: string, type: 'png' | 'csv') => {
+    // Mock export function
+    alert(`Exporting ${title} as ${type.toUpperCase()}...`);
+};
 
 // --- Sub-Components (Memoized for Performance) ---
 
@@ -77,7 +84,9 @@ const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
             <Tooltip cursor={{fill: '#1e293b'}} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} />
             <Legend wrapperStyle={{ fontSize: '10px' }} />
             {data.config?.dataKeys?.map((k, i) => (
-              <Bar key={k.key} dataKey={k.key} name={k.name} fill={k.color || COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]} />
+              <Bar key={k.key} dataKey={k.key} name={k.name} fill={k.color || COLORS[i % COLORS.length]} radius={[4, 4, 0, 0]}>
+                  <LabelList dataKey={k.key} position="top" fill={k.color || COLORS[i % COLORS.length]} fontSize={10} />
+              </Bar>
             ))}
           </BarChart>
         );
@@ -105,7 +114,9 @@ const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
                 stroke={k.color || COLORS[i % COLORS.length]} 
                 fillOpacity={1} 
                 fill={i === 0 ? "url(#colorValue)" : (k.color || COLORS[i % COLORS.length])} 
-              />
+              >
+                  <LabelList dataKey={k.key} position="top" fill={k.color || COLORS[i % COLORS.length]} fontSize={10} />
+              </Area>
             ))}
           </AreaChart>
         );
@@ -122,12 +133,17 @@ const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
 
   return (
     <div className="w-full bg-slate-900/80 border border-white/10 rounded-xl overflow-hidden shadow-lg backdrop-blur-md">
-      <div className="flex items-center gap-2 p-3 bg-white/5 border-b border-white/10">
-          {getIcon()}
-          <div>
-              <h4 className="text-sm font-bold text-white leading-tight">{data.title}</h4>
-              {data.description && <p className="text-[10px] text-gray-400">{data.description}</p>}
+      <div className="flex items-center justify-between p-3 bg-white/5 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            {getIcon()}
+            <div>
+                <h4 className="text-sm font-bold text-white leading-tight">{data.title}</h4>
+                {data.description && <p className="text-[10px] text-gray-400">{data.description}</p>}
+            </div>
           </div>
+          <button onClick={() => handleExport(data.title || 'chart', 'png')} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Save Chart">
+              <ImageIcon className="w-4 h-4" />
+          </button>
       </div>
       <div className="p-4 h-[250px] w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -140,9 +156,14 @@ const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
 
 const TableRenderer = React.memo(({ data }: { data: UIBlock }) => (
   <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/30 backdrop-blur-md shadow-lg">
-    <div className="p-3 bg-white/5 border-b border-white/10 flex items-center gap-2">
-        <FileSpreadsheet className="w-4 h-4 text-blue-400" />
-        <h4 className="text-sm font-bold text-white">{data.title}</h4>
+    <div className="p-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+            <h4 className="text-sm font-bold text-white">{data.title}</h4>
+        </div>
+        <button onClick={() => handleExport(data.title || 'table', 'csv')} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Export CSV">
+            <Download className="w-4 h-4" />
+        </button>
     </div>
     <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-slate-300">
@@ -166,6 +187,71 @@ const TableRenderer = React.memo(({ data }: { data: UIBlock }) => (
     </div>
   </div>
 ));
+
+const ComparisonRenderer = React.memo(({ data }: { data: UIBlock }) => {
+  const headers = data.headers || [];
+  const rows = data.data;
+  const highlightCol = data.config?.highlightColumn;
+
+  const renderVisual = (val: string) => {
+    if (typeof val !== 'string') return val;
+    const cleanVal = val.replace(/\[\[.*?\]\]/g, '').trim();
+    
+    let icon = null;
+    if (val.includes('[[UP]]')) icon = <TrendingUp className="w-3 h-3 text-emerald-400" />;
+    else if (val.includes('[[DOWN]]')) icon = <TrendingDown className="w-3 h-3 text-rose-400" />;
+    else if (val.includes('[[CHECK]]')) icon = <CheckCircle2 className="w-3 h-3 text-emerald-400" />;
+    else if (val.includes('[[X]]')) icon = <XCircle className="w-3 h-3 text-rose-400" />;
+    else if (val.includes('[[CLOCK]]')) icon = <Clock className="w-3 h-3 text-amber-400" />;
+
+    return (
+      <span className="flex items-center justify-center gap-1.5">
+        {cleanVal}
+        {icon}
+      </span>
+    );
+  };
+
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/50 backdrop-blur-md shadow-xl">
+      <div className="p-3 bg-gradient-to-r from-celestial-purple/10 to-transparent border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Split className="w-4 h-4 text-celestial-purple" />
+            <h4 className="text-sm font-bold text-white">{data.title || 'Comparison Analysis'}</h4>
+          </div>
+          <button onClick={() => handleExport('comparison', 'csv')} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Export CSV">
+              <Download className="w-4 h-4" />
+          </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/5">
+              <th className="px-4 py-3 font-semibold text-slate-400 text-xs uppercase tracking-wider w-1/4">Metric</th>
+              {headers.map((h, i) => (
+                <th key={i} className={`px-4 py-3 font-bold text-center tracking-wider text-xs uppercase w-1/4 border-l border-white/5 ${h === highlightCol ? 'text-celestial-gold bg-celestial-gold/5' : 'text-white'}`}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {rows.map((row, i) => (
+              <tr key={i} className="hover:bg-white/5 transition-colors group">
+                <td className="px-4 py-3 text-xs font-medium text-slate-300 bg-white/5 group-hover:text-white transition-colors">{row.metric}</td>
+                {headers.map((h, j) => (
+                  <td key={j} className={`px-4 py-3 text-xs text-center border-l border-white/5 font-mono ${h === highlightCol ? 'bg-celestial-gold/5 font-medium text-white' : 'text-slate-400'}`}>
+                    {renderVisual(row[h])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+});
 
 const StatusCard = React.memo(({ data }: { data: UIBlock }) => {
   const isSuccess = data.status === 'success';
@@ -225,6 +311,7 @@ const GenerativeUIRenderer: React.FC<{ content: string }> = React.memo(({ conten
           case 'chart': Component = ChartRenderer; break;
           case 'table': Component = TableRenderer; break;
           case 'status': Component = StatusCard; break;
+          case 'comparison': Component = ComparisonRenderer; break;
           default: Component = null;
         }
 
