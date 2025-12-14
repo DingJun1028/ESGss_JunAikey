@@ -93,7 +93,7 @@ ESGss 不僅是一個 SaaS 平台，它是一個運行於 **AIOS (AI Agent Opera
 
 | 角色 (Role) | 中文名稱 | 權限範圍 (Permissions) | 典型使用者 |
 | :--- | :--- | :--- | :--- |
-| **ADMIN** | 超級管理員 (CSO) | VIEW_ALL, MANAGE_SETTINGS, MANAGE_API, VIEW_FINANCE | 永續長、系統管理員 |
+| **ADMIN** | 超級管理員 | VIEW_ALL, MANAGE_SETTINGS, MANAGE_API, VIEW_FINANCE | 永續長 (CSO)、系統管理員 |
 | **MANAGER** | 永續經理 | VIEW_CORE, VIEW_OPS, EDIT_OPS, VIEW_INTEL, VIEW_ECO, VIEW_FINANCE, VIEW_SYS | 永續部門主管 |
 | **ANALYST** | ESG 分析師 | VIEW_CORE, VIEW_OPS, VIEW_INTEL, VIEW_ECO | 數據分析師、研究員 |
 | **AUDITOR** | 外部稽核員 | VIEW_OPS, VIEW_ECO | 第三方驗證機構 |
@@ -109,7 +109,7 @@ ESGss 不僅是一個 SaaS 平台，它是一個運行於 **AIOS (AI Agent Opera
 *   **Sys (系統模組):** 系統設定、API 管理、診斷工具，需 `MANAGE_SETTINGS` 或 `MANAGE_API` 權限。
 
 **安全特性：**
-*   ✅ 前端路由守衛 (`ProtectedModule` HOC) 即時驗證權限
+*   ✅ 前端路由守衛 (`ProtectedModule` 高階組件) 即時驗證權限
 *   ✅ 敏感操作 (如財務報告、API 金鑰) 需雙重驗證
 *   ✅ 稽核追蹤 (`AuditTrail`) 記錄所有關鍵操作
 
