@@ -12,9 +12,7 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) => {
   const [isDevMode, setIsDevMode] = useState(false);
-  const [companyId, setCompanyId] = useState('');
   const [email, setEmail] = useState('');
-  const [personalEmail, setPersonalEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
@@ -100,34 +98,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, language }) =
                 {!isDevMode && (
                 <>
                     <div className="relative group">
-                    <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-gold transition-colors" />
-                    <input 
-                        type="text" 
-                        value={companyId}
-                        onChange={(e) => setCompanyId(e.target.value)}
-                        placeholder={isZh ? "企業代碼 (Company ID)" : "Company ID"}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-celestial-gold/50 focus:ring-1 focus:ring-celestial-gold/50 transition-all hover:bg-black/60"
-                    />
-                    </div>
-                    <div className="relative group">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-emerald transition-colors" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-blue transition-colors" />
                     <input 
                         type="email" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder={isZh ? "企業信箱 (Enterprise Email)" : "Enterprise Email"}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-celestial-emerald/50 focus:ring-1 focus:ring-celestial-emerald/50 transition-all hover:bg-black/60"
-                        required={!personalEmail} // Requirement logic could be complex, keeping simple for UI
-                    />
-                    </div>
-                    <div className="relative group">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-celestial-blue transition-colors" />
-                    <input 
-                        type="email" 
-                        value={personalEmail}
-                        onChange={(e) => setPersonalEmail(e.target.value)}
-                        placeholder={isZh ? "個人信箱 (Personal Email)" : "Personal Email"}
+                        placeholder={isZh ? "信箱 (Email)" : "Email"}
                         className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-celestial-blue/50 focus:ring-1 focus:ring-celestial-blue/50 transition-all hover:bg-black/60"
+                        required
                     />
                     </div>
                     <div className="relative group">

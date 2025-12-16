@@ -6,7 +6,7 @@ import {
     BrainCircuit, Activity, Eye, Database, Share2, Network, 
     ShieldCheck, Zap, Layers, Leaf, Target, FileText, Briefcase, Globe, Users, GripVertical,
     ArrowRight, Lightbulb, Compass, Bell, CheckSquare, Copy, RotateCcw, ThumbsUp, ThumbsDown, Download, FileSpreadsheet, GripHorizontal,
-    Trash2, Mic, Camera, Calculator, ScanLine
+    Trash2, Mic, Camera, Calculator, ScanLine, cpu, Save
 } from 'lucide-react';
 import { Language, View } from '../types';
 import { useToast } from '../contexts/ToastContext';
@@ -20,8 +20,6 @@ interface AiAssistantProps {
   currentView: View;
 }
 
-// ... (AVATAR_MATRIX and SUGGESTIONS_MAP remain defined locally as fallbacks or supplements) ...
-// Re-declare for context
 interface AgentPersona {
     core: 'Perception' | 'Cognition' | 'Memory' | 'Expression' | 'Nexus';
     name: string; 
@@ -29,34 +27,39 @@ interface AgentPersona {
     icon: any;
     color: string; 
     accent: string; 
+    bgEffect: 'nebula' | 'grid' | 'matrix' | 'flow';
 }
 
+// Enhanced Matrix with Visual Effects
 const AVATAR_MATRIX: Partial<Record<View, AgentPersona>> = {
-    [View.RESEARCH_HUB]: { core: 'Perception', name: 'Spectral Scanner', role: 'Data Ingestion & OCR Specialist', icon: Eye, color: 'purple', accent: '#a855f7' },
-    [View.INTEGRATION]: { core: 'Perception', name: 'Data Lake Sensor', role: 'IoT & ERP Signal Processor', icon: Network, color: 'blue', accent: '#3b82f6' },
-    [View.BUSINESS_INTEL]: { core: 'Perception', name: 'Global Crawler', role: 'Competitive Intelligence Scout', icon: Globe, color: 'indigo', accent: '#6366f1' },
-    [View.STRATEGY]: { core: 'Cognition', name: 'Strategy Oracle', role: 'Game Theory & Risk Analyst', icon: BrainCircuit, color: 'gold', accent: '#fbbf24' },
-    [View.CARBON]: { core: 'Cognition', name: 'Carbon Calculator', role: 'GHG Protocol Auditor', icon: Leaf, color: 'emerald', accent: '#10b981' },
-    [View.FINANCE]: { core: 'Cognition', name: 'ROI Simulator', role: 'Financial Projection Engine', icon: Activity, color: 'gold', accent: '#fbbf24' },
-    [View.HEALTH_CHECK]: { core: 'Cognition', name: 'Health Diagnostician', role: 'Corporate Vitality Analyst', icon: Activity, color: 'rose', accent: '#f43f5e' },
-    [View.RESTORATION]: { core: 'Memory', name: 'Asset Vault', role: 'Knowledge Archivist', icon: Database, color: 'cyan', accent: '#06b6d4' },
-    [View.CARD_GAME_ARENA]: { core: 'Memory', name: 'Asset Vault', role: 'Gamification Master', icon: Layers, color: 'cyan', accent: '#06b6d4' },
-    [View.TALENT]: { core: 'Memory', name: 'Skill Galaxy', role: 'Talent Vector Mapper', icon: Sparkles, color: 'pink', accent: '#ec4899' },
-    [View.REPORT]: { core: 'Expression', name: 'The Scribe', role: 'GRI/SASB Report Generator', icon: FileText, color: 'blue', accent: '#3b82f6' },
-    [View.DASHBOARD]: { core: 'Expression', name: 'Omni-Cell', role: 'Data Visualization Specialist', icon: Grid, color: 'indigo', accent: '#818cf8' },
-    [View.UNIVERSAL_BACKEND]: { core: 'Expression', name: 'GenUI Canvas', role: 'System Architect', icon: Terminal, color: 'slate', accent: '#94a3b8' },
-    // UNIVERSAL_AGENT view logic is overridden by global context
-    [View.API_ZONE]: { core: 'Nexus', name: 'API Gateway', role: 'Connectivity Manager', icon: Network, color: 'slate', accent: '#64748b' },
-    [View.AUDIT]: { core: 'Nexus', name: 'Audit Chain', role: 'Immutable Ledger Keeper', icon: ShieldCheck, color: 'emerald', accent: '#10b981' },
-    [View.ALUMNI_ZONE]: { core: 'Nexus', name: 'Role Switcher', role: 'Context Manager', icon: Users, color: 'orange', accent: '#f97316' },
-    [View.MY_ESG]: { core: 'Nexus', name: 'Personal Steward', role: 'Assistant', icon: Bot, color: 'purple', accent: '#8b5cf6' },
+    [View.RESEARCH_HUB]: { core: 'Perception', name: 'Spectral Scanner', role: 'Data Ingestion Specialist', icon: Eye, color: 'purple', accent: '#a855f7', bgEffect: 'flow' },
+    [View.INTEGRATION]: { core: 'Perception', name: 'Data Lake Sensor', role: 'Signal Processor', icon: Network, color: 'blue', accent: '#3b82f6', bgEffect: 'grid' },
+    [View.BUSINESS_INTEL]: { core: 'Perception', name: 'Global Crawler', role: 'Intel Scout', icon: Globe, color: 'indigo', accent: '#6366f1', bgEffect: 'flow' },
+    
+    [View.STRATEGY]: { core: 'Cognition', name: 'Strategy Oracle', role: 'Risk Analyst', icon: BrainCircuit, color: 'gold', accent: '#fbbf24', bgEffect: 'grid' },
+    [View.CARBON]: { core: 'Cognition', name: 'Carbon Calculator', role: 'GHG Auditor', icon: Leaf, color: 'emerald', accent: '#10b981', bgEffect: 'nebula' },
+    [View.FINANCE]: { core: 'Cognition', name: 'ROI Simulator', role: 'Financial Engine', icon: Activity, color: 'gold', accent: '#fbbf24', bgEffect: 'grid' },
+    [View.HEALTH_CHECK]: { core: 'Cognition', name: 'Health Diagnostician', role: 'Vitality Analyst', icon: Activity, color: 'rose', accent: '#f43f5e', bgEffect: 'nebula' },
+    
+    [View.RESTORATION]: { core: 'Memory', name: 'Asset Vault', role: 'Archivist', icon: Database, color: 'cyan', accent: '#06b6d4', bgEffect: 'grid' },
+    [View.CARD_GAME_ARENA]: { core: 'Memory', name: 'Asset Vault', role: 'Gamemaster', icon: Layers, color: 'cyan', accent: '#06b6d4', bgEffect: 'nebula' },
+    [View.TALENT]: { core: 'Memory', name: 'Skill Galaxy', role: 'Talent Mapper', icon: Sparkles, color: 'pink', accent: '#ec4899', bgEffect: 'nebula' },
+    
+    [View.REPORT]: { core: 'Expression', name: 'The Scribe', role: 'Report Generator', icon: FileText, color: 'blue', accent: '#3b82f6', bgEffect: 'flow' },
+    [View.DASHBOARD]: { core: 'Expression', name: 'Omni-Cell', role: 'Visualizer', icon: Grid, color: 'indigo', accent: '#818cf8', bgEffect: 'grid' },
+    [View.UNIVERSAL_BACKEND]: { core: 'Expression', name: 'GenUI Canvas', role: 'Architect', icon: Terminal, color: 'slate', accent: '#94a3b8', bgEffect: 'matrix' },
+    
+    [View.API_ZONE]: { core: 'Nexus', name: 'API Gateway', role: 'Connectivity', icon: Network, color: 'slate', accent: '#64748b', bgEffect: 'matrix' },
+    [View.AUDIT]: { core: 'Nexus', name: 'Audit Chain', role: 'Ledger Keeper', icon: ShieldCheck, color: 'emerald', accent: '#10b981', bgEffect: 'grid' },
+    [View.ALUMNI_ZONE]: { core: 'Nexus', name: 'Role Switcher', role: 'Context Manager', icon: Users, color: 'orange', accent: '#f97316', bgEffect: 'nebula' },
+    [View.MY_ESG]: { core: 'Nexus', name: 'Personal Steward', role: 'Assistant', icon: Bot, color: 'purple', accent: '#8b5cf6', bgEffect: 'nebula' },
 };
 
 const SUGGESTIONS_MAP: Partial<Record<View, string[]>> = {
     [View.MY_ESG]: ["Summarize my progress", "Show pending quests", "Check my ESG score"],
     [View.DASHBOARD]: ["Analyze emission trends", "Identify anomalies", "Forecast Q4 efficiency"],
-    [View.CARBON]: ["Input fuel data", "Calculate Scope 3", "Simulate carbon price"],
-    [View.STRATEGY]: ["Generate risk heatmap", "Start CSO/CFO debate", "Suggest climate strategy"],
+    [View.CARBON]: ["Analyze Scope 1 & 2 Trends", "Input fuel data", "Calculate Scope 3"],
+    [View.STRATEGY]: ["Analyze Risk Trends", "Generate risk heatmap", "Start CSO/CFO debate"],
     [View.REPORT]: ["Draft CEO Letter", "Audit compliance", "Export to PDF"],
     [View.INTEGRATION]: ["Check connection health", "Sync IoT data", "View API logs"],
     [View.RESEARCH_HUB]: ["Search regulations", "Explain CBAM", "Find competitor data"],
@@ -72,59 +75,92 @@ const SUGGESTIONS_MAP: Partial<Record<View, string[]>> = {
 };
 
 interface Message {
+    id: string;
     role: 'user' | 'model';
     text: string;
     timestamp?: number;
+    feedback?: 'good' | 'bad';
 }
+
+// Background Effect Component
+const ModeBackground: React.FC<{ effect: string; color: string }> = React.memo(({ effect, color }) => {
+    if (effect === 'matrix') {
+        return (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.1)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-emerald-900/10 to-emerald-900/20 animate-pulse" />
+            </div>
+        );
+    }
+    if (effect === 'grid') {
+        return (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
+                <div className={`absolute inset-0 bg-[linear-gradient(rgba(251,191,36,0.2)_1px,transparent_1px),linear-gradient(60deg,rgba(251,191,36,0.2)_1px,transparent_1px)] bg-[size:40px_40px]`} />
+                <div className="absolute inset-0 bg-radial-gradient from-transparent to-slate-900" />
+            </div>
+        );
+    }
+    // Nebula / Flow (Default)
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className={`absolute -top-20 -left-20 w-64 h-64 bg-${color}-500/10 rounded-full blur-[80px] animate-blob`} />
+            <div className={`absolute top-1/2 -right-20 w-64 h-64 bg-${color}-400/10 rounded-full blur-[80px] animate-blob animation-delay-2000`} />
+        </div>
+    );
+});
 
 export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, currentView }) => {
   const isZh = language === 'zh-TW';
   const { addToast, notifications } = useToast();
-  // Get active profile from context
   const { addLog, agentMode, systemLogs, activeAgentProfile, awardSkillXp } = useUniversalAgent(); 
-  const { quests, tier } = useCompany();
+  const { quests, carbonData, esgScores, budget, carbonCredits, auditLogs } = useCompany();
   
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  
-  // Interaction State
   const [isVoiceActive, setIsVoiceActive] = useState(false);
-  const [showToolsRing, setShowToolsRing] = useState(false);
+  const recognitionRef = useRef<any>(null);
   
-  // History State
-  const [historyCache, setHistoryCache] = useState<Record<string, Message[]>>({});
+  // Persistent History Cache
+  const [historyCache, setHistoryCache] = useState<Record<string, Message[]>>(() => {
+      try {
+          const saved = localStorage.getItem('esgss_ai_history');
+          return saved ? JSON.parse(saved) : {};
+      } catch (e) {
+          return {};
+      }
+  });
+
   const [messages, setMessages] = useState<Message[]>([]);
-  
   const [isThinking, setIsThinking] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false); // New transition state
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollLogRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const chatRef = useRef<any>(null); // Holds the ChatSession
+  const chatRef = useRef<any>(null);
   const client = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
 
-  // --- DRAG & INTERACTION LOGIC ---
-  // Default position: Bottom Right
+  // Save history to localStorage
+  useEffect(() => {
+      localStorage.setItem('esgss_ai_history', JSON.stringify(historyCache));
+  }, [historyCache]);
+
+  // --- DRAG LOGIC ---
   const initialX = typeof window !== 'undefined' ? window.innerWidth - 80 : 0;
-  const initialY = typeof window !== 'undefined' ? window.innerHeight - 100 : 0;
+  // Adjusted Y to ensure it doesn't overlap mobile nav (approx 80px buffer from bottom)
+  const initialY = typeof window !== 'undefined' ? window.innerHeight - 140 : 0;
   
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragTarget, setDragTarget] = useState<'button' | 'window'>('button');
-  
   const dragStartPos = useRef({ x: 0, y: 0 });
   const startElPos = useRef({ x: 0, y: 0 });
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isLongPressTriggeredRef = useRef(false);
-  const dragThreshold = 5;
 
   useEffect(() => {
       if (typeof window !== 'undefined') {
-          setWindowPosition({ 
-              x: window.innerWidth - 400, 
-              y: 80 
-          });
+          setWindowPosition({ x: window.innerWidth - 400, y: window.innerHeight - 600 });
+          setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 140 });
       }
   }, []);
 
@@ -132,21 +168,10 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
       dragStartPos.current = { x: clientX, y: clientY };
-      
       const currentPos = target === 'button' ? position : windowPosition;
       startElPos.current = { x: currentPos.x, y: currentPos.y };
-      
       setDragTarget(target);
       setIsDragging(true);
-      
-      // Long Press Logic for Button
-      if (target === 'button') {
-          isLongPressTriggeredRef.current = false;
-          longPressTimerRef.current = setTimeout(() => {
-              isLongPressTriggeredRef.current = true;
-              toggleVoiceMode();
-          }, 800); // 800ms threshold for long press
-      }
   };
 
   const handleDragMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -156,78 +181,25 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       const deltaX = clientX - dragStartPos.current.x;
       const deltaY = clientY - dragStartPos.current.y;
       
-      // Cancel long press if moved significantly
-      if (Math.abs(deltaX) > dragThreshold || Math.abs(deltaY) > dragThreshold) {
-          if (longPressTimerRef.current) {
-              clearTimeout(longPressTimerRef.current);
-              longPressTimerRef.current = null;
-          }
-      }
-      
       let newX = startElPos.current.x + deltaX;
       let newY = startElPos.current.y + deltaY;
       
       const width = dragTarget === 'button' ? 60 : 384; 
       const height = dragTarget === 'button' ? 60 : 600;
       
+      // Boundaries
       newX = Math.max(0, Math.min(window.innerWidth - width, newX));
-      const minY = dragTarget === 'window' ? 80 : 0; 
-      newY = Math.max(minY, Math.min(window.innerHeight - height, newY));
+      newY = Math.max(80, Math.min(window.innerHeight - height - 80, newY)); // Ensure above mobile nav
       
-      if (dragTarget === 'button') {
-          setPosition({ x: newX, y: newY });
-      } else {
-          setWindowPosition({ x: newX, y: newY });
-      }
+      if (dragTarget === 'button') setPosition({ x: newX, y: newY });
+      else setWindowPosition({ x: newX, y: newY });
   };
 
-  const handleDragEnd = (e: React.MouseEvent | React.TouchEvent) => {
-      if (longPressTimerRef.current) {
-          clearTimeout(longPressTimerRef.current);
-          longPressTimerRef.current = null;
-      }
+  const handleDragEnd = () => setIsDragging(false);
 
-      if (!isDragging) return;
-      setIsDragging(false);
-      
-      if (dragTarget === 'button') {
-          if (isLongPressTriggeredRef.current) {
-              // Handled by timer, do not treat as click
-              return;
-          }
+  // --- PERSONA & THEME LOGIC ---
 
-          const clientX = 'changedTouches' in e ? e.changedTouches[0].clientX : e.clientX;
-          const clientY = 'changedTouches' in e ? e.changedTouches[0].clientY : e.clientY;
-          const dist = Math.sqrt(Math.pow(clientX - dragStartPos.current.x, 2) + Math.pow(clientY - dragStartPos.current.y, 2));
-          
-          if (dist < dragThreshold && !isOpen) {
-              // Click logic is handled here if not a double click
-              // We rely on standard click/dblclick separation or simple toggle
-              // For simplicity in React, onClick handles single, but we have drag logic.
-              // Let's open it if it wasn't a drag and wasn't a long press.
-              setIsOpen(true);
-          }
-      }
-  };
-
-  const toggleVoiceMode = () => {
-      setIsVoiceActive(prev => {
-          const newState = !prev;
-          addToast(newState ? 'info' : 'warning', newState ? 'Voice Mode Activated' : 'Voice Mode Deactivated', 'System');
-          if (navigator.vibrate) navigator.vibrate(50);
-          return newState;
-      });
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setShowToolsRing(prev => !prev);
-      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-  };
-
-  // 1. Determine Current Avatar Persona (Prioritize Global Context Mode)
   const activePersona = useMemo(() => {
-      // If we are in the Universal Agent Zone, strictly follow the Global Mode
       if (currentView === View.UNIVERSAL_AGENT) {
           return {
               core: 'Nexus',
@@ -235,114 +207,156 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
               role: activeAgentProfile.role,
               icon: activeAgentProfile.icon,
               color: activeAgentProfile.color,
-              accent: '#8b5cf6' // Generic fallback, visual theme handles rest
-          };
+              accent: '#8b5cf6',
+              bgEffect: agentMode === 'phantom' ? 'matrix' : agentMode === 'captain' ? 'grid' : 'nebula'
+          } as AgentPersona;
       }
-      // Otherwise, use view-specific personas
       return AVATAR_MATRIX[currentView] || AVATAR_MATRIX[View.MY_ESG]!;
-  }, [currentView, activeAgentProfile]);
+  }, [currentView, activeAgentProfile, agentMode]);
 
-  // 2. Generate Context-Aware Suggestions
+  // Transition Effect on Persona Change
+  useEffect(() => {
+      setIsSwitching(true);
+      const timer = setTimeout(() => setIsSwitching(false), 600); // 600ms transition
+      return () => clearTimeout(timer);
+  }, [activePersona.name]);
+
   const activeSuggestions = useMemo(() => {
       let suggestions = [];
-      
       if (currentView === View.UNIVERSAL_AGENT) {
           if (agentMode === 'phantom') suggestions = ["tail -f system.log", "status report", "optimize kernel"];
           else if (agentMode === 'captain') suggestions = ["Strategic Overview", "Risk Assessment", "Market Scan"];
           else suggestions = ["System Status", "Run Diagnostics", "Show Evolution Plan"];
       } else {
-          suggestions = SUGGESTIONS_MAP[currentView] || ["What can you do?", "Help me get started", "System status"];
+          suggestions = SUGGESTIONS_MAP[currentView] || ["What can you do?", "Help me get started"];
       }
-
-      if (messages.length > 2) {
-          suggestions = ["Summarize discussion", "Create action items", ...suggestions];
+      // Add Context-Aware dynamic suggestions
+      if (currentView === View.DASHBOARD && esgScores.environmental < 70) {
+          suggestions.unshift("Why is Environmental score low?");
       }
-
-      const unreadAlerts = notifications.length;
-      if (unreadAlerts > 0 && !suggestions.some(s => s.includes('Alerts'))) {
-          suggestions.unshift(`Check ${unreadAlerts} Alerts`);
+      if (currentView === View.CARBON && carbonData.scope3 > 1000) {
+          suggestions.unshift("Reduce Scope 3 hotspots");
       }
-
-      const activeQuests = quests.filter(q => q.status === 'active').slice(0, 1);
-      if (activeQuests.length > 0 && currentView === View.MY_ESG) {
-          suggestions.push(`Quest: ${activeQuests[0].title}`);
-      }
-
-      return Array.from(new Set(suggestions)).slice(0, 5);
-  }, [currentView, agentMode, messages.length, activePersona, notifications.length, quests]);
-
-  // 3. Load History & Initialize Chat Session on Persona Change
-  useEffect(() => {
-      const historyKey = `${currentView}-${agentMode}`; // Distinct history per mode/view combination
-      const savedMessages = historyCache[historyKey] || [];
       
+      return Array.from(new Set(suggestions)).slice(0, 5);
+  }, [currentView, agentMode, esgScores, carbonData]);
+
+  const classifySuggestion = (text: string) => {
+      const lower = text.toLowerCase();
+      // Perception: Seeing, finding, monitoring
+      if (lower.match(/scan|search|find|monitor|read|crawl|detect/)) {
+          return { core: 'Perception', icon: Eye, color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' };
+      }
+      // Cognition: Thinking, analyzing, calculating
+      if (lower.match(/analyze|calculate|simulate|risk|predict|forecast|evaluate|compare/)) {
+          return { core: 'Cognition', icon: BrainCircuit, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' };
+      }
+      // Expression: Creating, writing, reporting
+      if (lower.match(/draft|write|generate|report|summarize|email|create|compose/)) {
+          return { core: 'Expression', icon: FileText, color: 'text-pink-400', border: 'border-pink-500/30', bg: 'bg-pink-500/10' };
+      }
+      // Memory: Recalling, storing, history
+      if (lower.match(/remember|history|log|archive|recall|save|store/)) {
+          return { core: 'Memory', icon: Database, color: 'text-cyan-400', border: 'border-cyan-500/30', bg: 'bg-cyan-500/10' };
+      }
+      // Nexus: Connecting, system, API, switching
+      return { core: 'Nexus', icon: Network, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/10' };
+  };
+
+  useEffect(() => {
+      const historyKey = `${currentView}-${agentMode}`;
+      const savedMessages = historyCache[historyKey] || [];
       setMessages(savedMessages);
+      
+      // Inject Live Data Context based on View
+      let viewContextData = "";
+      if (currentView === View.DASHBOARD || currentView === View.CARBON) {
+          // Synthetic History for Chart Generation
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+          const history = months.map((m, i) => ({
+              month: m,
+              s1: carbonData.scope1 * (0.9 + (i * 0.02)), // Simulated trend
+              s2: carbonData.scope2 * (1.1 - (i * 0.03)),
+              s3: carbonData.scope3
+          }));
+
+          viewContextData = `
+            Current Carbon Data (tCO2e): Scope 1=${carbonData.scope1}, Scope 2=${carbonData.scope2}, Scope 3=${carbonData.scope3}.
+            Historical Data (6 Months): ${JSON.stringify(history)}.
+            ESG Scores: ${JSON.stringify(esgScores)}.
+          `;
+      } else if (currentView === View.FINANCE) {
+          viewContextData = `Financial Context: Budget=$${budget}, Carbon Credits=${carbonCredits}. Focus: ROI, Carbon Tax Impact.`;
+      } else if (currentView === View.STRATEGY) {
+          viewContextData = `Strategic Context: ESG Scores=${JSON.stringify(esgScores)}. Focus on Risk Mitigation and Stakeholder Engagement.`;
+      } else if (currentView === View.AUDIT) {
+          viewContextData = `Audit Logs Context: ${JSON.stringify(auditLogs.slice(0, 3))}. Focus on Data Integrity and Hash Verification.`;
+      }
 
       const systemContext = `
           [SYSTEM IDENTITY]
           You are "${activePersona.name}", a specialized AI agent within the ESGss Platform.
           Role: ${activePersona.role}
-          [CURRENT CONTEXT] User View: ${currentView}. Language: ${language}.
-          [INSTRUCTION] ${activeAgentProfile?.instruction || 'Be helpful.'}
-          ${currentView === View.UNIVERSAL_AGENT ? `Current Interaction Mode: ${agentMode.toUpperCase()}.` : ''}
-      `;
+          Core Function: ${activePersona.core}
+          Current View: ${currentView}
+          Language: ${language}
+          
+          [LIVE DATA CONTEXT]
+          ${viewContextData}
 
-      const historyContent = savedMessages.map(m => ({
-          role: m.role,
-          parts: [{ text: m.text }]
-      }));
+          [CAPABILITIES]
+          1. If asked to analyze trends, risks, or data, use the provided [LIVE DATA CONTEXT].
+          2. VISUALIZATION: If the user asks for a chart, graph, or trend analysis (e.g. "Analyze ESG trends"), you MUST output a 'json_ui' block.
+             Supported chartTypes: 'area', 'bar', 'pie', 'radar'.
+             
+             Example Chart Response:
+             Here is the trend analysis:
+             \`\`\`json_ui
+             {
+               "type": "chart",
+               "chartType": "area",
+               "title": "Emission Trends (H1)",
+               "data": [{"label":"Jan", "value":120}, {"label":"Feb", "value":140}],
+               "config": {"xKey":"label", "dataKeys":[{"key":"value", "color":"#10b981", "name":"Metric"}]}
+             }
+             \`\`\`
+
+          ${agentMode === 'phantom' ? 'Tone: Technical, CLI-style, Concise.' : ''}
+          ${agentMode === 'captain' ? 'Tone: Strategic, Executive, Insightful.' : ''}
+      `;
 
       try {
           chatRef.current = client.chats.create({
               model: 'gemini-2.5-flash',
               config: { systemInstruction: systemContext },
-              history: historyContent
+              history: savedMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
           });
-      } catch (e) {
-          console.error("Failed to restore chat history context:", e);
-          chatRef.current = null;
-      }
+      } catch (e) { console.error(e); }
+  }, [currentView, agentMode, carbonData, esgScores, budget, carbonCredits, auditLogs]);
 
-  }, [currentView, agentMode, activeAgentProfile]); // Re-init when mode changes
-
-  // Scroll logic
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-      if (currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' && scrollLogRef.current) {
-          scrollLogRef.current.scrollTop = scrollLogRef.current.scrollHeight;
-      }
-  }, [systemLogs, agentMode, currentView]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = `${e.target.scrollHeight}px`;
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-    }
-  };
-
-  // Heuristic Logic for Skill XP Awarding
+  // Expanded Skill Check Logic
   const checkSkills = (text: string) => {
       const lower = text.toLowerCase();
+      
       // Data Processing (sk-2)
-      if (lower.match(/analyze|data|report|calculate|stats|trend/)) {
-          awardSkillXp('sk-2', 10);
+      if (lower.match(/analyze|data|calc|stats|trend|forecast/)) {
+          awardSkillXp('sk-2', 15);
       }
       // Creative Synthesis (sk-3)
-      if (lower.match(/write|create|draft|idea|suggest|imagine/)) {
-          awardSkillXp('sk-3', 10);
+      if (lower.match(/write|create|draft|idea|suggest|generate/)) {
+          awardSkillXp('sk-3', 15);
       }
-      // Context Retention (sk-1) - based on complexity or specific keywords
-      if (text.length > 50 || lower.match(/remember|context|history|previous/)) {
-          awardSkillXp('sk-1', 5);
+      // Context Retention (sk-1)
+      if (text.length > 50 || lower.match(/remember|context|history|previous|recall/)) {
+          awardSkillXp('sk-1', 10);
+      }
+      // System Integration (sk-4)
+      if (lower.match(/connect|api|sync|link|export|import/)) {
+          awardSkillXp('sk-4', 20);
       }
   };
 
@@ -350,21 +364,18 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
     const userMessage = overrideText || input;
     if (!userMessage.trim() || isThinking) return;
 
-    // Trigger Skill Check
     checkSkills(userMessage);
-
     if (!overrideText) {
         setInput('');
         if (textareaRef.current) textareaRef.current.style.height = 'auto'; 
     }
     
-    // Special Mode: Phantom Command Line logic (Visual only here, real logic in context)
+    // Phantom Mode Visual Log
     if (currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom') {
-        addLog(`COMMAND > ${userMessage}`, 'info', 'Phantom');
-        // Let normal chat process proceed for response generation too
+        addLog(`> ${userMessage}`, 'info', 'Phantom');
     }
 
-    const newMessage: Message = { role: 'user', text: userMessage, timestamp: Date.now() };
+    const newMessage: Message = { id: Date.now().toString(), role: 'user', text: userMessage, timestamp: Date.now() };
     const updatedMessages = [...messages, newMessage];
     
     setMessages(updatedMessages);
@@ -375,86 +386,140 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
     try {
         if (!chatRef.current) {
-             const systemContext = `You are ${activePersona.name}. Context: ${currentView}.`;
-             chatRef.current = client.chats.create({
-                model: 'gemini-2.5-flash',
-                config: { systemInstruction: systemContext }
-            });
+             // Fallback init
+             chatRef.current = client.chats.create({ model: 'gemini-2.5-flash' });
         }
 
         const result = await chatRef.current.sendMessage({ message: userMessage });
-        const responseText = result.text || "I have acknowledged your request.";
+        const responseText = result.text || "Processed.";
         
-        const botMessage: Message = { role: 'model', text: responseText, timestamp: Date.now() };
+        const botMessage: Message = { id: (Date.now()+1).toString(), role: 'model', text: responseText, timestamp: Date.now() };
         const finalMessages = [...updatedMessages, botMessage];
         
         setMessages(finalMessages);
         setHistoryCache(prev => ({ ...prev, [historyKey]: finalMessages }));
         
-        addLog(`[${activePersona.name}] Response generated.`, 'info', 'Assistant');
-
     } catch (error) {
-      console.error("Chat Error:", error);
       addToast('error', 'Neural Link Interrupted', 'AI Error');
-      const errorMessage: Message = { role: 'model', text: "I encountered a disturbance in the neural core. Please try again.", timestamp: Date.now() };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Connection unstable. Retrying neural handshake...", timestamp: Date.now() }]);
       chatRef.current = null;
     } finally {
       setIsThinking(false);
     }
   };
 
-  const handleClearHistory = () => {
-      const historyKey = `${currentView}-${agentMode}`;
-      setMessages([]);
-      setHistoryCache(prev => {
-          const next = { ...prev };
-          delete next[historyKey];
-          return next;
-      });
-      chatRef.current = null;
-      addToast('info', isZh ? '對話紀錄已清除' : 'Conversation cleared', 'Memory Purge');
-  };
-
-  const handleCopy = (text: string) => {
+  // --- CONVERSATION TOOLS HANDLERS ---
+  const handleCopyMessage = (text: string) => {
       navigator.clipboard.writeText(text);
-      addToast('success', 'Copied to clipboard', 'System');
+      addToast('success', isZh ? '已複製' : 'Copied', 'Clipboard');
   };
 
-  const handleRegenerate = () => {
-      const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
-      if (lastUserMsg) handleSend(lastUserMsg.text);
+  const handleRedoMessage = async (index: number) => {
+      // Find the last user message before this bot message
+      if (index === 0) return;
+      const lastUserMsg = messages[index - 1];
+      if (lastUserMsg.role !== 'user') return;
+
+      // Remove current bot message
+      const newMessages = messages.slice(0, index);
+      setMessages(newMessages);
+      
+      // Resend prompt
+      await handleSend(lastUserMsg.text);
   };
 
-  const handleExportChat = () => {
-      const chatText = messages.map(m => `[${m.role.toUpperCase()}] ${new Date(m.timestamp || Date.now()).toLocaleTimeString()}: ${m.text}`).join('\n\n');
-      const blob = new Blob([chatText], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `chat_export_${Date.now()}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-      addToast('success', 'Chat exported', 'System');
+  const handleFeedback = (msgId: string, type: 'good' | 'bad') => {
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, feedback: type } : m));
+      addToast('success', isZh ? '感謝反饋' : 'Thanks for feedback', 'System');
+      
+      if (type === 'good') {
+          // Simulate visual spread creation
+          setTimeout(() => {
+              addToast('info', isZh ? '已根據反饋優化視覺模型' : 'Visual model optimized based on feedback', 'Generative UI');
+          }, 1000);
+      }
+  };
+
+  const handleShareMessage = (text: string) => {
+      // Mock Share
+      addToast('success', isZh ? '分享連結已生成' : 'Share link generated', 'Share');
+  };
+
+  const handleVoiceInput = () => {
+      if (isVoiceActive) {
+          // Stop listening
+          if (recognitionRef.current) recognitionRef.current.stop();
+          setIsVoiceActive(false);
+          return;
+      }
+
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+          addToast('error', isZh ? '您的瀏覽器不支援語音識別' : 'Browser does not support speech recognition', 'System');
+          return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = language === 'zh-TW' ? 'zh-TW' : 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+          setIsVoiceActive(true);
+          addToast('info', isZh ? '正在聆聽...' : 'Listening...', 'Voice Input');
+      };
+
+      recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          if (transcript) {
+              setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+          }
+      };
+
+      recognition.onerror = (event: any) => {
+          console.error('Speech recognition error', event.error);
+          setIsVoiceActive(false);
+      };
+
+      recognition.onend = () => {
+          setIsVoiceActive(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+  };
+
+  const handleClearConversation = () => {
+      const historyKey = `${currentView}-${agentMode}`;
+      
+      // Clear current view messages
+      setMessages([]);
+      
+      // Clear from persistence
+      setHistoryCache(prev => {
+          const newCache = { ...prev };
+          delete newCache[historyKey];
+          return newCache;
+      });
+
+      // Reset Gemini Chat Session
+      chatRef.current = null; 
+
+      addToast('info', isZh ? '對話記憶已清除' : 'Conversation memory cleared', 'System');
   };
 
   const getThemeClasses = () => {
       const c = activePersona.color;
-      // Handle Custom color mapping (simplistic)
-      if (c === 'pink') return { bg: 'bg-pink-900/20', border: 'border-pink-500/30', text: 'text-pink-400', button: 'bg-pink-500 hover:bg-pink-400' };
-      if (c === 'emerald') return { bg: 'bg-emerald-900/20', border: 'border-emerald-500/30', text: 'text-emerald-400', button: 'bg-emerald-500 hover:bg-emerald-400' };
-      if (c === 'gold') return { bg: 'bg-amber-900/20', border: 'border-amber-500/30', text: 'text-amber-400', button: 'bg-amber-500 hover:bg-amber-400' };
-      if (c === 'blue') return { bg: 'bg-blue-900/20', border: 'border-blue-500/30', text: 'text-blue-400', button: 'bg-blue-500 hover:bg-blue-400' };
-      if (c === 'purple') return { bg: 'bg-purple-900/20', border: 'border-purple-500/30', text: 'text-purple-400', button: 'bg-celestial-purple hover:bg-purple-400' };
-      if (c === 'rose') return { bg: 'bg-rose-900/20', border: 'border-rose-500/30', text: 'text-rose-400', button: 'bg-rose-500 hover:bg-rose-400' };
-      if (c === 'cyan') return { bg: 'bg-cyan-900/20', border: 'border-cyan-500/30', text: 'text-cyan-400', button: 'bg-cyan-500 hover:bg-cyan-400' };
-      if (c === 'orange') return { bg: 'bg-orange-900/20', border: 'border-orange-500/30', text: 'text-orange-400', button: 'bg-orange-500 hover:bg-orange-400' };
-      if (c === 'indigo') return { bg: 'bg-indigo-900/20', border: 'border-indigo-500/30', text: 'text-indigo-400', button: 'bg-indigo-500 hover:bg-indigo-400' };
-      return { bg: 'bg-slate-900/20', border: 'border-white/10', text: 'text-gray-200', button: 'bg-white/10 hover:bg-white/20' };
+      if (c === 'emerald') return { bg: 'bg-emerald-950/90', border: 'border-emerald-500/50', text: 'text-emerald-400', button: 'bg-emerald-600 hover:bg-emerald-500', glow: 'shadow-emerald-500/20' };
+      if (c === 'gold') return { bg: 'bg-amber-950/90', border: 'border-amber-500/50', text: 'text-amber-400', button: 'bg-amber-600 hover:bg-amber-500', glow: 'shadow-amber-500/20' };
+      // Default / Purple / Blue
+      return { bg: 'bg-slate-900/95', border: 'border-celestial-purple/30', text: 'text-celestial-purple', button: 'bg-celestial-purple hover:bg-purple-500', glow: 'shadow-purple-500/20' };
   };
 
   const theme = getThemeClasses();
   const ModeIcon = activePersona.icon;
+
+  // --- RENDER ---
 
   if (!isOpen) {
     return (
@@ -466,30 +531,19 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
             onTouchMove={handleDragMove}
             onMouseUp={handleDragEnd}
             onTouchEnd={handleDragEnd}
-            onDoubleClick={handleDoubleClick}
+            onClick={(e) => {
+                if (!isDragging) {
+                    setIsOpen(true);
+                }
+            }}
             style={{ left: position.x, top: position.y }}
-            className={`fixed z-[9999] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 cursor-move
-                ${theme.button} text-white border border-white/20 shadow-lg touch-none select-none ${isVoiceActive ? 'animate-pulse ring-4 ring-celestial-gold/50' : 'animate-bounce-slow'}`}
+            className={`fixed z-[9999] w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 cursor-move touch-none select-none
+                ${theme.button} text-white border-2 border-white/20 ${theme.glow} shadow-lg
+                ${isVoiceActive ? 'animate-pulse ring-4 ring-white/30' : 'animate-bounce-slow'}
+            `}
         >
-            {isVoiceActive ? <Mic className="w-7 h-7" /> : <ModeIcon className="w-7 h-7 pointer-events-none" />}
-            
-            {/* Tool Ring Orbit */}
-            {showToolsRing && (
-                <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); onNavigate(View.UNIVERSAL_TOOLS); setShowToolsRing(false); }}>
-                        <Terminal className="w-4 h-4 text-celestial-purple" />
-                    </div>
-                    <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); onNavigate(View.MY_ESG); setShowToolsRing(false); }}>
-                        <ArrowRight className="w-4 h-4 text-emerald-400" />
-                    </div>
-                    <div className="absolute top-1/2 -left-12 -translate-y-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); onNavigate(View.RESEARCH_HUB); setShowToolsRing(false); }}>
-                        <Globe className="w-4 h-4 text-blue-400" />
-                    </div>
-                    <div className="absolute top-1/2 -right-12 -translate-y-1/2 p-2 bg-slate-900 rounded-full border border-white/20 hover:scale-110 transition-transform pointer-events-auto cursor-pointer" onClick={(e) => {e.stopPropagation(); addToast('info', 'Scanner Ready', 'Vision'); setShowToolsRing(false); }}>
-                        <ScanLine className="w-4 h-4 text-celestial-gold" />
-                    </div>
-                </div>
-            )}
+            <div className="absolute inset-0 rounded-full bg-white/10 animate-pulse pointer-events-none" />
+            {isVoiceActive ? <Mic className="w-7 h-7 relative z-10" /> : <ModeIcon className="w-7 h-7 relative z-10 pointer-events-none" />}
         </div>
       </>
     );
@@ -501,31 +555,29 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         onTouchMove={handleDragMove}
         onMouseUp={handleDragEnd}
         onTouchEnd={handleDragEnd}
-        className={`fixed z-[9999] w-full md:w-96 h-full md:h-[600px] md:max-h-[calc(100vh-100px)] backdrop-blur-xl border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in ring-1 ring-white/10 transition-all duration-300 bg-slate-900/95 ${theme.border}
+        className={`fixed z-[9999] w-full md:w-96 h-full md:h-[650px] md:max-h-[calc(100vh-100px)] backdrop-blur-xl border-2 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in ring-1 ring-white/10 transition-all duration-500 touch-none
+            ${theme.bg} ${theme.border}
             ${typeof window !== 'undefined' && window.innerWidth >= 768 ? '' : 'bottom-0 right-0 rounded-b-none'}
         `}
-        style={
-            typeof window !== 'undefined' && window.innerWidth >= 768 
-            ? { left: windowPosition.x, top: windowPosition.y } 
-            : {}
-        }
+        style={typeof window !== 'undefined' && window.innerWidth >= 768 ? { left: windowPosition.x, top: windowPosition.y } : {}}
     >
-      
+      <ModeBackground effect={activePersona.bgEffect} color={activePersona.color} />
+
       {/* Header */}
       <div 
         onMouseDown={(e) => handleDragStart(e, 'window')}
         onTouchStart={(e) => handleDragStart(e, 'window')}
-        className={`p-4 border-b ${theme.border} bg-white/5 flex justify-between items-center shrink-0 cursor-move touch-none select-none`}
+        className={`p-4 border-b ${theme.border} bg-white/5 flex justify-between items-center shrink-0 cursor-move touch-none select-none relative z-10`}
       >
         <div className="flex items-center gap-3 pointer-events-none">
-            <div className={`p-2 rounded-lg bg-white/5 ${theme.text} border border-white/10`}>
-                <ModeIcon className="w-5 h-5" />
+            <div className={`p-2 rounded-xl bg-gradient-to-br from-white/10 to-transparent ${theme.border} border`}>
+                <ModeIcon className={`w-5 h-5 ${theme.text}`} />
             </div>
             <div>
-                <span className="font-bold text-white text-sm block tracking-tight">{activePersona.name}</span>
+                <span className="font-bold text-white text-sm block tracking-tight shadow-black drop-shadow-sm">{activePersona.name}</span>
                 <div className="flex items-center gap-1.5">
-                    <div className={`w-1.5 h-1.5 rounded-full ${theme.button}`} />
-                    <span className={`text-[10px] uppercase tracking-wider font-bold opacity-70 ${theme.text}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${theme.button} animate-pulse`} />
+                    <span className={`text-[10px] uppercase tracking-wider font-bold opacity-80 ${theme.text}`}>
                         {activePersona.core} Core
                     </span>
                 </div>
@@ -534,32 +586,32 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         
         {/* Actions */}
         <div className="flex gap-2" onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-            <div className="md:hidden flex items-center mr-2 text-gray-500">
-                <GripHorizontal className="w-4 h-4 opacity-50" />
-            </div>
-            <button onClick={handleClearHistory} className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-red-400 transition-colors" title={isZh ? "清除對話" : "Clear Conversation"}>
+            <button onClick={handleClearConversation} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors" title={isZh ? "清除對話" : "Clear Conversation"}>
                 <Trash2 className="w-4 h-4" />
             </button>
-            <button onClick={handleExportChat} className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors" title="Export Chat">
-                <Download className="w-4 h-4" />
-            </button>
-            <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
-                <Minimize2 className="w-4 h-4" />
-            </button>
-            <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
+            <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
             </button>
         </div>
       </div>
 
+      {/* Transition Overlay */}
+      {isSwitching && (
+          <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-md flex items-center justify-center animate-fade-in">
+              <div className="flex flex-col items-center gap-3">
+                  <Loader2 className={`w-10 h-10 animate-spin ${theme.text}`} />
+                  <span className="text-xs font-mono text-white tracking-widest uppercase">Recalibrating Neural Core...</span>
+              </div>
+          </div>
+      )}
+
       {/* Content Area */}
-      <div className={`flex-1 overflow-y-auto p-4 custom-scrollbar bg-black/20 ${currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' ? 'font-mono text-xs' : ''}`} ref={scrollLogRef}>
+      <div className={`flex-1 overflow-y-auto p-4 custom-scrollbar relative z-10 ${agentMode === 'phantom' ? 'font-mono text-xs' : ''}`} ref={scrollLogRef}>
         
-        {/* Special Case: Phantom Mode in Universal Agent Zone */}
         {currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' ? (
             <div className="space-y-1">
                 {systemLogs.slice(-20).map((log) => (
-                    <div key={log.id} className="flex gap-2 text-gray-300 break-all">
+                    <div key={log.id} className="flex gap-2 text-gray-300 break-all animate-fade-in">
                         <span className="text-gray-600 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
                         <span className={`${log.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>{log.source}:</span>
                         <span>{log.message}</span>
@@ -568,44 +620,56 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
                 <div className="animate-pulse text-emerald-500">_</div>
             </div>
         ) : (
-            /* Standard Chat for All Other Personas */
             <div className="space-y-4">
                 {messages.length === 0 && (
                     <div className="text-center text-gray-500 mt-12 text-sm px-4">
-                        <ModeIcon className={`w-12 h-12 mx-auto mb-4 opacity-20 ${theme.text}`} />
+                        <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-white/5 to-transparent border border-white/10 flex items-center justify-center ${theme.text}`}>
+                            <ModeIcon className="w-8 h-8 opacity-50" />
+                        </div>
                         <p className="font-bold text-gray-300 mb-1">{isZh ? '我是您的專屬智能代理。' : `I am ${activePersona.name}.`}</p>
-                        <p className="text-xs">{activePersona.role}</p>
+                        <p className="text-xs opacity-70">{activePersona.role}</p>
                     </div>
                 )}
                 {messages.map((msg, idx) => (
-                    <div key={idx} className="flex flex-col gap-1">
+                    <div key={msg.id} className="flex flex-col gap-1 animate-fade-in">
                         <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl p-3 text-sm leading-relaxed ${
+                            <div className={`max-w-[90%] rounded-2xl p-3 text-sm leading-relaxed shadow-lg backdrop-blur-md ${
                                 msg.role === 'user' 
-                                ? `${theme.button} text-white rounded-br-none shadow-md` 
-                                : 'bg-white/10 text-gray-200 rounded-bl-none border border-white/5'
+                                ? `${theme.button} text-white rounded-br-none` 
+                                : 'bg-white/10 text-gray-100 rounded-bl-none border border-white/5'
                             }`}>
                                 {msg.role === 'model' ? (
-                                    <GenerativeUIRenderer content={msg.text} />
+                                    <>
+                                        <GenerativeUIRenderer content={msg.text} />
+                                        {/* Conversation Tools */}
+                                        <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-white/10 text-gray-400">
+                                            <button onClick={() => handleCopyMessage(msg.text)} className="p-1 hover:text-white transition-colors" title="Copy">
+                                                <Copy className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={() => handleRedoMessage(idx)} className="p-1 hover:text-white transition-colors" title="Regenerate">
+                                                <RotateCcw className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={() => handleShareMessage(msg.text)} className="p-1 hover:text-white transition-colors" title="Share">
+                                                <Share2 className="w-3 h-3" />
+                                            </button>
+                                            <div className="w-px h-3 bg-white/10 mx-1" />
+                                            <button onClick={() => handleFeedback(msg.id, 'good')} className={`p-1 hover:text-green-400 transition-colors ${msg.feedback === 'good' ? 'text-green-400' : ''}`} title="Helpful">
+                                                <ThumbsUp className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={() => handleFeedback(msg.id, 'bad')} className={`p-1 hover:text-red-400 transition-colors ${msg.feedback === 'bad' ? 'text-red-400' : ''}`} title="Not Helpful">
+                                                <ThumbsDown className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    </>
                                 ) : (
                                     msg.text.split('\n').map((line, i) => <div key={i}>{line}</div>)
                                 )}
                             </div>
                         </div>
-                        {msg.role === 'model' && (
-                            <div className="flex items-center gap-1 ml-2 opacity-50 hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleCopy(msg.text)} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Copy">
-                                    <Copy className="w-3 h-3" />
-                                </button>
-                                <button onClick={handleRegenerate} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Regenerate">
-                                    <RotateCcw className="w-3 h-3" />
-                                </button>
-                            </div>
-                        )}
                     </div>
                 ))}
                 {isThinking && (
-                    <div className="flex justify-start">
+                    <div className="flex justify-start animate-pulse">
                         <div className="bg-white/10 rounded-2xl rounded-bl-none p-3 border border-white/5 flex items-center gap-2">
                             <Loader2 className={`w-4 h-4 animate-spin ${theme.text}`} />
                             <span className="text-xs text-gray-400">Thinking...</span>
@@ -617,63 +681,84 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         )}
       </div>
 
-      {/* Suggestions Area */}
+      {/* Capabilities / Suggestions */}
       {!(currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom') && (
-          <div className="flex flex-col shrink-0 bg-slate-950/50 backdrop-blur-md border-t border-white/5 transition-all duration-300">
+          <div className="flex flex-col shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 relative z-10">
               <div className="px-4 pt-3 pb-1 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                      <div className={`p-1 rounded bg-white/5`}>
-                          <Compass className={`w-3 h-3 ${theme.text}`} />
-                      </div>
+                      <Sparkles className={`w-3 h-3 ${theme.text}`} />
                       <span className={`text-[10px] font-bold uppercase tracking-wider ${theme.text} opacity-90`}>
-                          {isZh ? 'AI 預知建議' : 'AI Precognition'}
+                          {isZh ? '多維智能能力' : 'Multi-Dimensional Capabilities'}
                       </span>
                   </div>
-                  <span className="text-[9px] text-gray-500 font-mono bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
-                      CTX: {currentView}
-                  </span>
               </div>
 
               <div className="px-4 pb-3 pt-2 flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade">
-                  {activeSuggestions.map((suggestion, idx) => (
+                  {activeSuggestions.map((suggestion, idx) => {
+                      const visuals = classifySuggestion(suggestion);
+                      const CoreIcon = visuals.icon;
+                      return (
                       <button 
                         key={idx}
                         onClick={() => handleSend(suggestion)}
                         className={`
-                            whitespace-nowrap px-3 py-2 rounded-xl text-xs border transition-all flex items-center gap-2 group relative overflow-hidden
-                            ${theme.border} bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white
+                            flex flex-col items-start p-2 rounded-xl border transition-all min-w-[140px] max-w-[200px] gap-1 group relative overflow-hidden shrink-0 hover:scale-105
+                            ${visuals.border} ${visuals.bg} hover:brightness-110 hover:shadow-lg
                         `}
                       >
-                          <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 bg-gradient-to-r from-white/10 to-transparent transition-opacity`} />
-                          <span className="relative z-10">{suggestion}</span>
-                          <ArrowRight className={`w-3 h-3 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 ${theme.text} relative z-10`} />
+                          <div className={`flex items-center gap-1.5 opacity-80 ${visuals.color}`}>
+                              <CoreIcon className="w-3 h-3" />
+                              <span className="text-[9px] uppercase tracking-wider font-bold">{visuals.core}</span>
+                          </div>
+                          <span className="text-xs text-left font-medium text-gray-200 group-hover:text-white leading-tight w-full truncate">
+                              {suggestion}
+                          </span>
                       </button>
-                  ))}
+                  )})}
               </div>
           </div>
       )}
 
       {/* Input Area */}
-      <div className={`p-4 border-t bg-white/5 ${theme.border} shrink-0`}>
+      <div className={`p-4 border-t bg-white/5 ${theme.border} shrink-0 relative z-10`}>
          <div className="flex gap-2 items-end">
             <textarea 
                 ref={textareaRef}
                 value={input} 
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
+                onChange={(e) => {
+                    setInput(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }}
                 placeholder={
                     currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' ? "Enter system command..." : 
                     isZh ? `詢問 ${activePersona.name}...` : `Ask ${activePersona.name}...`
                 }
-                className={`flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm text-white outline-none transition-colors resize-none max-h-32 custom-scrollbar focus:border-opacity-50 focus:border-white
+                className={`flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none transition-colors resize-none max-h-32 custom-scrollbar focus:border-opacity-50 focus:border-white
                     ${currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' ? 'font-mono text-emerald-400' : ''}
                 `}
                 rows={1}
             />
+            
+            {/* Mic Button */}
+            <button 
+                onClick={handleVoiceInput}
+                className={`p-3 rounded-xl transition-all mb-0.5 ${isVoiceActive ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+                title={isZh ? "語音輸入" : "Voice Input"}
+            >
+                <Mic className="w-5 h-5" />
+            </button>
+
             <button 
                 onClick={() => handleSend()} 
                 disabled={isThinking || !input.trim()}
-                className={`p-2 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 ${theme.button} text-white shadow-lg`}
+                className={`p-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 ${theme.button} text-white shadow-lg hover:scale-105`}
             >
                 {currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' ? <Terminal className="w-5 h-5"/> : <Send className="w-5 h-5"/>}
             </button>

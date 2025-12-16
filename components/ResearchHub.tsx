@@ -10,12 +10,13 @@ import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy
 import { universalIntelligence } from '../services/evolutionEngine';
 import { useCompany } from './providers/CompanyProvider';
 import { UniversalPageHeader } from './UniversalPageHeader';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 interface ResearchHubProps {
   language: Language;
 }
 
-// ... (ConceptNodeBase & ConceptAgent components remain unchanged) ...
 // ----------------------------------------------------------------------
 // Agent: Knowledge Concept Node
 // ----------------------------------------------------------------------
@@ -131,6 +132,25 @@ export const ResearchHub: React.FC<ResearchHubProps> = ({ language }) => {
       } finally {
           setIsSearching(false);
       }
+  };
+
+  const handleDownload = (elementId: string, fileName: string) => {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      
+      addToast('info', isZh ? '正在生成 PDF...' : 'Generating PDF...', 'System');
+      
+      const opt = {
+          margin: 10,
+          filename: `${fileName}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#0f172a' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().set(opt).from(element).save().then(() => {
+          addToast('success', isZh ? '下載完成' : 'Download Complete', 'System');
+      });
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -410,14 +430,23 @@ export const ResearchHub: React.FC<ResearchHubProps> = ({ language }) => {
                   <p className="text-gray-400 text-sm">{isZh ? '瀏覽、搜尋並學習豐富的 ESG 案例，為您的永續轉型提供靈感。' : 'Browse, search, and learn from rich ESG cases for inspiration.'}</p>
               </div>
               {cases.map(c => (
-                  <div key={c.id} className={`glass-panel p-6 rounded-2xl border ${c.color} hover:bg-white/5 transition-all group cursor-pointer`} onClick={() => addToast('info', isZh ? '正在分析案例詳情...' : 'Analyzing case details...', 'JunAiKey Case Study')}>
+                  <div id={`case-card-${c.id}`} key={c.id} className={`glass-panel p-6 rounded-2xl border ${c.color} hover:bg-white/5 transition-all group cursor-pointer`} onClick={() => addToast('info', isZh ? '正在分析案例詳情...' : 'Analyzing case details...', 'JunAiKey Case Study')}>
                       <div className="flex justify-between items-start mb-4">
                           <div>
                               <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">{c.sector}</div>
                               <h4 className="text-xl font-bold text-white group-hover:text-blue-300 transition-colors">{c.title}</h4>
                           </div>
-                          <div className="p-2 bg-white/5 rounded-full group-hover:bg-blue-500/20 transition-colors">
-                              <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-400" />
+                          <div className="flex gap-2">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleDownload(`case-card-${c.id}`, `${c.title}_CaseStudy`); }}
+                                className="p-2 bg-white/5 rounded-full hover:bg-white/20 hover:text-white text-gray-400 transition-colors"
+                                title="Download Case PDF"
+                              >
+                                  <Download className="w-4 h-4" />
+                              </button>
+                              <div className="p-2 bg-white/5 rounded-full group-hover:bg-blue-500/20 transition-colors">
+                                  <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-blue-400" />
+                              </div>
                           </div>
                       </div>
                       <p className="text-sm text-gray-300 leading-relaxed mb-4 min-h-[40px]">{c.desc}</p>
@@ -496,11 +525,20 @@ export const ResearchHub: React.FC<ResearchHubProps> = ({ language }) => {
           <>
             {/* Search Results Area */}
             {searchResults && (
-                <div className="glass-panel p-6 rounded-2xl border border-celestial-emerald/30 bg-celestial-emerald/5 animate-fade-in">
-                    <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-                        <Globe className="w-5 h-5 text-celestial-emerald" />
-                        RAG Enhanced Search Results
-                    </h3>
+                <div id="rag-search-results" className="glass-panel p-6 rounded-2xl border border-celestial-emerald/30 bg-celestial-emerald/5 animate-fade-in relative">
+                    <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Globe className="w-5 h-5 text-celestial-emerald" />
+                            RAG Enhanced Search Results
+                        </h3>
+                        <button 
+                            onClick={() => handleDownload('rag-search-results', `Search_Result_${Date.now()}`)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-celestial-emerald/20 hover:bg-celestial-emerald/30 text-celestial-emerald rounded-lg text-xs font-bold transition-all border border-celestial-emerald/30"
+                        >
+                            <Download className="w-3 h-3" />
+                            {isZh ? '下載報告' : 'Download PDF'}
+                        </button>
+                    </div>
                     <div className="text-sm text-gray-300 mb-4 whitespace-pre-wrap leading-relaxed">
                         {searchResults.text}
                     </div>

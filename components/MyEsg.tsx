@@ -29,6 +29,9 @@ const BerkeleyHeroBanner: React.FC<{ isZh: boolean, onNavigate: (view: View) => 
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2 leading-tight">
                     {isZh ? 'Berkeley 國際永續策略創新師' : 'Berkeley International ESG Strategy Innovator'}
+                    <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-celestial-gold to-amber-200">
+                        {isZh ? '× TSISDA 國際永續轉型規劃師' : '× TSISDA ESG Transformation Planner'}
+                    </span>
                 </h2>
                 <div className="flex gap-4 mt-2 text-xs text-gray-300">
                     <div className="flex items-center gap-1"><Target className="w-3 h-3 text-celestial-gold"/> Strategy Blueprint</div>
@@ -36,7 +39,7 @@ const BerkeleyHeroBanner: React.FC<{ isZh: boolean, onNavigate: (view: View) => 
                 </div>
             </div>
             <button className="self-start px-5 py-2 bg-celestial-gold hover:bg-amber-400 text-black text-xs font-bold rounded-lg transition-all flex items-center gap-2 group/btn">
-                {isZh ? '立即報名' : 'Register Now'}
+                {isZh ? '我要報名' : 'Register Now'}
                 <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
             </button>
         </div>

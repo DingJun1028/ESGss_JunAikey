@@ -187,7 +187,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
           status: 'processed',
           tags: ['GRI', 'Annual Report', 'Verified'],
           confidence: 98,
-          aiSummary: "**Executive Summary:**\n- **Achievements:** Achieved 15% reduction in Scope 1 emissions via solar transition. Reached 40% gender diversity in senior leadership.\n- **Challenges:** Scope 3 data collection gaps in Tier-2 suppliers. Water usage efficiency dropped by 2% due to expansion.",
+          aiSummary: "**Executive Summary (AI Analysis):**\n\n**Key Achievements:**\n- 📉 **Emissions:** Successfully reduced Scope 1 emissions by 15% through solar energy adoption.\n- 👥 **Diversity:** Achieved 40% gender diversity in executive leadership roles.\n\n**Strategic Challenges:**\n- ⚠️ **Supply Chain:** Significant data collection gaps identified in Tier-2 suppliers (Scope 3).\n- 💧 **Resource Efficiency:** Water usage intensity increased by 2% due to rapid manufacturing expansion.",
           complianceData: {
               standard: 'GRI Standards 2024',
               certId: 'GRI-2024-8821',
@@ -270,7 +270,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
         setMyIntelligence(data.myIntelligence || []);
         setLastBriefingDate(data.lastBriefingDate || 'never');
         setCustomWidgets(data.customWidgets || []);
-        // Only load if exists, else use default logic above
         if(data.myEsgWidgets) setMyEsgWidgets(data.myEsgWidgets);
         setPalaceWidgets(data.palaceWidgets || [
             { id: 'pw1', type: 'quest_list', title: 'Daily Quests', gridSize: 'medium' },
@@ -382,19 +381,59 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   const addNote = useCallback((content: string, tags: string[] = [], title?: string) => {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const generatedTitle = title || `${dateStr} - New Note`;
-    setUniversalNotes(prev => [{ 
-        id: Date.now().toString(), 
+    const newId = Date.now().toString();
+    
+    const newNote: NoteItem = { 
+        id: newId, 
         title: generatedTitle,
         content, 
         tags, 
         createdAt: Date.now(), 
         source: 'manual',
         backlinks: []
-    }, ...prev]);
+    };
+
+    setUniversalNotes(prev => {
+        let updatedNotes = [newNote, ...prev];
+        
+        // Check for bi-directional linking
+        // Syntax: [[Target Note Title]]
+        const linkRegex = /\[\[(.*?)\]\]/g;
+        const links = [...content.matchAll(linkRegex)].map(m => m[1]);
+        
+        if (links.length > 0) {
+            updatedNotes = updatedNotes.map(n => {
+                if (links.includes(n.title) && !n.backlinks.includes(newId)) {
+                    // Update referenced note with a backlink to the new note
+                    return { ...n, backlinks: [...n.backlinks, newId] };
+                }
+                return n;
+            });
+        }
+        
+        return updatedNotes;
+    });
   }, []);
   
   const updateNote = useCallback((id: string, content: string, title?: string, tags?: string[]) => {
-    setUniversalNotes(prev => prev.map(n => n.id === id ? { ...n, content, title: title || n.title, tags: tags || n.tags } : n));
+    setUniversalNotes(prev => {
+        let notes = prev.map(n => n.id === id ? { ...n, content, title: title || n.title, tags: tags || n.tags } : n);
+        
+        // Additive Backlinking Logic
+        const linkRegex = /\[\[(.*?)\]\]/g;
+        const links = [...content.matchAll(linkRegex)].map(m => m[1]);
+        
+        if (links.length > 0) {
+            notes = notes.map(n => {
+                if (links.includes(n.title) && !n.backlinks.includes(id)) {
+                    return { ...n, backlinks: [...n.backlinks, id] };
+                }
+                return n;
+            });
+        }
+        
+        return notes;
+    });
   }, []);
   
   const deleteNote = useCallback((id: string) => {

@@ -4,7 +4,8 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LabelList 
 } from 'recharts';
-import { AlertCircle, CheckCircle2, FileSpreadsheet, Activity, PieChart as PieIcon, BarChart3, Split, ArrowRight, Minus, XCircle, TrendingUp, TrendingDown, Clock, Download, Image as ImageIcon } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileSpreadsheet, Activity, PieChart as PieIcon, BarChart3, Split, ArrowRight, Minus, XCircle, TrendingUp, TrendingDown, Clock, Download, Image as ImageIcon, Share2, Plus, Save } from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 
 // Definition of JSON UI Structure
 interface UIBlock {
@@ -28,14 +29,33 @@ interface UIBlock {
 
 const COLORS = ['#06b6d4', '#8b5cf6', '#10b981', '#f43f5e', '#fbbf24'];
 
-const handleExport = (title: string, type: 'png' | 'csv') => {
-    // Mock export function
-    alert(`Exporting ${title} as ${type.toUpperCase()}...`);
+// Helper Hooks
+const useChartActions = () => {
+    const { addToast } = useToast();
+
+    const handleExport = (title: string, type: 'png' | 'csv') => {
+        // Mock export logic
+        addToast('success', `Exporting ${title} as ${type.toUpperCase()}...`, 'System');
+    };
+
+    const handleShare = (title: string) => {
+        addToast('success', `Share link for "${title}" generated.`, 'Share');
+    };
+
+    const handleSaveToDashboard = (title: string) => {
+        addToast('success', `"${title}" added to your Dashboard.`, 'Dashboard');
+    };
+
+    return { handleExport, handleShare, handleSaveToDashboard };
 };
 
 // --- Sub-Components (Memoized for Performance) ---
 
 const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
+  const { handleExport, handleShare, handleSaveToDashboard } = useChartActions();
+
+  if (!data.data || data.data.length === 0) return <div className="text-gray-500 text-xs p-4 text-center">No data available for chart</div>;
+
   const renderChart = () => {
     switch (data.chartType) {
       case 'pie':
@@ -141,12 +161,20 @@ const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
                 {data.description && <p className="text-[10px] text-gray-400">{data.description}</p>}
             </div>
           </div>
-          <button onClick={() => handleExport(data.title || 'chart', 'png')} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Save Chart">
-              <ImageIcon className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+              <button onClick={() => handleSaveToDashboard(data.title || 'Chart')} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-emerald-400 transition-colors" title="Save to Dashboard">
+                  <Save className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => handleShare(data.title || 'Chart')} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-blue-400 transition-colors" title="Share Chart">
+                  <Share2 className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => handleExport(data.title || 'chart', 'png')} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors" title="Download Image">
+                  <ImageIcon className="w-3.5 h-3.5" />
+              </button>
+          </div>
       </div>
-      <div className="p-4 h-[250px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="p-4 h-[250px] w-full min-h-[250px]">
+        <ResponsiveContainer width="99%" height="100%">
           {renderChart()}
         </ResponsiveContainer>
       </div>
@@ -154,41 +182,46 @@ const ChartRenderer = React.memo(({ data }: { data: UIBlock }) => {
   );
 });
 
-const TableRenderer = React.memo(({ data }: { data: UIBlock }) => (
-  <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/30 backdrop-blur-md shadow-lg">
-    <div className="p-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-blue-400" />
-            <h4 className="text-sm font-bold text-white">{data.title}</h4>
-        </div>
-        <button onClick={() => handleExport(data.title || 'table', 'csv')} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Export CSV">
-            <Download className="w-4 h-4" />
-        </button>
+const TableRenderer = React.memo(({ data }: { data: UIBlock }) => {
+  const { handleExport } = useChartActions();
+  
+  return (
+    <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-slate-900/30 backdrop-blur-md shadow-lg">
+      <div className="p-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+              <h4 className="text-sm font-bold text-white">{data.title}</h4>
+          </div>
+          <button onClick={() => handleExport(data.title || 'table', 'csv')} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white" title="Export CSV">
+              <Download className="w-4 h-4" />
+          </button>
+      </div>
+      <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-slate-300">
+          <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
+              <tr>
+              {data.columns?.map((h, i) => (
+                  <th key={i} className="px-4 py-3 font-medium tracking-wider">{h}</th>
+              ))}
+              </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+              {data.data.map((row, i) => (
+              <tr key={i} className="hover:bg-white/5 transition-colors">
+                  {data.columns?.map((col, j) => (
+                  <td key={j} className="px-4 py-3 whitespace-nowrap text-xs">{row[col] || row[j]}</td>
+                  ))}
+              </tr>
+              ))}
+          </tbody>
+          </table>
+      </div>
     </div>
-    <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-slate-300">
-        <thead className="text-xs text-slate-400 uppercase bg-slate-800/50">
-            <tr>
-            {data.columns?.map((h, i) => (
-                <th key={i} className="px-4 py-3 font-medium tracking-wider">{h}</th>
-            ))}
-            </tr>
-        </thead>
-        <tbody className="divide-y divide-white/5">
-            {data.data.map((row, i) => (
-            <tr key={i} className="hover:bg-white/5 transition-colors">
-                {data.columns?.map((col, j) => (
-                <td key={j} className="px-4 py-3 whitespace-nowrap text-xs">{row[col] || row[j]}</td>
-                ))}
-            </tr>
-            ))}
-        </tbody>
-        </table>
-    </div>
-  </div>
-));
+  );
+});
 
 const ComparisonRenderer = React.memo(({ data }: { data: UIBlock }) => {
+  const { handleExport } = useChartActions();
   const headers = data.headers || [];
   const rows = data.data;
   const highlightCol = data.config?.highlightColumn;

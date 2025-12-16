@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Language, View, CustomAgentProfile } from '../types';
-import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout, TrendingUp } from 'lucide-react';
+import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout, TrendingUp, Lock, Unlock, Database, ThumbsUp, XCircle } from 'lucide-react';
 import { UniversalPageHeader } from './UniversalPageHeader';
 import { useUniversalAgent, AgentMode } from '../contexts/UniversalAgentContext';
 import { useCompany } from './providers/CompanyProvider';
@@ -32,6 +32,12 @@ const GenesisArchive: React.FC<{ isZh: boolean }> = ({ isZh }) => (
                         ? '第一建築師為了阻止宇宙混屯，犧牲自我化作「萬能代理千面化身」，將宇宙奧義打散為無數記憶結晶。您作為「萬能元鑰召喚神使」，將在此指引下收集碎片，重塑秩序。'
                         : 'The First Architect sacrificed themselves to stop cosmic chaos, becoming the "Universal Agent Avatar of a Thousand Faces" and scattering wisdom as memory crystals. As the Summoner Envoy, you gather these fragments to restore order.'}
                 </p>
+                <div className="mt-4 flex items-center gap-3 text-xs text-celestial-gold">
+                    <Shield className="w-4 h-4" />
+                    <span className="font-mono font-bold uppercase tracking-wider">{isZh ? '零幻覺標配：已啟用' : 'Zero Hallucination: STANDARD'}</span>
+                    <span className="text-gray-500">|</span>
+                    <span className="text-gray-400">{isZh ? 'AI 內容源自您的專屬萬能智庫 (Personal Think Tank)' : 'AI output grounded in your Personal Universal Think Tank.'}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -51,80 +57,135 @@ const AgentNurseryView: React.FC = () => {
                     <div className="relative w-full h-full border-4 border-celestial-purple/50 rounded-full flex items-center justify-center bg-slate-900 shadow-2xl">
                         <Bot className="w-16 h-16 text-celestial-purple" />
                     </div>
-                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-celestial-gold text-black text-xs font-bold px-3 py-1 rounded-full border border-white">
-                        Lv. {agentLevel}
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-celestial-gold text-black text-xs font-bold px-3 py-1 rounded-full border border-white whitespace-nowrap">
+                        Lv. {agentLevel} | Universal Agent
                     </div>
                 </div>
                 
-                <h3 className="text-xl font-bold text-white mb-1">Universal Core</h3>
-                <p className="text-sm text-gray-400 mb-6">Sentient & Evolving</p>
+                <h3 className="text-xl font-bold text-white mb-1">Neural Core Status</h3>
+                <p className="text-sm text-gray-400 mb-6 flex items-center gap-2">
+                    <Activity className="w-3 h-3 text-emerald-400" />
+                    Sentient & Evolving
+                </p>
 
                 <div className="w-full space-y-2 mb-6">
                     <div className="flex justify-between text-xs text-gray-300">
-                        <span>XP Progress</span>
+                        <span>Global XP Progress</span>
                         <span>{agentXp} / {nextLevelXp}</span>
                     </div>
-                    <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
-                        <div className="h-full bg-gradient-to-r from-celestial-purple to-celestial-blue transition-all duration-1000" style={{ width: `${progress}%` }} />
+                    <div className="h-4 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5 relative">
+                        <div 
+                            className="h-full bg-gradient-to-r from-celestial-purple to-celestial-blue transition-all duration-1000 relative" 
+                            style={{ width: `${progress}%` }} 
+                        >
+                            <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_linear_infinite]" />
+                        </div>
                     </div>
                 </div>
 
-                <button 
-                    onClick={() => feedAgent(100)}
-                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 flex items-center gap-2 transition-all active:scale-95"
-                >
-                    <Zap className="w-4 h-4 text-yellow-400" />
-                    Inject Data (100 XP)
-                </button>
+                <div className="flex gap-4">
+                    <button 
+                        onClick={() => feedAgent(100)}
+                        className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/10 flex items-center gap-2 transition-all active:scale-95"
+                    >
+                        <Zap className="w-4 h-4 text-yellow-400" />
+                        Quick Charge (100 XP)
+                    </button>
+                </div>
             </div>
 
             {/* Skill Tree */}
             <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <BrainCircuit className="w-5 h-5 text-emerald-400" />
-                    Neural Skills
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <BrainCircuit className="w-5 h-5 text-emerald-400" />
+                        Neural Skill Tree
+                    </h3>
+                    <span className="text-xs text-gray-500">Train skills to unlock perks</span>
+                </div>
+                
                 {agentSkills.map(skill => {
                     const skillProgress = (skill.currentXp / skill.xpRequired) * 100;
+                    const isMaxed = skill.level >= skill.maxLevel;
+                    const isPerkUnlock = (skill.level + 1) % 3 === 0;
+
                     return (
-                        <div key={skill.id} className="glass-panel p-4 rounded-xl border border-white/5 flex flex-col gap-3 hover:border-emerald-500/30 transition-all">
-                            <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-lg ${skill.level >= skill.maxLevel ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'}`}>
+                        <div key={skill.id} className="glass-panel p-4 rounded-xl border border-white/5 flex flex-col gap-3 hover:border-emerald-500/30 transition-all group relative overflow-hidden">
+                            {/* Skill Header */}
+                            <div className="flex items-center gap-4 relative z-10">
+                                <div className={`p-3 rounded-lg ${isMaxed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-gray-400'}`}>
                                     <skill.icon className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex justify-between items-center mb-1">
                                         <h4 className="font-bold text-white">{skill.name}</h4>
-                                        <span className="text-xs text-emerald-400">Lv. {skill.level}/{skill.maxLevel}</span>
+                                        <span className={`text-xs ${isMaxed ? 'text-emerald-400' : 'text-celestial-purple'} font-mono`}>
+                                            Lv. {skill.level}/{skill.maxLevel}
+                                        </span>
                                     </div>
-                                    <p className="text-xs text-gray-400">{skill.description}</p>
+                                    <p className="text-xs text-gray-400 mb-2">{skill.description}</p>
+                                    
+                                    {/* Progress Bar */}
+                                    <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden mb-1">
+                                        <div 
+                                            className={`h-full transition-all duration-700 ease-out ${isMaxed ? 'bg-emerald-500' : 'bg-celestial-blue'}`} 
+                                            style={{ width: `${isMaxed ? 100 : skillProgress}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-gray-500">
+                                        <span>{isMaxed ? 'MAXED' : `${skill.currentXp} / ${skill.xpRequired} XP`}</span>
+                                        {isPerkUnlock && !isMaxed && <span className="text-amber-400 font-bold animate-pulse">Next Level: Perk Unlock!</span>}
+                                    </div>
                                 </div>
+                                
                                 <button 
                                     onClick={() => trainSkill(skill.id)}
-                                    disabled={skill.level >= skill.maxLevel || agentXp < 200}
-                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-white/10"
+                                    disabled={isMaxed || agentXp < 50} // Assume minimal cost
+                                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-white text-xs font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-colors border border-white/10 flex flex-col items-center gap-1"
                                 >
-                                    Boost (200 GXP)
+                                    <Plus className="w-3 h-3" />
+                                    <span>Train</span>
                                 </button>
                             </div>
-                            {/* Skill Progress Bar */}
-                            {skill.level < skill.maxLevel && (
-                                <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-emerald-500 transition-all duration-700 ease-out" 
-                                        style={{ width: `${skillProgress}%` }}
-                                    />
-                                </div>
-                            )}
+
+                            {/* Unlocks / Perks Strip */}
+                            <div className="flex gap-2 mt-1 relative z-10 border-t border-white/5 pt-2">
+                                {[3, 6, 9].map(lvl => {
+                                    const isUnlocked = skill.level >= lvl;
+                                    return (
+                                        <div key={lvl} className={`flex items-center gap-1 text-[9px] px-2 py-1 rounded border ${isUnlocked ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-black/30 text-gray-600 border-white/5'}`}>
+                                            {isUnlocked ? <Unlock className="w-2.5 h-2.5" /> : <Lock className="w-2.5 h-2.5" />}
+                                            <span>Lv.{lvl} Perk</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     );
                 })}
+                
+                {/* Knowledge Base Connectors */}
+                <div className="mt-4 p-4 rounded-xl border border-white/10 bg-white/5">
+                    <h4 className="text-xs font-bold text-white mb-3 flex items-center gap-2">
+                        <Database className="w-3 h-3 text-celestial-blue" />
+                        Universal Think Tank Sources (Zero Hallucination)
+                    </h4>
+                    <div className="flex gap-2 flex-wrap">
+                        {['Notion', 'Google Drive', 'Capacities', 'InfoFlow', 'UpNote', 'OneDrive'].map(src => (
+                            <span key={src} className="text-[10px] px-2 py-1 rounded-full bg-black/40 border border-white/10 text-gray-400 flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                {src}
+                            </span>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
-// ... (Rest of AgentFactoryView, CompanionView, CaptainView, PhantomView, UniversalAgentZone remain largely the same, just keeping them in the file content for consistency if needed, but for minimal change I will include the rest of the file content below AgentNurseryView to ensure complete replacement of the file structure or component)
+// ... (Rest of AgentFactoryView, CompanionView, CaptainView, PhantomView remain the same) ...
+// Including them here to ensure file completeness
 
 // --- Agent Factory View (Custom Creator) ---
 const AgentFactoryView: React.FC = () => {
@@ -381,7 +442,7 @@ const PhantomView: React.FC<{ language: Language }> = ({ language }) => {
 export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language }) => {
   const isZh = language === 'zh-TW';
   const { addToast } = useToast();
-  const { agentMode, switchMode, isProcessing, processUniversalInput, activeAgentProfile } = useUniversalAgent(); 
+  const { agentMode, switchMode, isProcessing, processUniversalInput, activeAgentProfile, suggestedMode, confirmSuggestion, dismissSuggestion } = useUniversalAgent(); 
   const [input, setInput] = useState('');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'nursery' | 'factory'>('dashboard');
 
@@ -449,7 +510,25 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
         {activeTab === 'dashboard' && (
             <>
                 {/* Universal Omni-Input Node */}
-                <div className="flex justify-center mb-8 relative z-20">
+                <div className="flex justify-center mb-8 relative z-20 flex-col items-center gap-4">
+                    
+                    {/* Mode Suggestion Pill */}
+                    {suggestedMode && (
+                        <div className="animate-bounce-slow flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md shadow-lg mb-[-1rem] z-30">
+                            <Sparkles className="w-4 h-4 text-celestial-gold animate-pulse" />
+                            <span className="text-xs text-white">
+                                {isZh ? `建議切換至 ${suggestedMode.toUpperCase()} 模式以獲得更佳體驗` : `Suggest switching to ${suggestedMode.toUpperCase()} mode`}
+                            </span>
+                            <div className="h-4 w-px bg-white/20 mx-1" />
+                            <button onClick={confirmSuggestion} className="p-1 hover:bg-emerald-500/20 rounded-full text-emerald-400 transition-colors" title="Accept">
+                                <ThumbsUp className="w-4 h-4" />
+                            </button>
+                            <button onClick={dismissSuggestion} className="p-1 hover:bg-red-500/20 rounded-full text-red-400 transition-colors" title="Dismiss">
+                                <XCircle className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
                     <div className={`w-full max-w-3xl backdrop-blur-xl p-2 rounded-3xl border-2 transition-all duration-700 ${getActiveColor()} ${isProcessing ? 'animate-pulse scale-[0.99]' : ''}`}>
                         <div className="relative flex items-center">
                             <div className="absolute left-4">
@@ -499,8 +578,8 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
                     </div>
                 </div>
 
-                {/* Content Area with Transition */}
-                <div className={`transition-all duration-700 ease-in-out transform ${isProcessing ? 'opacity-50 scale-98 blur-[2px]' : 'opacity-100 scale-100 blur-0'}`}>
+                {/* Content Area with Transition - Using Key for Animation Reset */}
+                <div key={agentMode} className="animate-fade-in transition-all duration-500">
                     {(agentMode === 'companion' || agentMode === 'custom') && <CompanionView language={language} />}
                     {agentMode === 'captain' && <CaptainView language={language} />}
                     {agentMode === 'phantom' && <PhantomView language={language} />}

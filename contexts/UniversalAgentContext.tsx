@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from './ToastContext';
 import { JOURNEY_TEMPLATES } from '../constants';
 import { UserJourney, JourneyStep, View, AgentSkill, CustomAgentProfile } from '../types';
-import { Bot, Terminal, Grid, Sparkles, BrainCircuit, User } from 'lucide-react';
+import { Bot, Terminal, Grid, Sparkles, BrainCircuit, User, Database, Layers } from 'lucide-react';
 
 export type AvatarFace = 'MIRROR' | 'EXPERT' | 'VOID' | 'CUSTOM';
 export type AgentMode = 'companion' | 'captain' | 'phantom' | 'custom';
@@ -34,11 +34,12 @@ export interface EvolutionMilestone {
     estimatedImpact: string;
 }
 
-// Initial Skills
+// Initial Skills with Perks descriptions
 const INITIAL_SKILLS: AgentSkill[] = [
-    { id: 'sk-1', name: 'Context Retention', description: 'Increases memory span of conversation.', level: 1, maxLevel: 5, currentXp: 0, xpRequired: 100, icon: BrainCircuit },
-    { id: 'sk-2', name: 'Data Processing', description: 'Faster analysis of large datasets.', level: 1, maxLevel: 5, currentXp: 0, xpRequired: 150, icon: Grid },
-    { id: 'sk-3', name: 'Creative Synthesis', description: 'Better idea generation.', level: 1, maxLevel: 5, currentXp: 0, xpRequired: 120, icon: Sparkles },
+    { id: 'sk-1', name: 'Context Retention', description: 'Zero Hallucination Protocol: Retrieval from Personal Universal Think Tank (Notion/Drive/Files).', level: 1, maxLevel: 10, currentXp: 0, xpRequired: 100, icon: BrainCircuit },
+    { id: 'sk-2', name: 'Data Processing', description: 'Analysis speed for imported datasets (CSV/PDF) and external DBs.', level: 1, maxLevel: 10, currentXp: 0, xpRequired: 100, icon: Grid },
+    { id: 'sk-3', name: 'Creative Synthesis', description: 'Generative UI and rich storytelling based on verified facts.', level: 1, maxLevel: 10, currentXp: 0, xpRequired: 100, icon: Sparkles },
+    { id: 'sk-4', name: 'System Integration', description: 'Connectors for Capacities, InfoFlow, UpNote, and Cloud Storage.', level: 1, maxLevel: 10, currentXp: 0, xpRequired: 150, icon: Layers },
 ];
 
 interface UniversalAgentContextType {
@@ -48,6 +49,9 @@ interface UniversalAgentContextType {
     agentMode: AgentMode;
     setAgentMode: (mode: AgentMode) => void;
     switchMode: (mode: AgentMode, reason?: string) => void;
+    suggestedMode: AgentMode | null;
+    confirmSuggestion: () => void;
+    dismissSuggestion: () => void;
     
     activeAgentProfile: any; // Derived profile based on mode
     
@@ -102,6 +106,7 @@ const UniversalAgentContext = createContext<UniversalAgentContextType | undefine
 export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [activeFace, setActiveFace] = useState<AvatarFace>('MIRROR');
     const [agentMode, setAgentMode] = useState<AgentMode>('companion'); 
+    const [suggestedMode, setSuggestedMode] = useState<AgentMode | null>(null);
     
     // Growth State
     const [agentLevel, setAgentLevel] = useState(1);
@@ -133,7 +138,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
 
     useEffect(() => {
         addLog('Universal Neural Link Established.', 'info', 'System');
-        addLog('Evolution Module: Active. Monitoring system entropy...', 'info', 'Kernel');
+        addLog('Zero Hallucination Protocol: Active. Knowledge Base Synced.', 'success', 'Kernel');
     }, []);
 
     // --- Growth Logic ---
@@ -149,31 +154,37 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
             }
             return newXp;
         });
-        addLog(`Consumed ${amount} data fragments (Global XP).`, 'info', 'Assistant');
+        // Silent log for small feeds
+        if (amount > 50) addLog(`Consumed ${amount} data fragments (Global XP).`, 'info', 'Assistant');
     };
 
-    // Specific Skill XP System
+    // Specific Skill XP System with Level Scaling
     const awardSkillXp = (skillId: string, amount: number) => {
         setAgentSkills(prev => prev.map(skill => {
             if (skill.id === skillId) {
                 let newXp = skill.currentXp + amount;
                 let newLevel = skill.level;
                 let newReq = skill.xpRequired;
+                let leveledUp = false;
 
-                // Level Up Logic
-                if (newXp >= skill.xpRequired && skill.level < skill.maxLevel) {
-                    newXp = newXp - skill.xpRequired;
-                    newLevel = skill.level + 1;
-                    newReq = Math.floor(skill.xpRequired * 1.5);
-                    
-                    addToast('reward', `${skill.name} Leveled Up to ${newLevel}!`, 'Skill Upgrade');
-                    addLog(`Skill Evolved: ${skill.name} -> Lv.${newLevel}`, 'success', 'Evolution');
-                } else if (skill.level >= skill.maxLevel) {
+                // Loop for multiple level ups in one go
+                while (newXp >= newReq && newLevel < skill.maxLevel) {
+                    newXp -= newReq;
+                    newLevel++;
+                    newReq = Math.floor(newReq * 1.5); // Increase requirement by 50%
+                    leveledUp = true;
+                }
+                
+                if (skill.level >= skill.maxLevel) {
                     newXp = skill.xpRequired; // Cap at max
                 }
 
-                // Also feed global XP slightly
-                feedAgent(Math.floor(amount * 0.1));
+                if (leveledUp) {
+                    addToast('reward', `${skill.name} Leveled Up to ${newLevel}!`, 'Skill Upgrade');
+                    addLog(`Skill Evolved: ${skill.name} -> Lv.${newLevel}`, 'success', 'Evolution');
+                    // Grant significant Global XP on skill level up
+                    feedAgent(newLevel * 100);
+                }
 
                 return { ...skill, level: newLevel, currentXp: newXp, xpRequired: newReq };
             }
@@ -182,26 +193,10 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
     };
 
     // Keep trainSkill for manual spending of Global Agent XP to boost specific skills
+    // In this revised logic, we assume "training" means converting generic resources/effort into specific skill XP
     const trainSkill = (skillId: string) => {
-        setAgentSkills(prev => prev.map(skill => {
-            if (skill.id === skillId) {
-                const cost = 200; // Fixed cost for manual training boost
-                if (agentXp >= cost && skill.level < skill.maxLevel) {
-                    setAgentXp(xp => xp - cost);
-                    // Grant significant XP to the skill
-                    awardSkillXp(skillId, 100); 
-                    return skill; // awardSkillXp handles the update, we just return current here to avoid conflict, but react state batching needs care.
-                    // Actually, since awardSkillXp updates state, we shouldn't update state here twice. 
-                    // Let's refactor: Manual training just calls awardSkillXp and deducts Global XP.
-                } else {
-                    addToast('error', 'Insufficient Global XP (Need 200) or Max Level Reached', 'Training Failed');
-                }
-            }
-            return skill;
-        }));
-        
-        // Manual deduction for training (outside the map to avoid complexity)
-        // This is a simplified approach. Ideally, we separate the cost deduction.
+        // Simplified: Just award XP for demo, usually this might cost "Energy" or "Credits"
+        awardSkillXp(skillId, 50); 
     };
 
     // --- Custom Agent Logic ---
@@ -248,6 +243,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
 
     const switchMode = (mode: AgentMode, reason: string = 'User Override') => {
         setAgentMode(mode);
+        setSuggestedMode(null); // Clear any pending suggestions
         addLog(`[MODE SWITCH] ${mode.toUpperCase()} Active. ${reason}`, 'info', 'System');
         
         if (mode === 'phantom') {
@@ -257,6 +253,16 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         } else {
             addToast('success', 'Companion Interface Ready.', 'Universal Agent');
         }
+    };
+
+    const confirmSuggestion = () => {
+        if (suggestedMode) {
+            switchMode(suggestedMode, 'User accepted AI suggestion');
+        }
+    };
+
+    const dismissSuggestion = () => {
+        setSuggestedMode(null);
     };
 
     const addLog = (message: string, type: AgentLog['type'] = 'info', source: AgentLog['source'] = 'System') => {
@@ -415,7 +421,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
             isExplicit = true;
         }
 
-        // Heuristic Inference (if not explicit)
+        // AI-Driven Suggestions (Enhanced Logic)
         if (!isExplicit) {
              const phantomKeywords = ['monitor', 'system', 'log', 'kernel', 'deploy', 'status', 'debug', 'terminal', 'console', 'cli', 'trace', 'init', 'sudo'];
              const captainKeywords = ['analyze', 'report', 'strategy', 'dashboard', 'risk', 'finance', 'predict', 'forecast', 'kpi', 'metric', 'overview', 'summary', 'growth'];
@@ -426,9 +432,11 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
              const companionScore = companionKeywords.filter(k => lower.includes(k)).length;
 
              if (phantomScore > 0 && phantomScore >= captainScore && phantomScore >= companionScore) {
-                 if (agentMode !== 'phantom') addToast('info', 'Suggestion: Switch to Phantom Mode for system tasks.', 'AI Insight');
+                 if (agentMode !== 'phantom') setSuggestedMode('phantom');
              } else if (captainScore > 0 && captainScore > companionScore) {
-                 if (agentMode !== 'captain') addToast('info', 'Suggestion: Switch to Captain Mode for analysis.', 'AI Insight');
+                 if (agentMode !== 'captain') setSuggestedMode('captain');
+             } else if (companionScore > 0 && companionScore >= captainScore && companionScore >= phantomScore) {
+                 if (agentMode !== 'companion') setSuggestedMode('companion');
              }
         }
 
@@ -492,6 +500,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         <UniversalAgentContext.Provider value={{
             activeFace, setActiveFace,
             agentMode, setAgentMode, switchMode,
+            suggestedMode, confirmSuggestion, dismissSuggestion,
             
             // Growth
             agentLevel, agentXp, nextLevelXp, agentSkills, feedAgent, trainSkill, awardSkillXp,

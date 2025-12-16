@@ -5,6 +5,8 @@ import { Stethoscope, CheckSquare, BarChart, Settings, Activity, ShieldCheck, Za
 import { useToast } from '../contexts/ToastContext';
 import { useCompany } from './providers/CompanyProvider';
 import { UniversalPageHeader } from './UniversalPageHeader';
+import { generateComplianceAssessment } from '../services/ai-service';
+import { marked } from 'marked';
 
 interface HealthCheckProps {
   language: Language;
@@ -24,6 +26,8 @@ export const HealthCheck: React.FC<HealthCheckProps> = ({ language, onNavigate }
       env: 3
   });
   const [isGenerated, setIsGenerated] = useState(false);
+  const [assessmentResult, setAssessmentResult] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const pageData = {
       title: { zh: 'ESG 健檢服務', en: 'ESG Assessment Service' },
@@ -46,9 +50,19 @@ export const HealthCheck: React.FC<HealthCheckProps> = ({ language, onNavigate }
       }
   }, [intelligenceBrief]);
 
-  const handleGenerate = () => {
-      setIsGenerated(true);
-      addToast('success', isZh ? '分析報告已生成' : 'Analysis Report Generated', 'System');
+  const handleGenerate = async () => {
+      setIsGenerating(true);
+      setAssessmentResult(null); // Clear previous
+      try {
+          const result = await generateComplianceAssessment(formData, language);
+          setAssessmentResult(result);
+          setIsGenerated(true); 
+          addToast('success', isZh ? '分析報告已生成' : 'Analysis Report Generated', 'System');
+      } catch (e) {
+          addToast('error', 'Generation failed', 'Error');
+      } finally {
+          setIsGenerating(false);
+      }
   };
 
   const handleRequestService = () => {
@@ -236,23 +250,29 @@ export const HealthCheck: React.FC<HealthCheckProps> = ({ language, onNavigate }
                             </div>
                         </div>
                     ))}
-                    <button onClick={handleGenerate} className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all mt-4">
+                    <button 
+                        onClick={handleGenerate} 
+                        disabled={isGenerating}
+                        className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all mt-4 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        {isGenerating && <Zap className="w-4 h-4 animate-spin" />}
                         {isZh ? '生成初步分析' : 'Generate Lite Analysis'}
                     </button>
                 </div>
 
-                {isGenerated ? (
-                    <div className="glass-panel p-8 rounded-2xl border border-red-500/30 bg-slate-900/80 animate-fade-in flex flex-col justify-center items-center text-center">
-                        <div className="w-24 h-24 rounded-full border-8 border-red-500/20 border-t-red-500 flex items-center justify-center mb-6">
-                            <span className="text-3xl font-bold text-white">72</span>
+                {isGenerated && assessmentResult ? (
+                    <div className="glass-panel p-8 rounded-2xl border border-red-500/30 bg-slate-900/80 animate-fade-in flex flex-col h-full overflow-hidden">
+                        <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-red-400" />
+                                {isZh ? 'AI 診斷結果' : 'AI Diagnostic Result'}
+                            </h3>
+                            <button onClick={() => setIsGenerated(false)} className="text-gray-500 hover:text-white">Close</button>
                         </div>
-                        <h3 className="text-2xl font-bold text-white mb-2">{isZh ? '現況：尚可' : 'Status: Moderate'}</h3>
-                        <p className="text-gray-400 text-sm mb-6 max-w-xs">
-                            {isZh 
-                                ? '您的戰略清晰，但在數據完整性方面存在風險。建議升級至專業版健檢以獲得詳細改善清單。' 
-                                : 'Strategy is clear, but data integrity poses a risk. Upgrade to Pro Assessment for detailed action items.'}
-                        </p>
-                        <div className="flex flex-col gap-3 w-full">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            <div className="markdown-content text-sm text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: marked.parse(assessmentResult) as string }} />
+                        </div>
+                        <div className="mt-6 flex flex-col gap-3 w-full border-t border-white/10 pt-4">
                             <button onClick={handleRequestService} className="w-full py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg font-bold border border-red-500/50 flex items-center justify-center gap-2 transition-all">
                                 <BarChart className="w-4 h-4" /> {isZh ? '預約完整健檢' : 'Book Full Check'}
                             </button>

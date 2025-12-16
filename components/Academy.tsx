@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getMockCourses, TRANSLATIONS } from '../constants';
-import { PlayCircle, Cpu, Users, Briefcase, Zap, ArrowRight, Calendar, Ticket, GraduationCap, Crown, BookOpen, CheckCircle, Globe, Scale, Award, Target, Clock } from 'lucide-react';
+import { PlayCircle, Cpu, Users, Briefcase, Zap, ArrowRight, Calendar, Ticket, GraduationCap, Crown, BookOpen, CheckCircle, Globe, Scale, Award, Target, Clock, ExternalLink } from 'lucide-react';
 import { Language, Course } from '../types';
 import { OmniEsgCell } from './OmniEsgCell';
 import { CoursePlayer } from './CoursePlayer';
@@ -51,10 +51,6 @@ export const Academy: React.FC<AcademyProps> = ({ language }) => {
       addToast('success', isZh ? `已報名活動：${event}` : `Registered for: ${event}`, 'Community');
   };
 
-  const handleSdgClick = (id: number) => {
-      addToast('info', isZh ? `正在載入 SDG ${id} 相關課程與資源...` : `Loading SDG ${id} resources...`, 'Knowledge Retrieval');
-  };
-
   const handleRegisterStar = () => {
       window.open('https://www.esgsunshine.com/courses/berkeley-tsisda', '_blank');
       addToast('success', isZh ? '正在前往報名頁面...' : 'Redirecting to registration...', 'System');
@@ -89,11 +85,25 @@ export const Academy: React.FC<AcademyProps> = ({ language }) => {
       { id: 'off-2', title: isZh ? '雙重重大性分析' : 'Double Materiality', discount: 'Enterprise Plan', desc: isZh ? '符合 CSRD/GRI 要求' : 'CSRD/GRI Compliant' },
   ];
 
-  const sdgColors = [
-      "#E5243B", "#DDA63A", "#4C9F38", "#C5192D", "#FF3A21", 
-      "#26BDE2", "#FCC30B", "#A21942", "#FD6925", "#DD1367", 
-      "#FD9D24", "#BF8B2E", "#3F7E44", "#0A97D9", "#56C02B", 
-      "#00689D", "#19486A"
+  // Enhanced SDG Data with Titles, Descriptions, and Links
+  const SDG_DATA = [
+      { id: 1, color: "#E5243B", en: { title: "No Poverty", desc: "End poverty in all its forms everywhere." }, zh: { title: "消除貧窮", desc: "消除各地一切形式的貧窮。" } },
+      { id: 2, color: "#DDA63A", en: { title: "Zero Hunger", desc: "End hunger, achieve food security and improved nutrition." }, zh: { title: "消除飢餓", desc: "消除飢餓，達成糧食安全，改善營養及促進永續農業。" } },
+      { id: 3, color: "#4C9F38", en: { title: "Good Health", desc: "Ensure healthy lives and promote well-being for all at all ages." }, zh: { title: "健康與福祉", desc: "確保及促進各年齡層健康生活與福祉。" } },
+      { id: 4, color: "#C5192D", en: { title: "Quality Education", desc: "Ensure inclusive and equitable quality education." }, zh: { title: "優質教育", desc: "確保有教無類、公平以及高品質的教育。" } },
+      { id: 5, color: "#FF3A21", en: { title: "Gender Equality", desc: "Achieve gender equality and empower all women and girls." }, zh: { title: "性別平權", desc: "實現性別平等，並賦權所有的婦女與女孩。" } },
+      { id: 6, color: "#26BDE2", en: { title: "Clean Water", desc: "Ensure availability and sustainable management of water." }, zh: { title: "淨水及衛生", desc: "確保所有人都能享有水及衛生及其永續管理。" } },
+      { id: 7, color: "#FCC30B", en: { title: "Clean Energy", desc: "Ensure access to affordable, reliable, sustainable and modern energy." }, zh: { title: "可負擔能源", desc: "確保所有的人都可取得負擔得起、可靠、永續及現代的能源。" } },
+      { id: 8, color: "#A21942", en: { title: "Decent Work", desc: "Promote sustained, inclusive and sustainable economic growth." }, zh: { title: "就業與經濟", desc: "促進包容且永續的經濟成長，讓每個人都有一份好工作。" } },
+      { id: 9, color: "#FD6925", en: { title: "Industry & Innovation", desc: "Build resilient infrastructure, promote inclusive industrialization." }, zh: { title: "工業與創新", desc: "建立具有韌性的基礎建設，促進包容且永續的工業。" } },
+      { id: 10, color: "#DD1367", en: { title: "Reduced Inequalities", desc: "Reduce inequality within and among countries." }, zh: { title: "減少不平等", desc: "減少國內及國家間的不平等。" } },
+      { id: 11, color: "#FD9D24", en: { title: "Sustainable Cities", desc: "Make cities and human settlements inclusive, safe, resilient and sustainable." }, zh: { title: "永續城鄉", desc: "建構具包容、安全、韌性及永續特質的城市與鄉村。" } },
+      { id: 12, color: "#BF8B2E", en: { title: "Responsible Consumption", desc: "Ensure sustainable consumption and production patterns." }, zh: { title: "責任消費", desc: "促進綠色經濟，確保永續消費及生產模式。" } },
+      { id: 13, color: "#3F7E44", en: { title: "Climate Action", desc: "Take urgent action to combat climate change and its impacts." }, zh: { title: "氣候行動", desc: "完備減緩調適行動，以因應氣候變遷及其影響。" } },
+      { id: 14, color: "#0A97D9", en: { title: "Life Below Water", desc: "Conserve and sustainably use the oceans, seas and marine resources." }, zh: { title: "保育海洋", desc: "保育及永續利用海洋生態系，以確保生物多樣性。" } },
+      { id: 15, color: "#56C02B", en: { title: "Life on Land", desc: "Protect, restore and promote sustainable use of terrestrial ecosystems." }, zh: { title: "保育陸域", desc: "保育及永續利用陸域生態系，確保生物多樣性。" } },
+      { id: 16, color: "#00689D", en: { title: "Peace & Justice", desc: "Promote peaceful and inclusive societies for sustainable development." }, zh: { title: "和平與正義", desc: "促進和平多元的社會，確保司法平等，建立負責任的制度。" } },
+      { id: 17, color: "#19486A", en: { title: "Partnerships", desc: "Strengthen the means of implementation and revitalize the global partnership." }, zh: { title: "全球夥伴", desc: "強化永續發展執行方法及活化永續發展全球夥伴關係。" } }
   ];
 
   const berkeleyFaculty = [
@@ -382,28 +392,46 @@ export const Academy: React.FC<AcademyProps> = ({ language }) => {
                 </div>
             )}
 
-            {/* === TAB: SDGs === */}
+            {/* === TAB: SDGs (Updated) === */}
             {activeTab === 'sdgs' && (
                 <div className="space-y-6 animate-fade-in">
                     <div className="mb-4">
                         <h3 className="text-xl font-bold text-white mb-1">{isZh ? '聯合國永續發展目標' : 'UN Sustainable Development Goals'}</h3>
                         <p className="text-gray-400 text-sm">{isZh ? '了解 17 項全球永續發展目標，及其對企業的意義與實踐方式。' : 'Learn about the 17 SDGs and their business implications.'}</p>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {sdgColors.map((color, i) => {
-                            const id = i + 1;
-                            return (
-                                <div 
-                                    key={id} 
-                                    onClick={() => handleSdgClick(id)}
-                                    className="aspect-square rounded-xl hover:scale-105 transition-transform cursor-pointer flex flex-col items-center justify-center p-2 text-center group shadow-lg"
-                                    style={{ backgroundColor: color }}
-                                >
-                                    <div className="text-4xl font-bold text-white mb-1 drop-shadow-md">{id}</div>
-                                    <span className="text-[10px] text-white font-bold uppercase tracking-wide opacity-90">Goal</span>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                        {SDG_DATA.map((goal) => (
+                            <a 
+                                key={goal.id} 
+                                href={`https://sdgs.un.org/goals/goal${goal.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="relative overflow-hidden rounded-xl cursor-pointer group flex flex-col items-start justify-between p-4 h-36 md:h-40 transition-all hover:scale-105 hover:shadow-2xl hover:z-20 border border-transparent hover:border-white/20"
+                                style={{ backgroundColor: goal.color }}
+                            >
+                                <div className="flex justify-between items-start w-full relative z-10">
+                                    <span className="text-3xl font-bold text-white drop-shadow-md">{goal.id}</span>
+                                    <ExternalLink className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
-                            );
-                        })}
+                                
+                                <div className="relative z-10 w-full">
+                                    <h4 className="text-sm font-bold text-white leading-tight mb-1 drop-shadow-sm">
+                                        {isZh ? goal.zh.title : goal.en.title}
+                                    </h4>
+                                    
+                                    {/* Description Slide Up Effect */}
+                                    <div className="absolute top-0 left-0 w-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
+                                        <p className="text-[10px] text-white/90 leading-tight bg-black/40 backdrop-blur-md p-2 rounded mt-2 shadow-lg">
+                                            {isZh ? goal.zh.desc : goal.en.desc}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Background gradient for depth */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                            </a>
+                        ))}
                     </div>
                 </div>
             )}

@@ -1,11 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { Language, View } from '../types';
 import { 
     PenTool, Database, Grid, Copy, Save, Sparkles, BrainCircuit, 
     Search, Command, FileText, ChevronRight, Server, Table, Zap, Bot, Layout, Terminal,
     Calendar as CalendarIcon, CheckSquare, Book, Hexagon, Play, Maximize2, Minimize2, Wand2,
-    Link2, ExternalLink, RefreshCw
+    Link2, ExternalLink, RefreshCw, UploadCloud, MessageCircle, Hash, Trash2, Plus, X, Tag,
+    Scissors, Link as LinkIcon
 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useCompany } from './providers/CompanyProvider';
@@ -20,33 +22,47 @@ interface UniversalToolsProps {
 // AI Smart Editor Toolbar Component
 const SmartEditToolbar: React.FC<{ 
     onAction: (action: string) => void, 
+    onLink: () => void,
     disabled: boolean,
     isZh: boolean 
-}> = ({ onAction, disabled, isZh }) => {
+}> = ({ onAction, onLink, disabled, isZh }) => {
     const tools = [
-        { id: 'continue', icon: Play, label: isZh ? '續寫' : 'Continue', color: 'text-emerald-400' },
-        { id: 'summarize', icon: FileText, label: isZh ? '摘要' : 'Summarize', color: 'text-blue-400' },
         { id: 'expand', icon: Maximize2, label: isZh ? '擴寫' : 'Expand', color: 'text-purple-400' },
-        { id: 'shorten', icon: Minimize2, label: isZh ? '縮短' : 'Shorten', color: 'text-rose-400' },
-        { id: 'action', icon: CheckSquare, label: isZh ? '行動事項' : 'To Action', color: 'text-amber-400' },
-        { id: 'table', icon: Table, label: isZh ? '轉表格' : 'To Table', color: 'text-cyan-400' },
-        { id: 'beautify', icon: Wand2, label: isZh ? '美化' : 'Beautify', color: 'text-celestial-gold' },
+        { id: 'summarize', icon: FileText, label: isZh ? '摘要' : 'Summarize', color: 'text-blue-400' },
+        { id: 'condense', icon: Minimize2, label: isZh ? '精簡' : 'Condense', color: 'text-orange-400' },
+        { id: 'refine', icon: Wand2, label: isZh ? '潤飾' : 'Refine', color: 'text-celestial-gold' },
+        { id: 'action', icon: CheckSquare, label: isZh ? '行動事項' : 'Action Items', color: 'text-emerald-400' },
+        { id: 'continue', icon: Play, label: isZh ? '續寫' : 'Continue', color: 'text-green-400' },
+        { id: 'fix', icon: RefreshCw, label: isZh ? '修正語法' : 'Fix Grammar', color: 'text-cyan-400' },
+        { id: 'tone', icon: MessageCircle, label: isZh ? '轉換語氣' : 'Change Tone', color: 'text-rose-400' },
     ];
 
     return (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2 border-b border-white/5 p-1">
-            {tools.map(tool => (
+        <div className="w-full">
+            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-3 mb-2 border-b border-white/5 p-1 w-full">
                 <button
-                    key={tool.id}
-                    onClick={() => onAction(tool.id)}
+                    onClick={onLink}
                     disabled={disabled}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs font-medium whitespace-nowrap disabled:opacity-50 ${tool.color}`}
-                    title={tool.label}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-celestial-purple/20 hover:bg-celestial-purple/30 border border-celestial-purple/30 transition-all text-xs font-bold text-celestial-purple whitespace-nowrap disabled:opacity-50 shrink-0"
+                    title="Insert Link"
                 >
-                    <tool.icon className="w-3.5 h-3.5" />
-                    {tool.label}
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    {isZh ? '連結' : 'Link'}
                 </button>
-            ))}
+                <div className="w-px h-6 bg-white/10 shrink-0 mx-1" />
+                {tools.map(tool => (
+                    <button
+                        key={tool.id}
+                        onClick={() => onAction(tool.id)}
+                        disabled={disabled}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs font-medium whitespace-nowrap disabled:opacity-50 shrink-0 ${tool.color}`}
+                        title={tool.label}
+                    >
+                        <tool.icon className="w-3.5 h-3.5" />
+                        {tool.label}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 };
@@ -54,68 +70,197 @@ const SmartEditToolbar: React.FC<{
 export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
   const isZh = language === 'zh-TW';
   const { addToast } = useToast();
-  const { universalNotes, addNote, deleteNote, todos, addTodo, toggleTodo, deleteTodo, journal } = useCompany();
+  const { universalNotes, addNote, deleteNote, todos, addTodo, toggleTodo, deleteTodo, journal, saveIntelligence } = useCompany();
   
   // Expanded Tabs
-  const [activeTab, setActiveTab] = useState<'agent' | 'notes' | 'journal' | 'calendar' | 'todo' | 'crystal' | 'thinktank' | 'matrix'>('agent');
+  const [activeTab, setActiveTab] = useState<'agent' | 'notes' | 'journal' | 'calendar' | 'todo' | 'crystal' | 'thinktank' | 'matrix'>('notes');
   const [noteInput, setNoteInput] = useState('');
   const [isProcessingNote, setIsProcessingNote] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [aiAnswer, setAiAnswer] = useState<string | null>(null);
   
+  // AI Tagging Review State
+  const [showMetaReview, setShowMetaReview] = useState(false);
+  const [generatedTitle, setGeneratedTitle] = useState('');
+  const [generatedTags, setGeneratedTags] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState('');
+
   // Think Tank Filter
   const [sdrFilter, setSdrFilter] = useState<'all' | 'boost'>('all');
 
+  const client = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
   // --- Note Logic ---
-  const handleSaveNote = () => {
-      if(!noteInput.trim()) return;
-      
-      const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
-      const firstLine = noteInput.split('\n')[0].substring(0, 20);
-      const autoTitle = `${dateStr} - ${firstLine}...`;
-      
-      const keywords = ['Strategy', 'Carbon', 'Budget', 'Team', 'Meeting', 'Idea', 'Urgent'];
-      const autoTags = keywords.filter(k => noteInput.toLowerCase().includes(k.toLowerCase()));
-      if (autoTags.length === 0) autoTags.push('QuickNote');
 
-      addNote(noteInput, autoTags, autoTitle);
-      setNoteInput('');
-      addToast('success', isZh ? '筆記已儲存 (自動標籤+雙向連結)' : 'Note saved (Auto-tag + Bi-link)', 'Universal Notes');
-  };
-
-  const handleSmartEdit = (action: string) => {
+  const handleSmartEdit = async (action: string) => {
       if (!noteInput.trim()) return;
       setIsProcessingNote(true);
-      addToast('info', isZh ? 'AI 正在處理您的筆記...' : 'AI processing your note...', 'Smart Edit');
+      addToast('info', isZh ? 'AI 正在處理您的筆記...' : 'AI processing your note...', 'Gemini Engine');
 
-      setTimeout(() => {
-          let newText = noteInput;
+      try {
+          let prompt = "";
+          let systemInstruction = "You are an expert editor. Output ONLY the processed text without conversational filler.";
+
           switch (action) {
-              case 'continue':
-                  newText += `\n\n[AI Continued]: Additionally, we should consider the long-term impact on our Scope 3 emissions targets...`;
+              case 'expand': 
+                  prompt = "Expand upon the following text, adding relevant details, depth, and context to make it more comprehensive:"; 
                   break;
-              case 'summarize':
-                  newText = `**Summary:**\nThe user discussed key points regarding: ${noteInput.substring(0, 50)}...`;
+              case 'summarize': 
+                  prompt = "Summarize the following text into key bullet points:"; 
                   break;
-              case 'expand':
-                  newText += `\n\n**Detailed Analysis:**\n1. Market Impact: High\n2. Feasibility: Moderate\n3. ROI Estimate: 15%`;
+              case 'condense':
+                  prompt = "Condense the following text to be as concise and direct as possible, removing unnecessary words without losing the core meaning:";
                   break;
-              case 'shorten':
-                  newText = noteInput.split('\n')[0] + " (Truncated for brevity)";
+              case 'refine': 
+                  prompt = "Refine the writing style of the following text to be more professional, polished, and clear:"; 
                   break;
-              case 'action':
-                  newText = noteInput.split('\n').map(line => line.trim() ? `- [ ] ${line}` : line).join('\n');
+              case 'action': 
+                  prompt = "Analyze the text and extract a list of clear, actionable tasks/items (Markdown format):"; 
                   break;
-              case 'table':
-                  newText = `| Key Point | Priority | Owner |\n|---|---|---|\n| ${noteInput.substring(0, 10)}... | High | PM |\n| Analysis | Med | Analyst |`;
+              case 'continue': 
+                  prompt = "Continue writing the following text naturally, adding 2-3 sentences:"; 
                   break;
-              case 'beautify':
-                  newText = `✨ **Enhanced Note** ✨\n\n${noteInput}\n\n🚀 *Generated by JunAiKey*`;
+              case 'fix':
+                  prompt = "Fix grammar and spelling errors in the following text:";
                   break;
+              case 'tone':
+                  prompt = "Rewrite the following text to be more persuasive and executive-level:";
+                  break;
+              default: 
+                  prompt = "Improve the following text:";
           }
-          setNoteInput(newText);
+
+          const response = await client.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: `${prompt}\n\n"${noteInput}"`,
+              config: { systemInstruction }
+          });
+
+          if (response.text) {
+              setNoteInput(response.text.trim());
+              addToast('success', isZh ? '處理完成' : 'Processing Complete', 'AI Editor');
+          }
+      } catch (e) {
+          console.error(e);
+          addToast('error', 'AI Service Unavailable', 'Error');
+      } finally {
           setIsProcessingNote(false);
-          addToast('success', isZh ? '處理完成' : 'Processing Complete', 'Smart Edit');
-      }, 1500);
+      }
   };
+
+  const handleInsertLink = () => {
+      setNoteInput(prev => prev + "[[Link]]");
+  };
+
+  const handleAnalyzeNote = async () => {
+      if(!noteInput.trim()) return;
+      setIsProcessingNote(true);
+      
+      try {
+          // AI Analysis for Meta Data
+          const analysisPrompt = `
+            Analyze this note content (which may contain Chinese and English). 
+            1. Generate a concise title (max 6 words).
+            2. Extract 3-5 relevant tags based on keywords, entities, and themes. Mix EN/ZH tags if appropriate.
+            3. Return strictly JSON: { "title": "...", "tags": ["..."] }
+          `;
+          
+          const response = await client.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: [{ role: 'user', parts: [{ text: analysisPrompt }, { text: noteInput }] }],
+              config: { responseMimeType: 'application/json' }
+          });
+
+          const result = JSON.parse(response.text || '{}');
+          setGeneratedTitle(result.title || `Note ${new Date().toLocaleDateString()}`);
+          setGeneratedTags(result.tags || ['QuickNote']);
+          setShowMetaReview(true);
+          addToast('success', isZh ? 'AI 已生成建議標籤，請確認。' : 'AI tags generated. Please review.', 'Tagging Agent');
+      } catch (e) {
+          // Fallback if AI fails
+          setGeneratedTitle(`Note ${new Date().toLocaleDateString()}`);
+          setGeneratedTags(['Manual']);
+          setShowMetaReview(true);
+          addToast('warning', 'AI Analysis failed, manual review required.', 'Universal Notes');
+      } finally {
+          setIsProcessingNote(false);
+      }
+  };
+
+  const handleAddTag = () => {
+      if (newTagInput.trim() && !generatedTags.includes(newTagInput.trim())) {
+          setGeneratedTags([...generatedTags, newTagInput.trim()]);
+          setNewTagInput('');
+      }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+      setGeneratedTags(generatedTags.filter(t => t !== tagToRemove));
+  };
+
+  const handleFinalSave = () => {
+      addNote(noteInput, generatedTags, generatedTitle);
+      setNoteInput('');
+      setGeneratedTitle('');
+      setGeneratedTags([]);
+      setShowMetaReview(false);
+      addToast('success', isZh ? '筆記已儲存至資料庫' : 'Note saved to database', 'Universal Notes');
+  };
+
+  const handlePushToHub = (note: any) => {
+      saveIntelligence({
+          id: `intel-${Date.now()}`,
+          type: 'report',
+          title: note.title,
+          source: 'Universal Notes',
+          date: new Date().toISOString(),
+          summary: note.content.substring(0, 150) + '...',
+          tags: [...note.tags, 'User Note'],
+          isRead: true
+      });
+      addToast('success', isZh ? '已同步至知識中樞' : 'Synced to Knowledge Hub', 'Memory Core');
+  };
+
+  const handleAskNotes = async () => {
+      if (!searchQuery.trim()) return;
+      setIsProcessingNote(true);
+      
+      // RAG-lite: Contextualize with filtered notes
+      const context = filteredNotes.map(n => `Title: ${n.title}\nContent: ${n.content}\nTags: ${n.tags.join(', ')}`).join('\n---\n');
+      
+      try {
+          const response = await client.models.generateContent({
+              model: 'gemini-2.5-flash',
+              contents: `
+                Context from user notes:
+                ${context}
+                
+                User Question: ${searchQuery}
+                
+                Answer the question based ONLY on the notes provided. If the answer is not in the notes, say so.
+              `
+          });
+          setAiAnswer(response.text || "No insights found.");
+      } catch (e) {
+          setAiAnswer("AI Service Error.");
+      } finally {
+          setIsProcessingNote(false);
+      }
+  };
+
+  const handleLinkClick = (title: string) => {
+      setSearchQuery(title);
+      addToast('info', isZh ? `已篩選連結筆記：${title}` : `Filtering linked note: ${title}`, 'Knowledge Graph');
+  };
+
+  // Filter Notes
+  const filteredNotes = useMemo(() => {
+      return universalNotes.filter(n => 
+          n.content.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          n.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+  }, [universalNotes, searchQuery]);
 
   // --- Todo Logic ---
   const [todoInput, setTodoInput] = useState('');
@@ -126,8 +271,29 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
       setTodoInput('');
   };
 
+  const renderNoteContentWithLinks = (content: string) => {
+      // Basic splitting for [[Link]] syntax
+      const parts = content.split(/(\[\[.*?\]\])/g);
+      return parts.map((part, index) => {
+          if (part.startsWith('[[') && part.endsWith(']]')) {
+              const linkTarget = part.slice(2, -2);
+              return (
+                  <button 
+                    key={index} 
+                    onClick={(e) => { e.stopPropagation(); handleLinkClick(linkTarget); }}
+                    className="text-celestial-purple hover:underline font-bold inline-flex items-center gap-0.5 mx-0.5"
+                  >
+                      <Link2 className="w-3 h-3" />
+                      {linkTarget}
+                  </button>
+              );
+          }
+          return <span key={index}>{part}</span>;
+      });
+  };
+
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] -mt-4 -mx-4 md:-mx-6 w-[calc(100%+2rem)] md:w-[calc(100%+3rem)] bg-[#020617] relative animate-fade-in">
+    <div className="flex flex-col h-[calc(100vh-5rem)] w-full bg-[#020617] rounded-3xl border border-white/10 relative overflow-hidden animate-fade-in shadow-2xl">
         
         {/* 1. Universal Command Bar (Header) */}
         <div className="shrink-0 h-14 bg-slate-900/80 border-b border-white/10 backdrop-blur-xl flex items-center px-4 md:px-6 gap-4 z-20 shadow-lg">
@@ -141,8 +307,8 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
             {/* Scrollable Tabs */}
             <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar items-center mask-linear-fade pr-4">
                 {[
-                    { id: 'agent', label: isZh ? '代理' : 'Agent', icon: Bot },
                     { id: 'notes', label: isZh ? '筆記' : 'Notes', icon: PenTool },
+                    { id: 'agent', label: isZh ? '代理' : 'Agent', icon: Bot },
                     { id: 'journal', label: isZh ? '日誌' : 'Log', icon: Book },
                     { id: 'calendar', label: isZh ? '日曆' : 'Cal', icon: CalendarIcon },
                     { id: 'todo', label: isZh ? '待辦' : 'Todo', icon: CheckSquare },
@@ -168,16 +334,9 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
         </div>
 
         {/* 2. Main Content Area (Full Height) */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative bg-slate-950/50">
             <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-4 md:p-6 pb-24">
                 
-                {/* === UNIVERSAL AGENT ZONE === */}
-                {activeTab === 'agent' && (
-                    <div className="h-full">
-                        <UniversalAgentZone language={language} />
-                    </div>
-                )}
-
                 {/* === UNIVERSAL NOTES === */}
                 {activeTab === 'notes' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full min-h-[600px]">
@@ -188,59 +347,208 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
                                 {isZh ? '萬能筆記編輯器' : 'Universal Note Editor'}
                             </h3>
                             
-                            <SmartEditToolbar onAction={handleSmartEdit} disabled={isProcessingNote} isZh={isZh} />
+                            {/* Toolbar with Scrollbar */}
+                            <SmartEditToolbar 
+                                onAction={handleSmartEdit} 
+                                onLink={handleInsertLink}
+                                disabled={isProcessingNote || showMetaReview} 
+                                isZh={isZh} 
+                            />
 
                             <textarea 
                                 value={noteInput}
                                 onChange={(e) => setNoteInput(e.target.value)}
-                                placeholder={isZh ? "輸入想法、數據，或使用上方 AI 工具進行續寫、摘要、美化..." : "Capture thoughts, or use AI tools above to expand, summarize..."}
+                                placeholder={isZh ? "輸入想法，使用 [[ ]] 建立連結，或使用工具列..." : "Capture thoughts, link with [[ ]], or use AI tools..."}
                                 className="flex-1 bg-slate-950/50 border border-white/10 rounded-xl p-4 text-white resize-none focus:outline-none focus:border-celestial-purple/50 mb-4 font-mono text-sm leading-relaxed"
-                                disabled={isProcessingNote}
+                                disabled={isProcessingNote || showMetaReview}
                             />
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs text-gray-500">{isZh ? '支援 Markdown & 雙向連結 [[ ]]' : 'Markdown & Bi-link [[ ]] Supported'}</span>
-                                <button 
-                                    onClick={handleSaveNote}
-                                    disabled={isProcessingNote}
-                                    className="px-6 py-2 bg-celestial-purple text-white font-bold rounded-xl hover:bg-purple-600 transition-all flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    {isProcessingNote ? <Sparkles className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4" />} 
-                                    {isZh ? '儲存' : 'Save'}
-                                </button>
-                            </div>
+                            
+                            {/* AI Tagging Review Area */}
+                            {showMetaReview ? (
+                                <div className="bg-celestial-purple/10 border border-celestial-purple/30 rounded-xl p-4 animate-fade-in mb-2">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="text-xs font-bold text-celestial-purple uppercase flex items-center gap-2">
+                                            <Sparkles className="w-3 h-3" />
+                                            {isZh ? 'AI 建議標籤與標題' : 'AI Suggested Meta'}
+                                        </h4>
+                                        <button onClick={() => setShowMetaReview(false)} className="text-gray-400 hover:text-white">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-gray-400 uppercase font-bold">{isZh ? '標題' : 'Title'}</label>
+                                            <input 
+                                                type="text" 
+                                                value={generatedTitle}
+                                                onChange={(e) => setGeneratedTitle(e.target.value)}
+                                                className="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-celestial-purple/50"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-gray-400 uppercase font-bold">{isZh ? '標籤 (Tags)' : 'Tags'}</label>
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                {generatedTags.map((tag, idx) => (
+                                                    <div key={idx} className="flex items-center gap-1 bg-celestial-purple/20 text-celestial-purple px-2 py-1 rounded text-xs border border-celestial-purple/30">
+                                                        <span>#{tag}</span>
+                                                        <button onClick={() => handleRemoveTag(tag)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                                                    </div>
+                                                ))}
+                                                <div className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded text-xs border border-white/10">
+                                                    <Plus className="w-3 h-3 text-gray-500" />
+                                                    <input 
+                                                        type="text" 
+                                                        value={newTagInput}
+                                                        onChange={(e) => setNewTagInput(e.target.value)}
+                                                        onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                                                        placeholder={isZh ? "新增標籤..." : "Add tag..."}
+                                                        className="bg-transparent outline-none text-white w-20"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-white/10">
+                                        <button 
+                                            onClick={() => setShowMetaReview(false)}
+                                            className="px-4 py-2 text-xs text-gray-400 hover:text-white transition-colors"
+                                        >
+                                            {isZh ? '取消' : 'Cancel'}
+                                        </button>
+                                        <button 
+                                            onClick={handleFinalSave}
+                                            className="px-6 py-2 bg-celestial-purple text-white font-bold rounded-xl hover:bg-purple-600 transition-all flex items-center gap-2 text-xs shadow-lg"
+                                        >
+                                            <Save className="w-3.5 h-3.5" />
+                                            {isZh ? '確認並儲存' : 'Confirm & Save'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500 flex items-center gap-2">
+                                        <Hash className="w-3 h-3" />
+                                        {isZh ? '點擊按鈕進行 AI 智能標註' : 'Click to Auto-Tag with AI'}
+                                    </span>
+                                    <button 
+                                        onClick={handleAnalyzeNote}
+                                        disabled={isProcessingNote || !noteInput.trim()}
+                                        className="px-6 py-2 bg-celestial-purple text-white font-bold rounded-xl hover:bg-purple-600 transition-all flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-purple-900/20"
+                                    >
+                                        {isProcessingNote ? <Sparkles className="w-4 h-4 animate-spin"/> : <Tag className="w-4 h-4" />} 
+                                        {isZh ? '分析並儲存' : 'Analyze & Save'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {/* List Area */}
+                        {/* List Area & AI Search */}
                         <div className="glass-panel p-6 rounded-2xl border border-white/10 h-full flex flex-col bg-slate-900/50">
                             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-emerald-400" />
-                                {isZh ? '最近筆記' : 'Recent Notes'}
+                                {isZh ? '筆記庫' : 'Knowledge Base'}
                             </h3>
+                            
+                            {/* AI Search Bar */}
+                            <div className="flex gap-2 mb-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                    <input 
+                                        type="text" 
+                                        value={searchQuery}
+                                        onChange={(e) => { setSearchQuery(e.target.value); setAiAnswer(null); }}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAskNotes()}
+                                        placeholder={isZh ? "搜尋筆記或向 AI 提問..." : "Search notes or ask AI..."}
+                                        className="w-full bg-black/30 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-celestial-gold/50"
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleAskNotes} 
+                                    disabled={isProcessingNote || !searchQuery}
+                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-celestial-gold border border-white/10 disabled:opacity-50"
+                                    title="Ask AI"
+                                >
+                                    <MessageCircle className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* AI Answer Box */}
+                            {aiAnswer && (
+                                <div className="mb-4 p-3 bg-celestial-gold/10 border border-celestial-gold/20 rounded-lg text-xs text-gray-200">
+                                    <div className="flex items-center gap-1 font-bold text-celestial-gold mb-1">
+                                        <Sparkles className="w-3 h-3" /> AI Insight:
+                                    </div>
+                                    {aiAnswer}
+                                </div>
+                            )}
+
                             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
-                                {universalNotes.length === 0 && (
+                                {filteredNotes.length === 0 && (
                                     <div className="text-center text-gray-500 mt-10">
-                                        {isZh ? '尚無筆記' : 'No notes yet.'}
+                                        {isZh ? '無相關筆記' : 'No notes found.'}
                                     </div>
                                 )}
-                                {universalNotes.map(note => (
+                                {filteredNotes.map(note => (
                                     <div key={note.id} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-all group relative">
-                                        <div className="text-sm font-bold text-white mb-1 truncate">{note.title}</div>
-                                        <div className="text-xs text-gray-400 line-clamp-2 font-mono">{note.content}</div>
-                                        <div className="mt-2 flex gap-2">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <div className="text-sm font-bold text-white truncate max-w-[80%]">{note.title}</div>
+                                            <button 
+                                                onClick={() => handlePushToHub(note)}
+                                                className="text-gray-500 hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                                title={isZh ? "上傳至知識中樞" : "Upload to Knowledge Hub"}
+                                            >
+                                                <UploadCloud className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                        <div className="text-xs text-gray-400 line-clamp-3 font-mono mb-2 leading-relaxed">
+                                            {renderNoteContentWithLinks(note.content)}
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mb-2">
                                             {note.tags.map(tag => (
                                                 <span key={tag} className="text-[10px] px-2 py-0.5 bg-black/30 rounded text-gray-400 border border-white/5">#{tag}</span>
                                             ))}
                                         </div>
+                                        
+                                        {/* Backlinks Section */}
+                                        {note.backlinks && note.backlinks.length > 0 && (
+                                            <div className="mt-2 pt-2 border-t border-white/5 text-[10px] text-gray-500 flex flex-wrap gap-1 items-center">
+                                                <Link2 className="w-3 h-3 text-celestial-purple" />
+                                                <span>Linked from:</span>
+                                                {note.backlinks.map(bid => {
+                                                    // Lookup backlink title (simplified lookup since we don't have direct access to all notes inside map efficiently without passing state down or complex lookup, but we have filteredNotes or can use a lookup helper. For now, let's assume we can find it in universalNotes)
+                                                    const sourceNote = universalNotes.find(n => n.id === bid);
+                                                    return sourceNote ? (
+                                                        <span 
+                                                            key={bid} 
+                                                            onClick={(e) => { e.stopPropagation(); handleLinkClick(sourceNote.title); }}
+                                                            className="text-celestial-purple hover:underline cursor-pointer bg-celestial-purple/10 px-1 rounded"
+                                                        >
+                                                            {sourceNote.title}
+                                                        </span>
+                                                    ) : null;
+                                                })}
+                                            </div>
+                                        )}
+
                                         <button 
                                             onClick={() => deleteNote(note.id)}
-                                            className="absolute top-4 right-4 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute bottom-3 right-3 text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                                         >
-                                            &times;
+                                            <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 ))}
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* === UNIVERSAL AGENT ZONE === */}
+                {activeTab === 'agent' && (
+                    <div className="h-full">
+                        <UniversalAgentZone language={language} />
                     </div>
                 )}
 

@@ -101,7 +101,7 @@ const ChapterAgent = withUniversalProxy(ChapterNodeBase);
 // ----------------------------------------------------------------------
 
 export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
-  const { companyName, esgScores, totalScore, carbonCredits, budget, tier, carbonData, files } = useCompany();
+  const { companyName, esgScores, totalScore, carbonCredits, budget, tier, carbonData, files, auditLogs } = useCompany();
   const { addToast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'generator' | 'archive'>('generator');
@@ -161,13 +161,21 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
     if (!activeSection) return;
     setIsGenerating(true);
     try {
+      // Calculate Derived Metrics for Context
+      const totalEmissions = carbonData.scope1 + carbonData.scope2 + carbonData.scope3;
+      
       const contextData = {
         company: companyName, scores: esgScores, overall_esg_score: totalScore,
         carbon_credits_inventory: carbonCredits, financial_budget_remaining: budget,
         reporting_year: new Date().getFullYear(),
         // INJECTED DATA
         linked_carbon_data: carbonData,
-        compliance_documents: complianceFiles.map(f => f.name)
+        compliance_documents: complianceFiles.map(f => f.name),
+        audit_history_summary: auditLogs.slice(0, 3).map(l => `${l.action} by ${l.user}`),
+        derived_metrics: {
+            total_emissions: totalEmissions,
+            scope3_percentage: totalEmissions > 0 ? ((carbonData.scope3 / totalEmissions) * 100).toFixed(1) + '%' : '0%'
+        }
       };
       
       const content = await generateReportChapter(activeSection.title, activeSection.template || "", activeSection.example || "", contextData, language);
@@ -188,8 +196,22 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
       setAuditResult(null);
       addToast('info', isZh ? '正在進行合規性稽核 (GRI Standards)...' : 'Auditing against GRI Standards...', 'AI Auditor');
       
+      const contextData = {
+          company: companyName,
+          scores: esgScores,
+          carbonData: carbonData, // Important for consistency check
+          budget: budget,
+          policies: ["Zero Greenwashing", "SBTi Alignment", "Transparency First"]
+      };
+
       try {
-          const result = await auditReportContent(activeSection.title, content, activeSection.griStandards || 'GRI Universal', language);
+          const result = await auditReportContent(
+              activeSection.title, 
+              content, 
+              activeSection.griStandards || 'GRI Universal', 
+              contextData, // New Arg
+              language
+          );
           setAuditResult(result);
       } catch (e) {
           addToast('error', 'Audit failed', 'Error');
@@ -211,10 +233,10 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
           const masterContext = {
               company: companyName,
               scores: esgScores,
-              carbon: {
-                  s1: carbonData.scope1,
-                  s2: carbonData.scope2,
-                  s3: carbonData.scope3,
+              linked_carbon_data: {
+                  scope1: carbonData.scope1,
+                  scope2: carbonData.scope2,
+                  scope3: carbonData.scope3,
                   total: carbonData.scope1 + carbonData.scope2 + carbonData.scope3
               },
               finance: {
@@ -223,19 +245,12 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
               },
               compliance: complianceFiles.length > 0 ? "Verified" : "Pending",
               compliance_docs: complianceFiles.map(f => f.name),
-              year: new Date().getFullYear()
+              year: new Date().getFullYear(),
+              risks: {
+                  strategic: "Analyzed in StrategyHub",
+                  operational: "Monitored via IoT"
+              }
           };
-
-          const prompt = `Generate an "ESGss x JunAiKey Enterprise Master Report" (Executive Summary).
-          Format: Markdown. 
-          Sections: 
-          1. Executive Summary (Overall Score & Status)
-          2. Environmental Performance (Carbon Data Analysis)
-          3. Compliance Status (Based on linked documents)
-          4. Strategic Outlook (Based on scores)
-          5. CEO Key Message.
-          Tone: Professional, Visionary, High-Level.
-          Data: ${JSON.stringify(masterContext)}`;
 
           // Reusing generateReportChapter logic but with master context
           const content = await generateReportChapter("Master Executive Report", "Full Report", "Professional", masterContext, language);
