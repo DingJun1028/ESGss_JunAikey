@@ -415,7 +415,7 @@ export const TRANSLATIONS = {
   },
   'zh-TW': {
     nav: {
-      myEsg: '我的 ESG (My ESG)',
+      myEsg: '我的 ESG',
       userJournal: '使用日誌 (Journal)',
       restoration: '萬能修復 (Crystals)',
       cardGameArena: '善向紀元 (Card Game)',
@@ -451,7 +451,7 @@ export const TRANSLATIONS = {
       cardGame: '萬能核心修復', // Legacy
     },
     modules: {
-      myEsg: { title: '我的 ESG (My ESG)', desc: '您的個人化永續戰情室與成長中心。' },
+      myEsg: { title: '我的 ESG', desc: '您的個人化永續戰情室與成長中心。' },
       strategy: { title: '策略中樞 (Strategy Hub)', desc: '風險熱點圖與利害關係人議合分析 (Risk heatmaps & stakeholder engagement)。' },
       talent: { title: '人才護照 (Talent Passport)', desc: '區塊鏈驗證證書與技能追蹤 (Blockchain-verified certificates)。' },
       carbon: { title: '碳資產管理 (Carbon Asset Mgmt)', desc: 'SBTi 路徑與內部碳定價模擬 (SBTi paths & Carbon Pricing)。' },
@@ -493,7 +493,7 @@ export const TRANSLATIONS = {
       subtitle: '提升團隊 ESG 技能 (Upskill your team with curated ESG learning paths)',
       levelInfo: '等級 12 • 4 徽章',
       progress: '進度 (Progress)',
-      start: '開始 (Start)',
+      start: 'Start',
       resume: '繼續 (Resume)'
     },
     diagnostics: {

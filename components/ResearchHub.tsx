@@ -10,6 +10,7 @@ import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy
 import { universalIntelligence } from '../services/evolutionEngine';
 import { useCompany } from './providers/CompanyProvider';
 import { UniversalPageHeader } from './UniversalPageHeader';
+import { marked } from 'marked';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -757,6 +758,11 @@ export const ResearchHub: React.FC<ResearchHubProps> = ({ language }) => {
                                       <Eye className="w-2 h-2" /> {file.confidence}% Confidence
                                   </span>
                               </div>
+                              {file.aiSummary && (
+                                  <div className="mt-3 p-3 bg-slate-950/50 rounded-lg border border-white/5 text-xs text-gray-400 leading-relaxed">
+                                      <div dangerouslySetInnerHTML={{ __html: marked.parse(file.aiSummary) as string }} />
+                                  </div>
+                              )}
                           </div>
                       ))}
                   </div>

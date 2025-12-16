@@ -18,7 +18,10 @@
     "marked": "^15.0.0",
     "html2pdf.js": "^0.10.1",
     "react-virtuoso": "^4.6.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "react-native": "^0.83.0",
+    "react-native-paper": "^5.14.5",
+    "react-native-gesture-handler": "^2.29.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

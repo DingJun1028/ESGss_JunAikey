@@ -27,6 +27,7 @@ const SmartEditToolbar: React.FC<{
     isZh: boolean 
 }> = ({ onAction, onLink, disabled, isZh }) => {
     const tools = [
+        { id: 'format', icon: Layout, label: isZh ? '自動排版' : 'Auto Format', color: 'text-indigo-400' },
         { id: 'expand', icon: Maximize2, label: isZh ? '擴寫' : 'Expand', color: 'text-purple-400' },
         { id: 'summarize', icon: FileText, label: isZh ? '摘要' : 'Summarize', color: 'text-blue-400' },
         { id: 'condense', icon: Minimize2, label: isZh ? '精簡' : 'Condense', color: 'text-orange-400' },
@@ -73,7 +74,7 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
   const { universalNotes, addNote, deleteNote, todos, addTodo, toggleTodo, deleteTodo, journal, saveIntelligence } = useCompany();
   
   // Expanded Tabs
-  const [activeTab, setActiveTab] = useState<'agent' | 'notes' | 'journal' | 'calendar' | 'todo' | 'crystal' | 'thinktank' | 'matrix'>('notes');
+  const [activeTab, setActiveTab] = useState<'universal_agent' | 'notes' | 'journal' | 'calendar' | 'todo' | 'thinktank' | 'matrix'>('notes');
   const [noteInput, setNoteInput] = useState('');
   const [isProcessingNote, setIsProcessingNote] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +103,9 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
           let systemInstruction = "You are an expert editor. Output ONLY the processed text without conversational filler.";
 
           switch (action) {
+              case 'format':
+                  prompt = "Analyze the structure of the following text and reformat it for maximum readability. Use Markdown features like headers (#, ##), bullet points (-), bold (**text**) for key terms, and code blocks (```) where appropriate. Organize loosely related points into logical sections. Do not change the original meaning:";
+                  break;
               case 'expand': 
                   prompt = "Expand upon the following text, adding relevant details, depth, and context to make it more comprehensive:"; 
                   break;
@@ -132,7 +136,7 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
 
           const response = await client.models.generateContent({
               model: 'gemini-2.5-flash',
-              contents: `${prompt}\n\n"${noteInput}"`,
+              contents: [{ role: 'user', parts: [{ text: `${prompt}\n\n"${noteInput}"` }] }],
               config: { systemInstruction }
           });
 
@@ -159,10 +163,16 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
       try {
           // AI Analysis for Meta Data
           const analysisPrompt = `
-            Analyze this note content (which may contain Chinese and English). 
-            1. Generate a concise title (max 6 words).
-            2. Extract 3-5 relevant tags based on keywords, entities, and themes. Mix EN/ZH tags if appropriate.
-            3. Return strictly JSON: { "title": "...", "tags": ["..."] }
+            Act as an intelligent knowledge organizer. Analyze the provided note content.
+            The content may contain Traditional Chinese (zh-TW) and English.
+            
+            Tasks:
+            1. Generate a concise, descriptive title (max 10 words).
+            2. Extract 3-5 relevant tags based on keywords, entities, and themes. 
+               - If the content discusses specific projects, people, or technologies, tag them.
+               - Include both Chinese and English tags if the content is bilingual or if the term is commonly known in English (e.g., 'ESG', 'AI').
+            
+            Return strictly JSON: { "title": "string", "tags": ["string", "string"] }
           `;
           
           const response = await client.models.generateContent({
@@ -231,14 +241,14 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
       try {
           const response = await client.models.generateContent({
               model: 'gemini-2.5-flash',
-              contents: `
+              contents: [{ role: 'user', parts: [{ text: `
                 Context from user notes:
                 ${context}
                 
                 User Question: ${searchQuery}
                 
                 Answer the question based ONLY on the notes provided. If the answer is not in the notes, say so.
-              `
+              ` }] }]
           });
           setAiAnswer(response.text || "No insights found.");
       } catch (e) {
@@ -308,11 +318,10 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
             <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar items-center mask-linear-fade pr-4">
                 {[
                     { id: 'notes', label: isZh ? '筆記' : 'Notes', icon: PenTool },
-                    { id: 'agent', label: isZh ? '代理' : 'Agent', icon: Bot },
+                    { id: 'universal_agent', label: isZh ? '萬能代理' : 'Universal Agent', icon: Bot },
                     { id: 'journal', label: isZh ? '日誌' : 'Log', icon: Book },
                     { id: 'calendar', label: isZh ? '日曆' : 'Cal', icon: CalendarIcon },
                     { id: 'todo', label: isZh ? '待辦' : 'Todo', icon: CheckSquare },
-                    { id: 'crystal', label: isZh ? '水晶' : 'Crystal', icon: Hexagon },
                     { id: 'thinktank', label: isZh ? '智庫' : 'SDR', icon: Database },
                     { id: 'matrix', label: isZh ? '矩陣' : 'Matrix', icon: Grid },
                 ].map(tab => (
@@ -545,8 +554,8 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
                     </div>
                 )}
 
-                {/* === UNIVERSAL AGENT ZONE === */}
-                {activeTab === 'agent' && (
+                {/* === UNIVERSAL AGENT ZONE (Consolidated) === */}
+                {activeTab === 'universal_agent' && (
                     <div className="h-full">
                         <UniversalAgentZone language={language} />
                     </div>
@@ -625,13 +634,6 @@ export const UniversalTools: React.FC<UniversalToolsProps> = ({ language }) => {
                                 </div>
                             ))}
                         </div>
-                    </div>
-                )}
-
-                {/* === UNIVERSAL CRYSTAL === */}
-                {activeTab === 'crystal' && (
-                    <div className="h-full overflow-y-auto custom-scrollbar">
-                        <UniversalRestoration language={language} />
                     </div>
                 )}
 

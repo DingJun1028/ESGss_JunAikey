@@ -90,7 +90,7 @@ export const MyEsg: React.FC<MyEsgProps> = ({ language, onNavigate }) => {
   const isZh = language === 'zh-TW';
 
   const pageData = {
-      title: { zh: '我的 ESG (My ESG)', en: 'My ESG Cockpit' },
+      title: { zh: '我的 ESG', en: 'My ESG Cockpit' },
       desc: { zh: '您的個人化永續戰情室與成長中心', en: 'Your personalized sustainability command center.' },
       tag: { zh: '個人核心', en: 'Personal Core' }
   };

@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Language, View, CustomAgentProfile } from '../types';
-import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout, TrendingUp, Lock, Unlock, Database, ThumbsUp, XCircle } from 'lucide-react';
+import { Sparkles, BrainCircuit, Activity, Zap, Grid, Terminal, MessageSquare, ChevronRight, Play, Pause, RefreshCw, Cpu, Shield, Command, Sun, Search, ArrowRight, User, Bot, Layers, Plus, Save, Trash2, Heart, Layout, TrendingUp, Lock, Unlock, Database, ThumbsUp, XCircle, Hexagon } from 'lucide-react';
 import { UniversalPageHeader } from './UniversalPageHeader';
 import { useUniversalAgent, AgentMode } from '../contexts/UniversalAgentContext';
 import { useCompany } from './providers/CompanyProvider';
 import { OmniEsgCell } from './OmniEsgCell';
 import { useToast } from '../contexts/ToastContext';
+import { UniversalRestoration } from './Gamification';
 
 interface UniversalAgentZoneProps {
   language: Language;
@@ -44,7 +45,7 @@ const GenesisArchive: React.FC<{ isZh: boolean }> = ({ isZh }) => (
 );
 
 // --- Agent Nursery View (Leveling System) ---
-const AgentNurseryView: React.FC = () => {
+const AgentSkillsView: React.FC = () => {
     const { agentLevel, agentXp, nextLevelXp, agentSkills, feedAgent, trainSkill } = useUniversalAgent();
     const progress = (agentXp / nextLevelXp) * 100;
 
@@ -183,9 +184,6 @@ const AgentNurseryView: React.FC = () => {
         </div>
     );
 };
-
-// ... (Rest of AgentFactoryView, CompanionView, CaptainView, PhantomView remain the same) ...
-// Including them here to ensure file completeness
 
 // --- Agent Factory View (Custom Creator) ---
 const AgentFactoryView: React.FC = () => {
@@ -444,7 +442,7 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
   const { addToast } = useToast();
   const { agentMode, switchMode, isProcessing, processUniversalInput, activeAgentProfile, suggestedMode, confirmSuggestion, dismissSuggestion } = useUniversalAgent(); 
   const [input, setInput] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'nursery' | 'factory'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'skills' | 'factory' | 'restoration'>('dashboard');
 
   const pageData = {
       title: { zh: '萬能代理千面化身', en: 'Universal Agent Avatar' },
@@ -492,8 +490,9 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
             <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/10">
                 {[
                     { id: 'dashboard', label: isZh ? '代理儀表板' : 'Agent Dashboard', icon: Layout },
-                    { id: 'nursery', label: isZh ? 'AI 培育室' : 'AI Nursery', icon: Heart },
+                    { id: 'skills', label: isZh ? 'AI 技能樹' : 'Agent Skills', icon: BrainCircuit },
                     { id: 'factory', label: isZh ? '自訂代理' : 'Agent Factory', icon: Plus },
+                    { id: 'restoration', label: isZh ? '核心修復' : 'Core Restoration', icon: Hexagon },
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -587,8 +586,9 @@ export const UniversalAgentZone: React.FC<UniversalAgentZoneProps> = ({ language
             </>
         )}
 
-        {activeTab === 'nursery' && <AgentNurseryView />}
+        {activeTab === 'skills' && <AgentSkillsView />}
         {activeTab === 'factory' && <AgentFactoryView />}
+        {activeTab === 'restoration' && <UniversalRestoration language={language} />}
     </div>
   );
 };

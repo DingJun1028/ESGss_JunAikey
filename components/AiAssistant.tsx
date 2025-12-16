@@ -159,7 +159,8 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
   useEffect(() => {
       if (typeof window !== 'undefined') {
-          setWindowPosition({ x: window.innerWidth - 400, y: window.innerHeight - 600 });
+          // Align top with logo line (approx 64px header + padding = ~80px)
+          setWindowPosition({ x: window.innerWidth - 400, y: 80 });
           setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 140 });
       }
   }, []);
@@ -189,7 +190,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       
       // Boundaries
       newX = Math.max(0, Math.min(window.innerWidth - width, newX));
-      newY = Math.max(80, Math.min(window.innerHeight - height - 80, newY)); // Ensure above mobile nav
+      newY = Math.max(20, Math.min(window.innerHeight - height - 80, newY)); // Ensure within screen
       
       if (dragTarget === 'button') setPosition({ x: newX, y: newY });
       else setWindowPosition({ x: newX, y: newY });
@@ -555,9 +556,11 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         onTouchMove={handleDragMove}
         onMouseUp={handleDragEnd}
         onTouchEnd={handleDragEnd}
-        className={`fixed z-[9999] w-full md:w-96 h-full md:h-[650px] md:max-h-[calc(100vh-100px)] backdrop-blur-xl border-2 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in ring-1 ring-white/10 transition-all duration-500 touch-none
+        className={`fixed z-[9999] w-full md:w-96 
+            h-[85vh] md:h-[calc(100vh-6rem)] 
+            backdrop-blur-xl border-2 rounded-t-3xl md:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in ring-1 ring-white/10 transition-all duration-500 touch-none
             ${theme.bg} ${theme.border}
-            ${typeof window !== 'undefined' && window.innerWidth >= 768 ? '' : 'bottom-0 right-0 rounded-b-none'}
+            ${typeof window !== 'undefined' && window.innerWidth >= 768 ? '' : 'bottom-0 right-0'}
         `}
         style={typeof window !== 'undefined' && window.innerWidth >= 768 ? { left: windowPosition.x, top: windowPosition.y } : {}}
     >

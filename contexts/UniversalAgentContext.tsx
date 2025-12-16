@@ -193,9 +193,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
     };
 
     // Keep trainSkill for manual spending of Global Agent XP to boost specific skills
-    // In this revised logic, we assume "training" means converting generic resources/effort into specific skill XP
     const trainSkill = (skillId: string) => {
-        // Simplified: Just award XP for demo, usually this might cost "Energy" or "Credits"
         awardSkillXp(skillId, 50); 
     };
 
@@ -250,6 +248,8 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
             addToast('warning', 'Entering System Root...', 'Phantom Protocol');
         } else if (mode === 'captain') {
             addToast('info', 'Strategic Dashboard Loaded.', 'Captain Deck');
+        } else if (mode === 'custom') {
+            addToast('success', `Agent [${activeAgentProfile.name}] Online.`, 'Custom Agent');
         } else {
             addToast('success', 'Companion Interface Ready.', 'Universal Agent');
         }
@@ -423,9 +423,9 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
 
         // AI-Driven Suggestions (Enhanced Logic)
         if (!isExplicit) {
-             const phantomKeywords = ['monitor', 'system', 'log', 'kernel', 'deploy', 'status', 'debug', 'terminal', 'console', 'cli', 'trace', 'init', 'sudo'];
-             const captainKeywords = ['analyze', 'report', 'strategy', 'dashboard', 'risk', 'finance', 'predict', 'forecast', 'kpi', 'metric', 'overview', 'summary', 'growth'];
-             const companionKeywords = ['hello', 'hi', 'explain', 'write', 'draft', 'suggest', 'idea', 'thank', 'story', 'tell', 'what', 'how', 'why'];
+             const phantomKeywords = ['monitor', 'system', 'log', 'kernel', 'deploy', 'status', 'debug', 'terminal', 'console', 'cli', 'trace', 'init', 'sudo', 'config'];
+             const captainKeywords = ['analyze', 'report', 'strategy', 'dashboard', 'risk', 'finance', 'predict', 'forecast', 'kpi', 'metric', 'overview', 'summary', 'growth', 'chart'];
+             const companionKeywords = ['hello', 'hi', 'explain', 'write', 'draft', 'suggest', 'idea', 'thank', 'story', 'tell', 'what', 'how', 'why', 'help'];
 
              const phantomScore = phantomKeywords.filter(k => lower.includes(k)).length;
              const captainScore = captainKeywords.filter(k => lower.includes(k)).length;
@@ -440,7 +440,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
              }
         }
 
-        // Simulate AI Processing Delay
+        // Simulate AI Processing Delay with "Thinking" effect
         const delay = isExplicit ? 600 : 1200;
         await new Promise(r => setTimeout(r, delay));
 

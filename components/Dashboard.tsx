@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { getMockMetrics, TRANSLATIONS } from '../constants';
-import { Wind, Activity, FileText, Zap, BrainCircuit, LayoutTemplate, Plus, Trash2, Grid, X, Globe, Map as MapIcon, ScanLine, FileCheck, Triangle, Sparkles, Sun, Loader2, ArrowUpRight, LayoutDashboard, Download } from 'lucide-react';
+import { Wind, Activity, FileText, Zap, BrainCircuit, LayoutTemplate, Plus, Trash2, Grid, X, Globe, Map as MapIcon, ScanLine, FileCheck, Triangle, Sparkles, Sun, Loader2, ArrowUpRight, LayoutDashboard, Download, Palette } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList
 } from 'recharts';
-import { Language, DashboardWidget, WidgetType } from '../types';
+import { Language, DashboardWidget, WidgetType, OmniEsgColor } from '../types';
 import { OmniEsgCell } from './OmniEsgCell';
 import { ChartSkeleton } from './ChartSkeleton';
 import { useToast } from '../contexts/ToastContext';
@@ -19,33 +19,85 @@ interface DashboardProps {
   language: Language;
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900/95 border border-white/10 p-4 rounded-xl shadow-2xl backdrop-blur-xl min-w-[150px]">
+        <p className="text-celestial-gold text-xs font-bold uppercase tracking-wider mb-2">{label}</p>
+        <div className="space-y-2">
+            {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: entry.color, color: entry.color }} />
+                    <span className="text-gray-300 font-medium">{entry.name}</span>
+                </div>
+                <span className="font-bold font-mono text-white">{entry.value.toFixed(1)} <span className="text-[10px] text-gray-500 font-sans">tCO2e</span></span>
+            </div>
+            ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 // ... (Widget Renderers remain same) ...
 const MainChartWidget: React.FC<{ data: any[], onExport: () => void }> = React.memo(({ data, onExport }) => (
   <div style={{ width: '100%', height: 250 }}>
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+      <AreaChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
         <defs>
           <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+            <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
             <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
           </linearGradient>
           <linearGradient id="colorBase" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2}/>
             <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-        <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} dy={10} />
-        <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
-        <Tooltip 
-          contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)' }}
-          itemStyle={{ color: '#e2e8f0', fontSize: '12px' }}
-          cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }}
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+        <XAxis 
+            dataKey="name" 
+            stroke="#64748b" 
+            fontSize={10} 
+            tickLine={false} 
+            axisLine={false} 
+            dy={10}
+            tick={{ fill: '#94a3b8' }}
         />
-        <Area type="monotone" dataKey="value" name="Current" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)">
-          <LabelList dataKey="value" position="top" fill="#10b981" fontSize={10} formatter={(val: number) => val.toFixed(0)} />
+        <YAxis 
+            stroke="#64748b" 
+            fontSize={10} 
+            tickLine={false} 
+            axisLine={false}
+            tick={{ fill: '#94a3b8' }} 
+        />
+        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1, strokeDasharray: '5 5' }} />
+        <Area 
+            type="monotone" 
+            dataKey="value" 
+            name="Emissions" 
+            stroke="#10b981" 
+            strokeWidth={3} 
+            fillOpacity={1} 
+            fill="url(#colorValue)" 
+            animationDuration={2000}
+        >
+            <LabelList dataKey="value" position="top" fill="#10b981" fontSize={10} formatter={(val: number) => val.toFixed(0)} />
         </Area>
-        <Area type="monotone" dataKey="baseline" name="Baseline" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" fillOpacity={1} fill="url(#colorBase)" />
+        <Area 
+            type="monotone" 
+            dataKey="baseline" 
+            name="Baseline" 
+            stroke="#8b5cf6" 
+            strokeWidth={2} 
+            strokeDasharray="5 5" 
+            fillOpacity={1} 
+            fill="url(#colorBase)" 
+            animationDuration={2000}
+            animationBegin={500}
+        />
       </AreaChart>
     </ResponsiveContainer>
   </div>
@@ -107,6 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'executive' | 'global' | 'custom'>('executive');
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [headerColor, setHeaderColor] = useState<OmniEsgColor>('emerald');
 
   const pageData = {
       title: { zh: '企業決策儀表板', en: 'Executive Dashboard' },
@@ -231,16 +284,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ language }) => {
     </>
   );
 
+  const themeButtons = [
+      { id: 'emerald', bg: 'bg-emerald-400' },
+      { id: 'blue', bg: 'bg-blue-400' },
+      { id: 'purple', bg: 'bg-purple-400' },
+      { id: 'gold', bg: 'bg-amber-400' },
+      { id: 'rose', bg: 'bg-rose-400' },
+  ];
+
   return (
     <div className="space-y-4 animate-fade-in relative">
-      <UniversalPageHeader 
-          icon={LayoutDashboard}
-          title={pageData.title}
-          description={pageData.desc}
-          language={language}
-          tag={pageData.tag}
-          accentColor="text-emerald-400"
-      />
+      <div className="relative group/header">
+          {/* Theme Customizer - Visible on Hover */}
+          <div className="absolute top-0 right-0 z-30 flex gap-1.5 opacity-0 group-hover/header:opacity-100 transition-opacity duration-300 bg-slate-900/80 p-2 rounded-full border border-white/10 backdrop-blur-md translate-y-2 translate-x-2">
+              {themeButtons.map((theme) => (
+                  <button
+                      key={theme.id}
+                      onClick={() => setHeaderColor(theme.id as OmniEsgColor)}
+                      className={`w-3 h-3 rounded-full transition-all hover:scale-125 ${
+                          headerColor === theme.id ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'
+                      } ${theme.bg}`}
+                      title={`Theme: ${theme.id}`}
+                  />
+              ))}
+          </div>
+          
+          <UniversalPageHeader 
+              icon={LayoutDashboard}
+              title={pageData.title}
+              description={pageData.desc}
+              language={language}
+              tag={pageData.tag}
+              accentColor={`text-${headerColor === 'gold' ? 'amber' : headerColor}-400`}
+          />
+      </div>
 
       {/* Header & Toggle */}
       <div className="flex flex-col md:flex-row justify-end items-end gap-4 mb-4 -mt-16 relative z-10">

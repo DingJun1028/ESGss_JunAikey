@@ -135,7 +135,7 @@ const CardGameArena: React.FC<{ isZh: boolean }> = ({ isZh }) => {
         <div className="space-y-8 animate-fade-in pb-12">
             <UniversalPageHeader 
                 icon={Swords}
-                title={{ zh: '善向紀元 (Goodwill Era)', en: 'Goodwill Era' }}
+                title={{ zh: '善向紀元', en: 'Goodwill Era' }}
                 description={{ zh: '永續對決與永恆收藏', en: 'Sustainability Duels & Eternal Collection' }}
                 language={isZh ? 'zh-TW' : 'en-US'}
                 tag={{ zh: '遊戲核心', en: 'Game Core' }}
