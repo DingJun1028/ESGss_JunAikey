@@ -1,15 +1,20 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useCompany } from './providers/CompanyProvider';
 import { generateReportChapter, auditReportContent } from '../services/ai-service';
 import { Language, ReportSection, PastReport } from '../types';
 import { REPORT_STRUCTURE } from '../constants';
-import { FileText, Sparkles, Download, Loader2, Save, ChevronRight, BookOpen, ShieldCheck, CheckCircle, Info, Crown, X, FileBarChart, FileCheck, Archive, BarChart2, PieChart } from 'lucide-react';
+import { 
+    FileText, Sparkles, Download, Loader2, Save, ChevronRight, BookOpen, 
+    ShieldCheck, CheckCircle, Info, Crown, X, FileBarChart, FileCheck, 
+    Archive, BarChart2, PieChart, TrendingUp, TrendingDown, Layers, History
+} from 'lucide-react';
 import { marked } from 'marked';
 import { useToast } from '../contexts/ToastContext';
 import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy';
 import { LockedFeature } from './LockedFeature';
 import { SubscriptionModal } from './SubscriptionModal';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import { UniversalPageHeader } from './UniversalPageHeader';
@@ -51,7 +56,7 @@ const MOCK_PAST_REPORTS: PastReport[] = [
 // Agent: Chapter Node (The Scribe)
 // ----------------------------------------------------------------------
 interface ChapterNodeProps extends InjectedProxyProps {
-    section: ReportSection; // Actually a sub-section
+    section: ReportSection; 
     isActive: boolean;
     hasContent: boolean;
     onClick: () => void;
@@ -61,10 +66,8 @@ const ChapterNodeBase: React.FC<ChapterNodeProps> = ({
     section, isActive, hasContent, onClick, 
     adaptiveTraits, trackInteraction, isAgentActive 
 }) => {
-    
-    // Agent Traits
-    const isOptimized = adaptiveTraits?.includes('optimization'); // AI Content Generated
-    const isEvolved = adaptiveTraits?.includes('evolution'); // High Interaction
+    const isOptimized = adaptiveTraits?.includes('optimization');
+    const isEvolved = adaptiveTraits?.includes('evolution');
     
     return (
         <button 
@@ -77,31 +80,21 @@ const ChapterNodeBase: React.FC<ChapterNodeProps> = ({
                 ${hasContent ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-gray-700'}
                 ${isOptimized ? 'animate-pulse scale-125' : ''}
             `} />
-            
             <span className="truncate flex-1">{section.title}</span>
-            
-            {/* Agent Status Icon */}
-            {isAgentActive && (
-                <Sparkles className="w-3 h-3 text-celestial-gold animate-spin-slow" />
-            )}
-            
-            {/* Completion Check */}
-            {hasContent && isEvolved && (
-                <CheckCircle className="w-3 h-3 text-emerald-500 absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-            )}
+            {isAgentActive && <Sparkles className="w-3 h-3 text-celestial-gold animate-spin-slow" />}
+            {hasContent && isEvolved && <CheckCircle className="w-3 h-3 text-emerald-500 absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity" />}
         </button>
     );
 };
 
 const ChapterAgent = withUniversalProxy(ChapterNodeBase);
 
-
 // ----------------------------------------------------------------------
 // Main Component
 // ----------------------------------------------------------------------
 
 export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
-  const { companyName, esgScores, totalScore, carbonCredits, budget, tier, carbonData, files, auditLogs } = useCompany();
+  const { companyName, esgScores, totalScore, carbonData, tier, files } = useCompany();
   const { addToast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'generator' | 'archive'>('generator');
@@ -113,13 +106,11 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   
-  // Master Report State
   const [showMasterReport, setShowMasterReport] = useState(false);
   const [masterReportContent, setMasterReportContent] = useState('');
   const [isGeneratingMaster, setIsGeneratingMaster] = useState(false);
   
-  // Archive State
-  const [selectedReport, setSelectedReport] = useState<PastReport | null>(null);
+  const [selectedReport, setSelectedReport] = useState<PastReport | null>(MOCK_PAST_REPORTS[0]);
 
   const reportRef = useRef<HTMLDivElement>(null);
   const masterReportRef = useRef<HTMLDivElement>(null);
@@ -131,11 +122,9 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
       tag: { zh: '表達核心', en: 'Expression Core' }
   };
 
-  // Compliance Data Retrieval
   const complianceFiles = files.filter(f => f.sourceModule === 'Compliance_Filling');
-  const hasComplianceData = complianceFiles.length > 0;
 
-  const getActiveSectionData = (): ReportSection | undefined => {
+  const activeSection = useMemo(() => {
     for (const chapter of REPORT_STRUCTURE) {
         if (chapter.id === activeSectionId) return chapter;
         if (chapter.subSections) {
@@ -144,40 +133,36 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
         }
     }
     return undefined;
-  };
+  }, [activeSectionId]);
   
-  const getParentChapter = (subId: string): ReportSection | undefined => {
-      return REPORT_STRUCTURE.find(c => c.subSections?.some(s => s.id === subId));
-  };
+  const parentChapter = useMemo(() => {
+      return REPORT_STRUCTURE.find(c => c.subSections?.some(s => s.id === activeSectionId));
+  }, [activeSectionId]);
 
-  const activeSection = getActiveSectionData();
-  const parentChapter = activeSectionId ? getParentChapter(activeSectionId) : undefined;
+  const trendData = useMemo(() => {
+      return [...MOCK_PAST_REPORTS].reverse().map(r => ({
+          year: r.year,
+          emissions: r.metrics.scope1 + r.metrics.scope2,
+          intensity: ((r.metrics.scope1 + r.metrics.scope2) / (r.metrics.energyConsumption / 1000)).toFixed(2)
+      }));
+  }, []);
 
   const handleGenerateSection = async () => {
-    if (tier === 'Free') {
-        setShowSubModal(true);
-        return;
-    }
+    if (tier === 'Free') { setShowSubModal(true); return; }
     if (!activeSection) return;
     setIsGenerating(true);
     try {
-      // Calculate Derived Metrics for Context
       const totalEmissions = carbonData.scope1 + carbonData.scope2 + carbonData.scope3;
-      
       const contextData = {
         company: companyName, scores: esgScores, overall_esg_score: totalScore,
-        carbon_credits_inventory: carbonCredits, financial_budget_remaining: budget,
         reporting_year: new Date().getFullYear(),
-        // INJECTED DATA
         linked_carbon_data: carbonData,
         compliance_documents: complianceFiles.map(f => f.name),
-        audit_history_summary: auditLogs.slice(0, 3).map(l => `${l.action} by ${l.user}`),
         derived_metrics: {
             total_emissions: totalEmissions,
             scope3_percentage: totalEmissions > 0 ? ((carbonData.scope3 / totalEmissions) * 100).toFixed(1) + '%' : '0%'
         }
       };
-      
       const content = await generateReportChapter(activeSection.title, activeSection.template || "", activeSection.example || "", contextData, language);
       setGeneratedContent(prev => ({ ...prev, [activeSection.id]: content }));
       addToast('success', isZh ? '草稿生成完成' : 'Draft generated', 'AI Reporter');
@@ -185,418 +170,367 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
   };
 
   const handleAuditSection = async () => {
-      if (tier === 'Free') {
-          setShowSubModal(true);
-          return;
-      }
+      if (tier === 'Free') { setShowSubModal(true); return; }
       const content = generatedContent[activeSectionId];
       if (!content || !activeSection) return;
-      
       setIsAuditing(true);
       setAuditResult(null);
-      addToast('info', isZh ? '正在進行合規性稽核 (GRI Standards)...' : 'Auditing against GRI Standards...', 'AI Auditor');
-      
-      const contextData = {
-          company: companyName,
-          scores: esgScores,
-          carbonData: carbonData, // Important for consistency check
-          budget: budget,
-          policies: ["Zero Greenwashing", "SBTi Alignment", "Transparency First"]
-      };
-
       try {
-          const result = await auditReportContent(
-              activeSection.title, 
-              content, 
-              activeSection.griStandards || 'GRI Universal', 
-              contextData, // New Arg
-              language
-          );
+          const result = await auditReportContent(activeSection.title, content, activeSection.griStandards || 'GRI Universal', { company: companyName, scores: esgScores }, language);
           setAuditResult(result);
-      } catch (e) {
-          addToast('error', 'Audit failed', 'Error');
-      } finally {
-          setIsAuditing(false);
-      }
+      } catch (e) { addToast('error', 'Audit failed', 'Error'); } finally { setIsAuditing(false); }
   };
 
   const handleGenerateMasterReport = async () => {
-      if (tier === 'Free') {
-          setShowSubModal(true);
-          return;
-      }
+      if (tier === 'Free') { setShowSubModal(true); return; }
       setIsGeneratingMaster(true);
-      addToast('info', isZh ? '正在彙整全模組數據生成總報告...' : 'Aggregating cross-module data for Master Report...', 'JunAiKey');
-
       try {
-          // Aggregate all system data for the prompt
-          const masterContext = {
-              company: companyName,
-              scores: esgScores,
-              linked_carbon_data: {
-                  scope1: carbonData.scope1,
-                  scope2: carbonData.scope2,
-                  scope3: carbonData.scope3,
-                  total: carbonData.scope1 + carbonData.scope2 + carbonData.scope3
-              },
-              finance: {
-                  budget: budget,
-                  credits: carbonCredits
-              },
-              compliance: complianceFiles.length > 0 ? "Verified" : "Pending",
-              compliance_docs: complianceFiles.map(f => f.name),
-              year: new Date().getFullYear(),
-              risks: {
-                  strategic: "Analyzed in StrategyHub",
-                  operational: "Monitored via IoT"
-              }
-          };
-
-          // Reusing generateReportChapter logic but with master context
-          const content = await generateReportChapter("Master Executive Report", "Full Report", "Professional", masterContext, language);
-          
+          const content = await generateReportChapter("Master Executive Report", "Full Report", "Professional", { company: companyName, scores: esgScores, carbon: carbonData }, language);
           setMasterReportContent(content);
           setShowMasterReport(true);
           addToast('success', isZh ? '企業總報告生成完畢' : 'Master Report Generated', 'System');
-      } catch (e) {
-          addToast('error', 'Generation Failed', 'Error');
-      } finally {
-          setIsGeneratingMaster(false);
-      }
+      } catch (e) { addToast('error', 'Generation Failed', 'Error'); } finally { setIsGeneratingMaster(false); }
   };
 
+  // Fix: element was missing in truncated file content
   const handleExportPDF = (elementRef: React.RefObject<HTMLDivElement>, filename: string) => {
       if (!elementRef.current) return;
-      setIsExporting(true);
       const element = elementRef.current;
-      const opt = { 
-          margin: 10, 
-          filename: filename, 
-          image: { type: 'jpeg' as const, quality: 0.98 }, 
-          html2canvas: { scale: 2, useCORS: true }, 
-          jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const } 
+      const opt = {
+          margin: 10,
+          filename: `${filename}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#0f172a' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
-      html2pdf().set(opt).from(element).save().then(() => { setIsExporting(false); addToast('success', 'PDF Downloaded.', 'System'); });
-  };
-
-  // --- Archive Handlers ---
-  const handleAnalyzeReport = (report: PastReport) => {
-      setSelectedReport(report);
-      addToast('info', isZh ? `正在分析 ${report.year} 年度數據...` : `Analyzing ${report.year} data...`, 'Data Organizer');
+      
+      addToast('info', isZh ? '正在匯出 PDF...' : 'Exporting PDF...', 'System');
+      html2pdf().set(opt).from(element).save().then(() => {
+          addToast('success', isZh ? '匯出完成' : 'Export Complete', 'System');
+      });
   };
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col animate-fade-in gap-4">
+    <div className="space-y-8 animate-fade-in relative pb-12">
         <SubscriptionModal isOpen={showSubModal} onClose={() => setShowSubModal(false)} language={language} />
         
-        {/* Master Report Modal */}
-        {showMasterReport && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95 backdrop-blur-xl animate-fade-in">
-                <div className="w-full max-w-4xl bg-slate-950 border border-celestial-gold/30 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-celestial-gold/10 to-transparent rounded-t-2xl">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-celestial-gold/20 rounded-xl border border-celestial-gold/30">
-                                <Crown className="w-6 h-6 text-celestial-gold" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white">{isZh ? 'ESGss x JunAiKey 企業總報告' : 'ESGss x JunAiKey Enterprise Master Report'}</h3>
-                                <p className="text-xs text-celestial-gold font-mono uppercase tracking-wider">{companyName} • {new Date().getFullYear()}</p>
-                            </div>
-                        </div>
-                        <button onClick={() => setShowMasterReport(false)} className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition-colors">
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-white text-black" ref={masterReportRef}>
-                        {/* Simulated Print Header inside the scroll view */}
-                        <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
-                            <h1 className="text-3xl font-bold font-serif text-black">Executive Summary</h1>
-                            <div className="text-right">
-                                <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Generated by</div>
-                                <div className="text-sm font-bold text-black">JunAiKey Intelligence Engine</div>
-                            </div>
-                        </div>
-                        <div className="prose prose-slate max-w-none text-black">
-                            <div dangerouslySetInnerHTML={{ __html: marked.parse(masterReportContent) as string }} />
-                        </div>
-                    </div>
+        <UniversalPageHeader 
+            icon={FileText}
+            title={pageData.title}
+            description={pageData.desc}
+            language={language}
+            tag={pageData.tag}
+        />
 
-                    <div className="p-6 border-t border-white/10 bg-slate-900 rounded-b-2xl flex justify-end gap-3">
-                        <button onClick={() => setShowMasterReport(false)} className="px-4 py-2 text-gray-400 hover:text-white transition-colors">{isZh ? '關閉' : 'Close'}</button>
-                        <button 
-                            onClick={() => handleExportPDF(masterReportRef, `MasterReport_${companyName}.pdf`)} 
-                            disabled={isExporting}
-                            className="px-6 py-2 bg-celestial-gold hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
-                        >
-                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            {isZh ? '下載 PDF' : 'Download PDF'}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end shrink-0 gap-4">
-            <div className="flex-1">
-                <UniversalPageHeader 
-                    icon={FileText}
-                    title={pageData.title}
-                    description={pageData.desc}
-                    language={language}
-                    tag={pageData.tag}
-                />
+        {/* Action Header */}
+        <div className="flex justify-between items-center -mt-16 mb-2 relative z-10">
+            <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/10">
+                <button onClick={() => setActiveTab('generator')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'generator' ? 'bg-celestial-emerald text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}>
+                    <Sparkles className="w-4 h-4" /> {isZh ? '報告生成器' : 'AI Generator'}
+                </button>
+                <button onClick={() => setActiveTab('archive')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'archive' ? 'bg-blue-500 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>
+                    <Archive className="w-4 h-4" /> {isZh ? '報告存檔' : 'Past Reports'}
+                </button>
             </div>
             
-            {/* Tabs */}
-            <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/10 mb-8 self-end">
+            {activeTab === 'generator' && (
                 <button 
-                    onClick={() => setActiveTab('generator')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'generator' ? 'bg-celestial-purple text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                    onClick={handleGenerateMasterReport}
+                    disabled={isGeneratingMaster}
+                    className="px-6 py-2 bg-celestial-gold hover:bg-amber-400 text-black font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
                 >
-                    <Sparkles className="w-4 h-4" /> {isZh ? 'AI 報告生成' : 'AI Generator'}
+                    {isGeneratingMaster ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileBarChart className="w-4 h-4" />}
+                    {isZh ? '生成企業總報告' : 'Full Executive Report'}
                 </button>
-                <button 
-                    onClick={() => setActiveTab('archive')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'archive' ? 'bg-celestial-blue text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                >
-                    <Archive className="w-4 h-4" /> {isZh ? '報告歸檔專區' : 'Report Archive'}
-                </button>
-            </div>
+            )}
         </div>
 
-        {/* --- Generator Tab --- */}
-        {activeTab === 'generator' && (
-            <div className="flex-1 grid grid-cols-12 gap-6 min-h-0 -mt-6">
-                <div className="col-span-12 flex justify-end mb-2">
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={handleGenerateMasterReport}
-                            disabled={isGeneratingMaster}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-celestial-gold to-amber-600 text-black font-bold rounded-lg shadow-lg hover:shadow-amber-500/30 transition-all disabled:opacity-50 text-xs"
-                        >
-                            {isGeneratingMaster ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
-                            <span>{isZh ? '生成企業總報告' : 'Generate Master Report'}</span>
-                        </button>
-                        <button 
-                            onClick={() => handleExportPDF(reportRef, `Report_${new Date().getFullYear()}.pdf`)} 
-                            disabled={isExporting} 
-                            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg border border-white/10 transition-all disabled:opacity-50 text-xs"
-                        >
-                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} 
-                            <span>Export PDF</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div className="col-span-3 glass-panel rounded-2xl flex flex-col overflow-hidden border border-white/10">
-                    <div className="p-4 border-b border-white/10 bg-white/5"><span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{isZh ? '目錄' : 'Contents'}</span></div>
-                    <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+        {activeTab === 'generator' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Navigation Sidebar */}
+                <div className="glass-panel p-4 rounded-2xl border border-white/10 h-fit">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest px-3 mb-4">{isZh ? '報告章節' : 'Report Chapters'}</h3>
+                    <div className="space-y-4">
                         {REPORT_STRUCTURE.map((chapter) => (
-                            <div key={chapter.id} className="mb-2">
-                                <button onClick={() => setActiveSectionId(chapter.id)} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeSectionId === chapter.id ? 'bg-celestial-purple/20 text-white' : 'text-gray-400 hover:text-white'}`}>
-                                    <span className="truncate">{chapter.title}</span>
-                                </button>
-                                {chapter.subSections && (
-                                    <div className="ml-2 mt-1 space-y-1 border-l border-white/10 pl-2">
-                                        {chapter.subSections.map(sub => (
-                                            <ChapterAgent 
-                                                key={sub.id}
-                                                id={sub.id} // Agent ID
-                                                label={sub.title}
-                                                section={sub}
-                                                isActive={activeSectionId === sub.id}
-                                                hasContent={!!generatedContent[sub.id]}
-                                                onClick={() => setActiveSectionId(sub.id)}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+                            <div key={chapter.id} className="space-y-1">
+                                <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                    <Layers className="w-3 h-3" />
+                                    {chapter.title}
+                                </div>
+                                {chapter.subSections?.map((sub) => (
+                                    <ChapterAgent 
+                                        key={sub.id}
+                                        id={`chapter-${sub.id}`}
+                                        label={sub.title}
+                                        section={sub}
+                                        isActive={activeSectionId === sub.id}
+                                        hasContent={!!generatedContent[sub.id]}
+                                        onClick={() => { setActiveSectionId(sub.id); setAuditResult(null); }}
+                                    />
+                                ))}
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div className="col-span-9 flex flex-col gap-6 h-full min-h-0">
-                    {/* Guidelines Panel */}
-                    <div className="glass-panel p-6 rounded-2xl border border-white/10 bg-slate-900/60 shrink-0 max-h-[35%] overflow-y-auto custom-scrollbar relative">
-                        <div className="absolute top-4 right-4 flex gap-2">
-                            {activeSection?.griStandards && <span className="text-[10px] px-2 py-1 bg-celestial-gold/10 text-celestial-gold border border-celestial-gold/20 rounded-full">{activeSection.griStandards}</span>}
+                {/* Main Content Area */}
+                <div className="lg:col-span-3 space-y-6">
+                    {activeSection ? (
+                        <div className="glass-panel p-8 rounded-2xl border border-white/10 flex flex-col min-h-[600px] relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-celestial-emerald to-transparent opacity-50" />
+                            
+                            <div className="flex justify-between items-start mb-8 border-b border-white/5 pb-6">
+                                <div>
+                                    <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">{parentChapter?.title}</div>
+                                    <h2 className="text-2xl font-bold text-white">{activeSection.title}</h2>
+                                    <div className="flex gap-4 mt-2">
+                                        <span className="text-[10px] text-gray-500 flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> {activeSection.griStandards}</span>
+                                        <span className={`text-[10px] flex items-center gap-1 ${generatedContent[activeSection.id] ? 'text-emerald-400' : 'text-gray-500'}`}>
+                                            <CheckCircle className="w-3 h-3"/> {generatedContent[activeSection.id] ? 'Draft Ready' : 'Pending Generation'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    {generatedContent[activeSection.id] && (
+                                        <button 
+                                            onClick={handleAuditSection}
+                                            disabled={isAuditing}
+                                            className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-xl border border-indigo-500/30 transition-all flex items-center gap-2 text-xs font-bold"
+                                        >
+                                            {isAuditing ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileCheck className="w-4 h-4" />}
+                                            {isZh ? 'AI 合規審查' : 'AI Audit'}
+                                        </button>
+                                    )}
+                                    <button 
+                                        onClick={handleGenerateSection}
+                                        disabled={isGenerating}
+                                        className="px-6 py-2 bg-celestial-emerald hover:bg-emerald-400 text-black font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                        {generatedContent[activeSection.id] ? (isZh ? '重新生成' : 'Regenerate') : (isZh ? '生成草稿' : 'Generate Draft')}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1">
+                                {isGenerating ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4 animate-pulse">
+                                        <div className="relative">
+                                            <Loader2 className="w-12 h-12 text-celestial-emerald animate-spin" />
+                                            <div className="absolute inset-0 bg-celestial-emerald/10 blur-xl rounded-full" />
+                                        </div>
+                                        <p className="font-mono text-xs tracking-widest">{isZh ? '正在從數據庫提取數據並撰寫中...' : 'Fetching live data and drafting section...'}</p>
+                                    </div>
+                                ) : generatedContent[activeSection.id] ? (
+                                    <div className="animate-fade-in">
+                                        <div id="report-section-content" className="markdown-content text-gray-200 text-sm leading-relaxed bg-black/20 p-6 rounded-xl border border-white/5 shadow-inner" 
+                                             dangerouslySetInnerHTML={{ __html: marked.parse(generatedContent[activeSection.id]) as string }} 
+                                        />
+                                        
+                                        <div className="flex justify-end gap-3 mt-8">
+                                            <button 
+                                                onClick={() => handleExportPDF(reportRef, `Report_${activeSection.title}`)}
+                                                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl border border-white/10 flex items-center gap-2 transition-all text-xs font-bold"
+                                            >
+                                                <Download className="w-4 h-4" /> {isZh ? '匯出 PDF' : 'Export PDF'}
+                                            </button>
+                                            <button className="px-4 py-2 bg-celestial-purple/20 hover:bg-celestial-purple/30 text-celestial-purple rounded-xl border border-celestial-purple/30 transition-all flex items-center gap-2 text-xs font-bold">
+                                                <Save className="w-4 h-4" /> {isZh ? '存入草稿箱' : 'Save to Drafts'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                                        <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+                                            <FileText className="w-10 h-10 text-gray-600" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-gray-400 mb-2">{isZh ? '此章節尚無內容' : 'This section is empty'}</h3>
+                                        <p className="text-sm text-gray-500 max-w-sm mb-8">{isZh ? '點擊「生成草稿」，JunAiKey 將根據您目前的營運數據與碳資產自動撰寫內容。' : 'Click "Generate Draft" to let AI write based on your current carbon and operational data.'}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Audit Result Sidebar-like overlay */}
+                            {auditResult && (
+                                <div className="mt-8 pt-8 border-t border-indigo-500/30 animate-fade-in">
+                                    <div className="flex items-center gap-2 mb-4 text-indigo-300 font-bold">
+                                        <ShieldCheck className="w-5 h-5" />
+                                        {isZh ? 'AI 合規審查報告' : 'AI Audit Report'}
+                                    </div>
+                                    <div className="bg-indigo-500/5 rounded-xl p-6 border border-indigo-500/20 text-xs text-indigo-100 leading-relaxed font-mono">
+                                        <div dangerouslySetInnerHTML={{ __html: marked.parse(auditResult) as string }} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <h3 className="text-lg font-bold text-white mb-2">{activeSection?.title}</h3>
-                        
-                        <div className="grid grid-cols-2 gap-4 mt-4 text-xs text-gray-300">
-                            {parentChapter && (
-                                <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                                    <div className="flex items-center gap-2 mb-1 text-emerald-400 font-bold uppercase tracking-wider">
-                                        <BookOpen className="w-3 h-3" /> Writing Guidelines
+                    ) : (
+                        <div className="glass-panel p-12 rounded-2xl border border-white/10 text-center text-gray-500">
+                             Please select a section from the sidebar.
+                        </div>
+                    )}
+                </div>
+            </div>
+        ) : (
+            <div className="space-y-8 animate-fade-in">
+                {/* Archive View Header */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
+                         <div className="flex justify-between items-start mb-2">
+                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Historical Trend</span>
+                             <TrendingUp className="w-4 h-4 text-emerald-400" />
+                         </div>
+                         <div className="text-2xl font-bold text-white">-12.5%</div>
+                         <div className="text-xs text-emerald-400 mt-1">Average Emission Reduction</div>
+                    </div>
+                    <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
+                         <div className="flex justify-between items-start mb-2">
+                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Compliance Score</span>
+                             <ShieldCheck className="w-4 h-4 text-blue-400" />
+                         </div>
+                         <div className="text-2xl font-bold text-white">92.4%</div>
+                         <div className="text-xs text-blue-400 mt-1">GRI 2024 Readiness</div>
+                    </div>
+                    <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col justify-between">
+                         <div className="flex justify-between items-start mb-2">
+                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total Reports</span>
+                             <FileText className="w-4 h-4 text-purple-400" />
+                         </div>
+                         <div className="text-2xl font-bold text-white">{MOCK_PAST_REPORTS.length}</div>
+                         <div className="text-xs text-purple-400 mt-1">Verified on Chain</div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Report List */}
+                    <div className="glass-panel p-6 rounded-2xl border border-white/10 h-fit">
+                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <History className="w-5 h-5 text-gray-400" />
+                            {isZh ? '報告歷史' : 'History'}
+                        </h3>
+                        <div className="space-y-3">
+                            {MOCK_PAST_REPORTS.map(report => (
+                                <button 
+                                    key={report.year}
+                                    onClick={() => setSelectedReport(report)}
+                                    className={`w-full p-4 rounded-xl border flex justify-between items-center transition-all group
+                                        ${selectedReport?.year === report.year ? 'bg-blue-500/10 border-blue-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10'}
+                                    `}
+                                >
+                                    <div className="text-left">
+                                        <div className={`text-sm font-bold ${selectedReport?.year === report.year ? 'text-blue-300' : 'text-white'}`}>{report.year} {isZh ? '年度報告' : 'Report'}</div>
+                                        <div className="text-[10px] text-gray-500">{report.publishDate} • {report.version}</div>
                                     </div>
-                                    <p>{parentChapter.guidelines || "No specific guidelines."}</p>
-                                </div>
-                            )}
-                            {parentChapter && (
-                                <div className="p-3 bg-white/5 rounded-xl border border-white/5">
-                                    <div className="flex items-center gap-2 mb-1 text-celestial-purple font-bold uppercase tracking-wider">
-                                        <Info className="w-3 h-3" /> Guiding Principles
-                                    </div>
-                                    <p>{parentChapter.principles || "Follow standard GRI principles."}</p>
-                                </div>
-                            )}
+                                    <ChevronRight className={`w-4 h-4 text-gray-600 group-hover:text-white transition-all ${selectedReport?.year === report.year ? 'rotate-90 text-blue-400' : ''}`} />
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="flex-1 glass-panel rounded-2xl border border-white/10 bg-slate-900/40 flex flex-col min-h-0 relative">
-                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                            <span className="text-sm font-medium text-white">{isZh ? '內容編輯器' : 'Editor'}</span>
-                            <div className="flex gap-2">
-                                <button onClick={handleGenerateSection} disabled={isGenerating || !activeSection} className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-celestial-purple to-celestial-blue hover:opacity-90 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50">
-                                    {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} {isZh ? 'AI 撰寫' : 'AI Write'}
-                                </button>
-                                <button onClick={handleAuditSection} disabled={isAuditing || !generatedContent[activeSectionId]} className="flex items-center gap-2 px-3 py-1.5 bg-celestial-gold/20 hover:bg-celestial-gold/30 text-celestial-gold rounded-lg text-xs font-bold transition-all disabled:opacity-50 border border-celestial-gold/30">
-                                    {isAuditing ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />} {isZh ? '合規稽核' : 'Audit'}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 flex overflow-hidden">
-                            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-950/30" ref={reportRef}>
-                                <LockedFeature featureName="Smart Report Editor" minTier="Free">
-                                    {generatedContent[activeSectionId] ? (
-                                        <div className="markdown-content text-gray-300 leading-relaxed space-y-4 max-w-3xl mx-auto" dangerouslySetInnerHTML={{ __html: marked.parse(generatedContent[activeSectionId]) as string }} />
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-60">
-                                            <FileText className="w-16 h-16 mb-4" />
-                                            <p>{isZh ? '尚無內容' : 'No content'}</p>
-                                            <p className="text-xs mt-2">Click AI Write to draft this section.</p>
+                    {/* Report Analysis/Comparison */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {selectedReport && (
+                            <div className="glass-panel p-8 rounded-2xl border border-white/10 animate-fade-in">
+                                <div className="flex justify-between items-start mb-8">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white">{selectedReport.title}</h3>
+                                        <div className="flex gap-3 mt-2">
+                                            <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded border border-emerald-500/20 uppercase tracking-widest">{selectedReport.status}</span>
+                                            <span className="text-xs text-gray-500 flex items-center gap-1"><FileCheck className="w-3 h-3"/> SHA-256 Verified</span>
                                         </div>
-                                    )}
-                                </LockedFeature>
-                            </div>
-                            
-                            {/* Audit Result Panel */}
-                            {auditResult && (
-                                <div className="w-80 border-l border-white/10 bg-slate-900/90 overflow-y-auto custom-scrollbar p-4 animate-fade-in">
-                                    <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                                        <ShieldCheck className="w-4 h-4 text-emerald-400" /> Audit Report
-                                    </h4>
-                                    <div className="markdown-content text-xs text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: marked.parse(auditResult) as string }} />
-                                    <button onClick={() => setAuditResult(null)} className="mt-4 w-full py-2 bg-white/5 hover:bg-white/10 rounded text-xs text-gray-400">Close</button>
+                                    </div>
+                                    <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-all">
+                                        <Download className="w-5 h-5" />
+                                    </button>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <div className="text-[10px] text-gray-500 uppercase mb-1">Scope 1+2</div>
+                                        <div className="text-lg font-bold text-white">{(selectedReport.metrics.scope1 + selectedReport.metrics.scope2).toFixed(1)} <span className="text-[10px] font-normal text-gray-500">t</span></div>
+                                    </div>
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <div className="text-[10px] text-gray-500 uppercase mb-1">Scope 3</div>
+                                        <div className="text-lg font-bold text-white">{selectedReport.metrics.scope3} <span className="text-[10px] font-normal text-gray-500">t</span></div>
+                                    </div>
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <div className="text-[10px] text-gray-500 uppercase mb-1">Energy Intensity</div>
+                                        <div className="text-lg font-bold text-white">{( (selectedReport.metrics.scope1 + selectedReport.metrics.scope2) / (selectedReport.metrics.energyConsumption / 1000) ).toFixed(2)}</div>
+                                    </div>
+                                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                                        <div className="text-[10px] text-gray-500 uppercase mb-1">GRI Coverage</div>
+                                        <div className="text-lg font-bold text-white">{selectedReport.metrics.griCoverage}%</div>
+                                    </div>
+                                </div>
+
+                                <div className="h-[250px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={trendData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                            <XAxis dataKey="year" stroke="#94a3b8" />
+                                            <YAxis stroke="#94a3b8" />
+                                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} />
+                                            <Legend />
+                                            <Area type="monotone" dataKey="emissions" name="Total Emissions (tCO2e)" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={3} />
+                                            <Area type="monotone" dataKey="intensity" name="Emission Intensity" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} strokeWidth={2} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         )}
 
-        {/* --- Archive Tab --- */}
-        {activeTab === 'archive' && (
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 min-h-0 -mt-6">
-                
-                {/* Reports List */}
-                <div className="md:col-span-1 space-y-4 overflow-y-auto custom-scrollbar">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Archive className="w-5 h-5 text-celestial-blue" />
-                        {isZh ? '歷年報告書庫' : 'Report Repository'}
-                    </h3>
-                    
-                    {MOCK_PAST_REPORTS.map(report => (
-                        <div 
-                            key={report.year}
-                            onClick={() => handleAnalyzeReport(report)}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer group flex flex-col gap-2 relative overflow-hidden
-                                ${selectedReport?.year === report.year 
-                                    ? 'bg-celestial-blue/10 border-celestial-blue/50 shadow-lg shadow-celestial-blue/20' 
-                                    : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'}
-                            `}
-                        >
-                            <div className="flex justify-between items-start relative z-10">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-2xl font-bold text-white font-mono">{report.year}</span>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold
-                                        ${report.status === 'Published' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                                          report.status === 'Draft' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 
-                                          'bg-gray-500/10 text-gray-400 border-gray-500/20'}
-                                    `}>
-                                        {report.status}
-                                    </span>
-                                </div>
-                                {selectedReport?.year === report.year && <ChevronRight className="w-5 h-5 text-celestial-blue animate-pulse" />}
-                            </div>
-                            <div className="text-sm text-gray-300 relative z-10">{report.title}</div>
-                            <div className="text-xs text-gray-500 font-mono relative z-10">Ver: {report.version} • {report.publishDate}</div>
-                            
-                            {/* Decorative Background */}
-                            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gradient-to-tl from-white/5 to-transparent rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+        {/* Master Report Full Screen Overlay */}
+        {showMasterReport && (
+            <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col animate-fade-in overflow-hidden">
+                <div className="h-20 bg-slate-900 border-b border-white/10 flex items-center justify-between px-8 backdrop-blur-xl">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-celestial-gold/20 rounded-xl text-celestial-gold">
+                            <Crown className="w-8 h-8" />
                         </div>
-                    ))}
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">{isZh ? '企業永續年度總報告' : 'Full Executive Sustainability Report'}</h2>
+                            <p className="text-xs text-gray-400">Generated for {companyName} • {new Date().getFullYear()} Edition</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => handleExportPDF(masterReportRef, `${companyName}_AnnualReport`)}
+                            className="px-6 py-3 bg-white text-black font-bold rounded-xl shadow-lg hover:bg-gray-100 transition-all flex items-center gap-2"
+                        >
+                            <Download className="w-5 h-5" /> {isZh ? '匯出完整報告 PDF' : 'Download PDF'}
+                        </button>
+                        <button 
+                            onClick={() => setShowMasterReport(false)}
+                            className="p-3 hover:bg-white/10 rounded-full text-gray-400 transition-colors"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+                    </div>
                 </div>
 
-                {/* Analysis Panel */}
-                <div className="md:col-span-2 glass-panel p-8 rounded-2xl border border-white/10 flex flex-col relative overflow-hidden">
-                    {selectedReport ? (
-                        <div className="flex-1 flex flex-col animate-fade-in relative z-10">
-                            <div className="flex justify-between items-start mb-8 pb-6 border-b border-white/10">
-                                <div>
-                                    <div className="text-xs font-bold text-celestial-blue uppercase tracking-widest mb-2">{isZh ? '數據整理與分析' : 'Data Organization & Analysis'}</div>
-                                    <h2 className="text-3xl font-bold text-white">{selectedReport.year} Performance</h2>
-                                </div>
-                                <button className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-bold text-white transition-all border border-white/10">
-                                    <Download className="w-4 h-4" /> {isZh ? '下載原始檔' : 'Download Report'}
-                                </button>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <OmniEsgCell 
-                                    mode="card" 
-                                    label="Total Emissions" 
-                                    value={`${(selectedReport.metrics.scope1 + selectedReport.metrics.scope2 + selectedReport.metrics.scope3).toLocaleString()} t`}
-                                    subValue={`Scope 1+2: ${(selectedReport.metrics.scope1 + selectedReport.metrics.scope2).toLocaleString()} t`}
-                                    color="emerald" 
-                                    icon={BarChart2}
-                                />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <OmniEsgCell mode="cell" label="GRI Coverage" value={`${selectedReport.metrics.griCoverage}%`} color="purple" />
-                                    <OmniEsgCell mode="cell" label="Scope 3" value={`${selectedReport.metrics.scope3} t`} color="gold" />
-                                </div>
-                            </div>
-
-                            <div className="glass-panel p-6 rounded-xl border border-white/5 bg-slate-900/50 flex-1">
-                                <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                                    <PieChart className="w-4 h-4 text-gray-400" />
-                                    {isZh ? '排放佔比分析' : 'Emission Breakdown'}
-                                </h4>
-                                <div className="space-y-4">
-                                    {['Scope 1', 'Scope 2', 'Scope 3'].map((scope, idx) => {
-                                        const val = scope === 'Scope 1' ? selectedReport.metrics.scope1 : scope === 'Scope 2' ? selectedReport.metrics.scope2 : selectedReport.metrics.scope3;
-                                        const total = selectedReport.metrics.scope1 + selectedReport.metrics.scope2 + selectedReport.metrics.scope3;
-                                        const pct = (val / total) * 100;
-                                        const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-amber-500'];
-                                        
-                                        return (
-                                            <div key={scope}>
-                                                <div className="flex justify-between text-xs mb-1 text-gray-300">
-                                                    <span>{scope}</span>
-                                                    <span className="font-mono">{val} t ({pct.toFixed(1)}%)</span>
-                                                </div>
-                                                <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
-                                                    <div className={`h-full ${colors[idx]} transition-all duration-1000`} style={{ width: `${pct}%` }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-12 bg-[#020617]">
+                    <div ref={masterReportRef} className="max-w-4xl mx-auto bg-slate-900 border border-white/10 p-16 rounded-[2rem] shadow-2xl relative">
+                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                            <Sparkles className="w-32 h-32 text-celestial-gold" />
                         </div>
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50">
-                            <FileBarChart className="w-24 h-24 mb-4" />
-                            <p className="text-lg">{isZh ? '請選擇一份報告以查看分析' : 'Select a report to view analysis'}</p>
+                        <div className="mb-12 border-b border-white/5 pb-12">
+                             <div className="text-sm font-bold text-celestial-gold uppercase tracking-[0.3em] mb-4">Confidential Executive Summary</div>
+                             <h1 className="text-5xl font-bold text-white mb-6 leading-tight">{companyName}<br/>Sustainability Disclosure</h1>
+                             <div className="flex gap-8 text-gray-500 font-mono text-sm">
+                                 <div>Year: {new Date().getFullYear()}</div>
+                                 <div>Reference: ESGss-JAK-v15</div>
+                             </div>
                         </div>
-                    )}
-                    
-                    {/* Background Graphic */}
-                    <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-celestial-blue/5 rounded-full blur-3xl pointer-events-none" />
+                        
+                        <div className="markdown-content text-gray-200 leading-loose prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(masterReportContent) as string }} />
+                        
+                        <div className="mt-20 pt-12 border-t border-white/5 text-center text-gray-500 italic text-sm">
+                            End of generated document. This report includes real-time data ingestion and AI compliance auditing.
+                        </div>
+                    </div>
                 </div>
             </div>
         )}

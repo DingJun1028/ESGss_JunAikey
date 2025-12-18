@@ -45,6 +45,7 @@ const AlumniZone = lazy(() => import('./components/AlumniZone').then(module => (
 const GoodwillLibrary = lazy(() => import('./components/GoodwillLibrary').then(module => ({ default: module.GoodwillLibrary })));
 const UserJournal = lazy(() => import('./components/UserJournal').then(module => ({ default: module.UserJournal })));
 const UniversalAgentZone = lazy(() => import('./components/UniversalAgentZone').then(module => ({ default: module.UniversalAgentZone })));
+const ContactUs = lazy(() => import('./components/ContactUs').then(module => ({ default: module.ContactUs })));
 
 const ProtectedModule: React.FC<{ view: View; children: React.ReactNode; onNavigate: (view: View) => void }> = ({ view, children, onNavigate }) => {
     const { hasPermission } = useCompany();
@@ -100,6 +101,7 @@ const AppContent: React.FC = () => {
                   
                   case View.FUNDRAISING: return wrap(<Fundraising language={language} />);
                   case View.ABOUT_US: return wrap(<AboutUs language={language} />);
+                  case View.CONTACT_US: return wrap(<ContactUs language={language} />);
                   case View.API_ZONE: return wrap(<ApiZone language={language} />);
                   case View.UNIVERSAL_BACKEND: return wrap(<UniversalBackend />);
                   case View.RESEARCH_HUB: return wrap(<ResearchHub language={language} />);

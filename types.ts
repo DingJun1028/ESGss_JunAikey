@@ -1,3 +1,4 @@
+
 import { LucideIcon } from 'lucide-react';
 
 export type Language = 'en-US' | 'zh-TW';
@@ -32,17 +33,36 @@ export enum View {
     ALUMNI_ZONE = 'alumni_zone',
     LIBRARY = 'library',
     UNIVERSAL_AGENT = 'universal_agent',
-    CARD_GAME = 'card_game' // Legacy
+    CONTACT_US = 'contact_us',
+    CARD_GAME = 'card_game' 
 }
 
-export type Role = 'ADMIN' | 'MANAGER' | 'ANALYST' | 'AUDITOR';
-export type Permission = 'VIEW_ALL' | 'VIEW_CORE' | 'VIEW_OPS' | 'EDIT_OPS' | 'VIEW_INTEL' | 'VIEW_ECO' | 'VIEW_SYS' | 'MANAGE_SETTINGS' | 'MANAGE_API' | 'VIEW_FINANCE';
+export type EvolutionStage = 'Seed' | 'Structure' | 'Optimized' | 'Autonomous' | 'Infinite';
 
-export type OmniEsgTrait = 'optimization' | 'performance' | 'gap-filling' | 'tagging' | 'evolution' | 'learning' | 'bridging' | 'seamless';
+export interface EvolutionMilestone {
+    id: string;
+    timestamp: number;
+    stage: EvolutionStage;
+    description: string;
+    logicChanges: string[];
+    verificationHash: string;
+}
+
+export type OmniEsgTrait = 'optimization' | 'performance' | 'gap-filling' | 'tagging' | 'evolution' | 'learning' | 'bridging' | 'seamless' | 'transcendent';
 export type OmniEsgDataLink = 'live' | 'ai' | 'blockchain';
 export type OmniEsgMode = 'card' | 'list' | 'cell' | 'badge';
 export type OmniEsgConfidence = 'high' | 'medium' | 'low';
 export type OmniEsgColor = 'emerald' | 'gold' | 'purple' | 'blue' | 'rose' | 'cyan' | 'slate' | 'orange' | 'indigo' | 'pink';
+
+export interface UniversalTag {
+    id: string;
+    label: string; 
+    labelZh: string; 
+    labelEn: string; 
+    hiddenPrompt: string; 
+    theme: 'gold' | 'purple' | 'emerald' | 'blue' | 'rose' | 'slate';
+    description?: string;
+}
 
 export interface UniversalLabel {
     id?: string;
@@ -65,30 +85,98 @@ export interface Metric {
     tags?: string[];
 }
 
+export interface QuantumNode {
+    id: string;
+    atom: string;
+    vector: string[];
+    weight: number;
+    connections: string[];
+    source?: string;
+}
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'reward';
+
+export interface Toast {
+    id: string;
+    type: ToastType;
+    title?: string;
+    message: string;
+    duration: number;
+}
+
+export interface NoteItem {
+    id: string;
+    title: string;
+    content: string;
+    tags: string[];
+    universalTags?: string[];
+    createdAt: number;
+    source: string;
+    backlinks: string[];
+    evolutionHistory?: EvolutionMilestone[];
+}
+
+export interface CarbonData {
+    fuelConsumption: number;
+    electricityConsumption: number;
+    scope1: number;
+    scope2: number;
+    scope3: number;
+    lastUpdated: number;
+}
+
+export interface UserJournalEntry {
+    id: string;
+    timestamp: number;
+    title: string;
+    impact: string;
+    xpGained: number;
+    type: 'milestone' | 'action' | 'insight';
+    tags: string[];
+}
+
+export interface UniversalKnowledgeNode {
+    id: string;
+    type: 'component' | 'concept' | 'data';
+    label: UniversalLabel;
+    currentValue: any;
+    traits: OmniEsgTrait[];
+    confidence: OmniEsgConfidence;
+    lastInteraction: number;
+    interactionCount: number;
+    evolutionStage: EvolutionStage;
+    evolutionHistory: EvolutionMilestone[];
+    memory: {
+        history: any[];
+        aiInsights: string[];
+    };
+}
+
+export type Role = 'ADMIN' | 'MANAGER' | 'ANALYST' | 'AUDITOR';
+export type Permission = 'VIEW_ALL' | 'VIEW_CORE' | 'VIEW_OPS' | 'EDIT_OPS' | 'VIEW_INTEL' | 'VIEW_ECO' | 'VIEW_SYS' | 'MANAGE_SETTINGS' | 'MANAGE_API' | 'VIEW_FINANCE';
+
 export interface Course {
     id: string;
     title: string;
     category: string;
-    level: string;
+    level: 'Beginner' | 'Intermediate' | 'Advanced';
     progress: number;
     thumbnail: string;
 }
 
 export interface SystemHealth {
     module: string;
-    status: 'Healthy' | 'Warning' | 'Critical';
+    status: 'Healthy' | 'Warning' | 'Error';
     latency: number;
 }
 
 export interface ReportSection {
     id: string;
     title: string;
-    subSections?: ReportSection[];
     template?: string;
     example?: string;
     griStandards?: string;
-    guidelines?: string;
-    principles?: string;
+    subSections?: ReportSection[];
 }
 
 export interface EsgCard {
@@ -110,7 +198,7 @@ export interface CardSynergy {
     name: string;
     description: string;
     requiredCards: string[];
-    effect: { type: string; target: string; value: number };
+    effect: any;
 }
 
 export type CrystalType = 'Perception' | 'Cognition' | 'Memory' | 'Expression' | 'Nexus';
@@ -132,7 +220,7 @@ export interface ChangelogEntry {
     version: string;
     date: string;
     title: string;
-    category: 'Core' | 'Feature' | 'UI' | 'Bugfix';
+    category: 'Core' | 'Feature' | 'UI';
     changes: string[];
 }
 
@@ -141,7 +229,7 @@ export interface JourneyStep {
     label: string;
     targetView: View;
     instruction: string;
-    status: 'pending' | 'active' | 'completed';
+    status: 'pending' | 'completed';
     triggerCondition?: string;
 }
 
@@ -154,7 +242,7 @@ export interface UserJourney {
     isCompleted: boolean;
 }
 
-export type WidgetType = 'kpi_card' | 'chart_area' | 'feed_list' | 'quest_list' | 'quick_note' | 'yang_bo_feed' | 'event_list' | 'intel_feed' | 'profile';
+export type WidgetType = 'kpi_card' | 'quest_list' | 'quick_note' | 'yang_bo_feed' | 'event_list' | 'intel_feed' | 'profile';
 
 export interface DashboardWidget {
     id: string;
@@ -162,25 +250,6 @@ export interface DashboardWidget {
     title: string;
     config?: any;
     gridSize?: 'small' | 'medium' | 'large' | 'full';
-}
-
-export interface QuantumNode {
-    id: string;
-    atom: string;
-    vector: string[];
-    weight: number;
-    connections: string[];
-    source?: string;
-}
-
-export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'reward';
-
-export interface Toast {
-    id: string;
-    type: ToastType;
-    title?: string;
-    message: string;
-    duration: number;
 }
 
 export interface AuditLogEntry {
@@ -210,16 +279,6 @@ export interface ToDoItem {
     done: boolean;
 }
 
-export interface NoteItem {
-    id: string;
-    title: string;
-    content: string;
-    tags: string[];
-    createdAt: number;
-    source: string;
-    backlinks: string[];
-}
-
 export interface BookmarkItem {
     id: string;
     type: 'article' | 'video' | 'news';
@@ -229,24 +288,13 @@ export interface BookmarkItem {
 }
 
 export type UserTier = 'Free' | 'Pro' | 'Enterprise';
-
-export interface CarbonData {
-    fuelConsumption: number;
-    electricityConsumption: number;
-    scope1: number;
-    scope2: number;
-    scope3: number;
-    lastUpdated: number;
-}
-
-export type MasteryLevel = 'Novice' | 'Apprentice' | 'Expert' | 'Master' | 'Grandmaster';
+export type MasteryLevel = 'Novice' | 'Apprentice' | 'Adept' | 'Expert' | 'Master';
 
 export interface Badge {
     id: string;
     name: string;
     description: string;
     icon: string;
-    unlockedAt?: number;
 }
 
 export interface AppFile {
@@ -256,7 +304,7 @@ export interface AppFile {
     size: string;
     uploadDate: number;
     sourceModule: string;
-    status: 'scanning' | 'processed' | 'error';
+    status: 'scanning' | 'processed';
     tags: string[];
     confidence: number;
     aiSummary?: string;
@@ -265,23 +313,13 @@ export interface AppFile {
 
 export interface IntelligenceItem {
     id: string;
-    type: 'news' | 'report' | 'competitor' | 'regulation';
+    type: 'news' | 'report' | 'competitor';
     title: string;
     source: string;
     date: string;
     summary: string;
     tags: string[];
     isRead: boolean;
-}
-
-export interface UserJournalEntry {
-    id: string;
-    timestamp: number;
-    title: string;
-    impact: string;
-    xpGained: number;
-    type: 'milestone' | 'action' | 'insight';
-    tags: string[];
 }
 
 export interface SemanticContext {
@@ -295,14 +333,8 @@ export interface PastReport {
     title: string;
     version: string;
     publishDate: string;
-    status: 'Published' | 'Draft' | 'Archived';
-    metrics: {
-        scope1: number;
-        scope2: number;
-        scope3: number;
-        energyConsumption: number;
-        griCoverage: number;
-    };
+    status: string;
+    metrics: any;
 }
 
 export interface InteractionEvent {
@@ -312,39 +344,16 @@ export interface InteractionEvent {
     payload?: any;
 }
 
-export interface UniversalKnowledgeNode {
-    id: string;
-    type: 'component' | 'concept' | 'data';
-    label: UniversalLabel;
-    currentValue: any;
-    traits: OmniEsgTrait[];
-    confidence: OmniEsgConfidence;
-    lastInteraction: number;
-    interactionCount: number;
-    memory: {
-        history: InteractionEvent[];
-        aiInsights: string[];
-    };
-}
-
 export interface MCPTool {
+    id: string;
     name: string;
     description: string;
-    inputSchema: any;
-    requiresApproval?: boolean;
 }
 
 export interface MCPResource {
-    uri: string;
+    id: string;
     name: string;
-    mimeType: string;
-    description?: string;
-}
-
-export interface MCPPrompt {
-    name: string;
-    description?: string;
-    arguments?: any[];
+    description: string;
 }
 
 export interface AgentSkill {
@@ -355,7 +364,7 @@ export interface AgentSkill {
     maxLevel: number;
     currentXp: number;
     xpRequired: number;
-    icon: any; 
+    icon: any;
 }
 
 export interface CustomAgentProfile {
@@ -363,8 +372,8 @@ export interface CustomAgentProfile {
     name: string;
     role: string;
     instruction: string;
-    knowledgeBase: string[];
     color: string;
+    knowledgeBase: string[];
     icon: any;
     created: number;
 }

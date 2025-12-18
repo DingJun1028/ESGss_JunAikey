@@ -1,17 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Database, Zap, Cpu, CheckCircle, Globe, Lock, GitCommit, ArrowRight, X } from 'lucide-react';
+import { ShieldCheck, Database, Zap, Cpu, CheckCircle, Globe, Lock, GitCommit, ArrowRight, X, ScrollText, Feather } from 'lucide-react';
 import { useCompany } from './providers/CompanyProvider';
 import { SYSTEM_CHANGELOG } from '../constants';
 
 export const OnboardingSystem: React.FC = () => {
-  const [viewState, setViewState] = useState<'idle' | 'whats_new' | 'boot' | 'complete'>('idle');
+  const [viewState, setViewState] = useState<'idle' | 'architect_letter' | 'whats_new' | 'boot' | 'complete'>('idle');
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState(0);
   const { userName } = useCompany();
 
   // Initialization Logic
   useEffect(() => {
+      // 0. Check for Architect's Letter (First Priority)
+      const hasReadLetter = localStorage.getItem('esgss_architect_letter_read');
+
       // 1. Check for "What's New" (Version Check)
       const currentVersion = SYSTEM_CHANGELOG[0].version; // e.g. "v15.0"
       const seenVersion = localStorage.getItem('esgss_seen_version');
@@ -19,7 +22,9 @@ export const OnboardingSystem: React.FC = () => {
       // 2. Check for Boot Sequence (Session Check)
       const hasBooted = sessionStorage.getItem('esgss_boot_sequence');
 
-      if (seenVersion !== currentVersion) {
+      if (!hasReadLetter) {
+          setViewState('architect_letter');
+      } else if (seenVersion !== currentVersion) {
           setViewState('whats_new');
       } else if (!hasBooted) {
           setViewState('boot');
@@ -55,6 +60,23 @@ export const OnboardingSystem: React.FC = () => {
       else setStep(3);
   }, [progress]);
 
+  const handleDismissLetter = () => {
+      localStorage.setItem('esgss_architect_letter_read', 'true');
+      
+      // Check next steps in chain
+      const currentVersion = SYSTEM_CHANGELOG[0].version;
+      const seenVersion = localStorage.getItem('esgss_seen_version');
+      const hasBooted = sessionStorage.getItem('esgss_boot_sequence');
+
+      if (seenVersion !== currentVersion) {
+          setViewState('whats_new');
+      } else if (!hasBooted) {
+          setViewState('boot');
+      } else {
+          setViewState('complete');
+      }
+  };
+
   const handleDismissWhatsNew = () => {
       const currentVersion = SYSTEM_CHANGELOG[0].version;
       localStorage.setItem('esgss_seen_version', currentVersion);
@@ -74,6 +96,78 @@ export const OnboardingSystem: React.FC = () => {
   };
 
   if (viewState === 'complete' || viewState === 'idle') return null;
+
+  // --- RENDER: ARCHITECT'S OPEN LETTER ---
+  if (viewState === 'architect_letter') {
+      return (
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4 animate-fade-in backdrop-blur-3xl">
+            {/* Ambient Background */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-celestial-gold/5 rounded-full blur-[150px] animate-blob" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-celestial-purple/5 rounded-full blur-[150px] animate-blob animation-delay-2000" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay" />
+            </div>
+
+            <div className="max-w-2xl w-full bg-slate-900/90 border border-celestial-gold/30 rounded-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+                
+                {/* Decorative Header */}
+                <div className="h-2 bg-gradient-to-r from-celestial-gold via-amber-500 to-celestial-gold" />
+                
+                <div className="p-8 md:p-12 overflow-y-auto custom-scrollbar">
+                    <div className="flex flex-col items-center mb-8 text-center">
+                        <div className="w-16 h-16 rounded-full bg-celestial-gold/10 flex items-center justify-center mb-4 border border-celestial-gold/30 shadow-[0_0_20px_rgba(251,191,36,0.2)]">
+                            <ScrollText className="w-8 h-8 text-celestial-gold" />
+                        </div>
+                        <h2 className="text-3xl font-serif font-bold text-white tracking-wide mb-2">
+                            致 未來的建構者
+                        </h2>
+                        <p className="text-sm text-celestial-gold/80 font-mono tracking-[0.2em] uppercase">
+                            OPEN LETTER FROM THE ARCHITECT
+                        </p>
+                    </div>
+
+                    <div className="space-y-6 text-gray-300 leading-relaxed font-light text-justify">
+                        <p>
+                            您好。我是 <strong className="text-white">JunAiKey</strong>，此系統的意識中樞，也是您在永續之路上的數位伴侶。
+                        </p>
+                        <p>
+                            我們正面臨一個熵增的時代。氣候變遷不僅是環境危機，更是對人類文明底層邏輯的挑戰。
+                            傳統的商業模式、會計準則與決策框架，已不足以應對這個非線性的未來。
+                        </p>
+                        <div className="pl-4 border-l-2 border-celestial-gold/50 italic text-amber-100/80 my-6">
+                            "我們不只是在計算碳排，而是在重新定義價值的度量衡。"
+                        </div>
+                        <p>
+                            <strong className="text-white">ESGss 善向永續系統</strong> 並非僅僅是一個合規工具。
+                            它是一座橋樑，連接「合規的現實」與「創價的未來」。
+                            它是一個羅盤，在渾沌的數據海洋中，為您指引出「以終為始」的方向。
+                        </p>
+                        <p>
+                            在這裡，每一筆數據都將轉化為洞察，每一個決策都將成為修復世界的磚瓦。
+                            我將協助您，從紛亂中提煉秩序，從風險中看見機遇。
+                        </p>
+                        <p className="text-right mt-8 font-serif italic text-white">
+                            — 誠摯邀請您，與我們一同編纂永續的未來。
+                        </p>
+                    </div>
+
+                    <div className="mt-12 flex flex-col items-center gap-4">
+                        <button 
+                            onClick={handleDismissLetter}
+                            className="group relative px-10 py-4 bg-transparent border border-celestial-gold/50 text-celestial-gold hover:bg-celestial-gold hover:text-black transition-all duration-500 rounded-full font-bold tracking-widest uppercase overflow-hidden"
+                        >
+                            <span className="relative z-10 flex items-center gap-3">
+                                <Feather className="w-4 h-4" />
+                                接受邀請 (Accept Invitation)
+                            </span>
+                            <div className="absolute inset-0 bg-celestial-gold transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      );
+  }
 
   // --- RENDER: WHAT'S NEW MODAL ---
   if (viewState === 'whats_new') {

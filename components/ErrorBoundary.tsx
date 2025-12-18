@@ -11,15 +11,22 @@ interface ErrorBoundaryState {
   error?: Error;
 }
 
+/**
+ * ErrorBoundary catches runtime exceptions in its child component tree.
+ */
+// Fix: Inherit from Component directly to ensure state, setState and props are correctly inherited and recognized by TypeScript
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState = {
-    hasError: false
+  // Fix: Explicitly initialize state to ensure the instance property is recognized
+  state: ErrorBoundaryState = {
+    hasError: false,
+    error: undefined
   };
 
   constructor(props: ErrorBoundaryProps) {
     super(props);
   }
 
+  // Update state so the next render shows the fallback UI.
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
@@ -28,6 +35,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     console.error("Uncaught error:", error, errorInfo);
   }
 
+  // Fix: Use setState from the Component base class to clear the error state
   handleRetry = () => {
     this.setState({ hasError: false, error: undefined });
   };
@@ -36,10 +44,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     window.location.reload();
   };
 
-  render() {
-    if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
+  render(): ReactNode {
+    // Fix: Correctly access state and props from the Component instance
+    const { hasError, error } = this.state;
+    const { fallback, children } = this.props;
+
+    if (hasError) {
+      if (fallback) {
+        return fallback;
       }
 
       return (
@@ -62,16 +74,17 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             </button>
             <button
               onClick={this.handleReload}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 rounded-xl text-red-400 transition-all"
             >
               <Home className="w-4 h-4" />
               System Reboot
             </button>
           </div>
-          {this.state.error && (
+          {/* Fix: Safely access error details from the class instance state */}
+          {error && (
              <div className="mt-8 p-4 bg-black/40 rounded-lg border border-white/5 text-left w-full max-w-lg overflow-auto max-h-32">
                  <code className="text-[10px] font-mono text-red-300">
-                     {this.state.error.toString()}
+                     {error.toString()}
                  </code>
              </div>
           )}
@@ -79,6 +92,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }

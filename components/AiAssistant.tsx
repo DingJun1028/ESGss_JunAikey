@@ -1,18 +1,20 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { 
     Send, Bot, X, Sparkles, Minimize2, Loader2, Terminal, Grid, 
     BrainCircuit, Activity, Eye, Database, Share2, Network, 
     ShieldCheck, Zap, Layers, Leaf, Target, FileText, Briefcase, Globe, Users, GripVertical,
     ArrowRight, Lightbulb, Compass, Bell, CheckSquare, Copy, RotateCcw, ThumbsUp, ThumbsDown, Download, FileSpreadsheet, GripHorizontal,
-    Trash2, Mic, Camera, Calculator, ScanLine, cpu, Save
+    Trash2, Mic, Camera, Calculator, ScanLine, Cpu, Save, Paperclip, ArrowLeft, Plus, MessageSquarePlus, Eraser
 } from 'lucide-react';
 import { Language, View } from '../types';
 import { useToast } from '../contexts/ToastContext';
 import { useUniversalAgent } from '../contexts/UniversalAgentContext';
 import { useCompany } from './providers/CompanyProvider';
-import GenerativeUIRenderer from './GenerativeUIRenderer';
+import { GenerativeUIRenderer } from './GenerativeUIRenderer';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 interface AiAssistantProps {
   language: Language;
@@ -80,6 +82,7 @@ interface Message {
     text: string;
     timestamp?: number;
     feedback?: 'good' | 'bad';
+    attachments?: { type: string; name: string; data?: string }[];
 }
 
 // Background Effect Component
@@ -120,6 +123,11 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const recognitionRef = useRef<any>(null);
   
+  // File Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedFile, setAttachedFile] = useState<{ file: File; base64: string } | null>(null);
+  const suggestionsScrollRef = useRef<HTMLDivElement>(null);
+
   // Persistent History Cache
   const [historyCache, setHistoryCache] = useState<Record<string, Message[]>>(() => {
       try {
@@ -130,7 +138,6 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       }
   });
 
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false); // New transition state
 
@@ -140,15 +147,27 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   const chatRef = useRef<any>(null);
   const client = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
 
-  // Save history to localStorage
+  // Sync history to localStorage whenever it changes
   useEffect(() => {
       localStorage.setItem('esgss_ai_history', JSON.stringify(historyCache));
   }, [historyCache]);
 
+  // Derive current messages from cache directly to ensure single source of truth
+  const historyKey = `${currentView}-${agentMode}`;
+  const messages = historyCache[historyKey] || [];
+
+  // Update history helper
+  const updateHistory = useCallback((newMessages: Message[]) => {
+      setHistoryCache(prev => ({
+          ...prev,
+          [historyKey]: newMessages
+      }));
+  }, [historyKey]);
+
   // --- DRAG LOGIC ---
   const initialX = typeof window !== 'undefined' ? window.innerWidth - 80 : 0;
   // Adjusted Y to ensure it doesn't overlap mobile nav (approx 80px buffer from bottom)
-  const initialY = typeof window !== 'undefined' ? window.innerHeight - 140 : 0;
+  const initialY = typeof window !== 'undefined' ? window.innerHeight - 100 : 0;
   
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [windowPosition, setWindowPosition] = useState({ x: 0, y: 0 });
@@ -161,7 +180,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       if (typeof window !== 'undefined') {
           // Align top with logo line (approx 64px header + padding = ~80px)
           setWindowPosition({ x: window.innerWidth - 400, y: 80 });
-          setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 140 });
+          setPosition({ x: window.innerWidth - 80, y: window.innerHeight - 100 });
       }
   }, []);
 
@@ -190,7 +209,8 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       
       // Boundaries
       newX = Math.max(0, Math.min(window.innerWidth - width, newX));
-      newY = Math.max(20, Math.min(window.innerHeight - height - 80, newY)); // Ensure within screen
+      // Ensure within screen but above mobile nav (approx 80px)
+      newY = Math.max(20, Math.min(window.innerHeight - height - 80, newY));
       
       if (dragTarget === 'button') setPosition({ x: newX, y: newY });
       else setWindowPosition({ x: newX, y: newY });
@@ -231,33 +251,64 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       } else {
           suggestions = SUGGESTIONS_MAP[currentView] || ["What can you do?", "Help me get started"];
       }
-      // Add Context-Aware dynamic suggestions
-      if (currentView === View.DASHBOARD && esgScores.environmental < 70) {
-          suggestions.unshift("Why is Environmental score low?");
+      
+      // --- Deep Context Awareness ---
+      
+      // 1. Dashboard Context
+      if (currentView === View.DASHBOARD) {
+          if (esgScores.environmental < 70) suggestions.unshift("Analyze Environmental gaps");
+          if (esgScores.social < 70) suggestions.unshift("Improve Social score");
+          if (esgScores.governance < 70) suggestions.unshift("Review Governance risks");
+          if (carbonData.scope1 + carbonData.scope2 > 1000) suggestions.unshift("Simulate decarbonization paths");
       }
-      if (currentView === View.CARBON && carbonData.scope3 > 1000) {
-          suggestions.unshift("Reduce Scope 3 hotspots");
+
+      // 2. Finance Context
+      if (currentView === View.FINANCE) {
+          if (budget > 100000) suggestions.unshift("Optimize budget allocation");
+          if (carbonCredits < 500) suggestions.unshift("Purchase Carbon Credits");
+          suggestions.unshift("Predict ROI for solar project");
+      }
+
+      // 3. Strategy Context
+      if (currentView === View.STRATEGY) {
+          suggestions.unshift("Simulate Competitor Move");
+          suggestions.unshift("Draft Risk Mitigation Plan");
+      }
+
+      // 4. Report Context
+      if (currentView === View.REPORT) {
+          if (auditLogs.length > 0) suggestions.unshift("Summarize recent audit logs");
+          suggestions.unshift("Generate Executive Summary");
+      }
+
+      // 5. Universal Context (History)
+      if (auditLogs.length > 0 && currentView === View.AUDIT) {
+           const lastAction = auditLogs[0].action;
+           suggestions.unshift(`Explain "${lastAction}" impact`);
       }
       
-      return Array.from(new Set(suggestions)).slice(0, 5);
-  }, [currentView, agentMode, esgScores, carbonData]);
+      // 6. Generic Alerts
+      if (budget < 50000) suggestions.unshift("Find cost savings");
+
+      return Array.from(new Set(suggestions)).slice(0, 6);
+  }, [currentView, agentMode, esgScores, carbonData, budget, carbonCredits, auditLogs]);
 
   const classifySuggestion = (text: string) => {
       const lower = text.toLowerCase();
       // Perception: Seeing, finding, monitoring
-      if (lower.match(/scan|search|find|monitor|read|crawl|detect/)) {
+      if (lower.match(/scan|search|find|monitor|read|crawl|detect|check/)) {
           return { core: 'Perception', icon: Eye, color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' };
       }
       // Cognition: Thinking, analyzing, calculating
-      if (lower.match(/analyze|calculate|simulate|risk|predict|forecast|evaluate|compare/)) {
+      if (lower.match(/analyze|calculate|simulate|risk|predict|forecast|evaluate|compare|why|explain/)) {
           return { core: 'Cognition', icon: BrainCircuit, color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' };
       }
       // Expression: Creating, writing, reporting
-      if (lower.match(/draft|write|generate|report|summarize|email|create|compose/)) {
+      if (lower.match(/draft|write|generate|report|summarize|email|create|compose|help/)) {
           return { core: 'Expression', icon: FileText, color: 'text-pink-400', border: 'border-pink-500/30', bg: 'bg-pink-500/10' };
       }
       // Memory: Recalling, storing, history
-      if (lower.match(/remember|history|log|archive|recall|save|store/)) {
+      if (lower.match(/remember|history|log|archive|recall|save|store|verify/)) {
           return { core: 'Memory', icon: Database, color: 'text-cyan-400', border: 'border-cyan-500/30', bg: 'bg-cyan-500/10' };
       }
       // Nexus: Connecting, system, API, switching
@@ -265,10 +316,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   };
 
   useEffect(() => {
-      const historyKey = `${currentView}-${agentMode}`;
-      const savedMessages = historyCache[historyKey] || [];
-      setMessages(savedMessages);
-      
+      // Chat Context Initialization
       // Inject Live Data Context based on View
       let viewContextData = "";
       if (currentView === View.DASHBOARD || currentView === View.CARBON) {
@@ -330,10 +378,10 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
           chatRef.current = client.chats.create({
               model: 'gemini-2.5-flash',
               config: { systemInstruction: systemContext },
-              history: savedMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
+              history: messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
           });
       } catch (e) { console.error(e); }
-  }, [currentView, agentMode, carbonData, esgScores, budget, carbonCredits, auditLogs]);
+  }, [currentView, agentMode, carbonData, esgScores, budget, carbonCredits, auditLogs]); // Depend on messages length to re-init history if clear? No, messages is managed.
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -361,9 +409,23 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
       }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setAttachedFile({
+                  file: file,
+                  base64: (reader.result as string).split(',')[1]
+              });
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
   const handleSend = async (overrideText?: string) => {
     const userMessage = overrideText || input;
-    if (!userMessage.trim() || isThinking) return;
+    if ((!userMessage.trim() && !attachedFile) || isThinking) return;
 
     checkSkills(userMessage);
     if (!overrideText) {
@@ -376,12 +438,17 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         addLog(`> ${userMessage}`, 'info', 'Phantom');
     }
 
-    const newMessage: Message = { id: Date.now().toString(), role: 'user', text: userMessage, timestamp: Date.now() };
-    const updatedMessages = [...messages, newMessage];
+    const newMessage: Message = { 
+        id: Date.now().toString(), 
+        role: 'user', 
+        text: userMessage, 
+        timestamp: Date.now(),
+        attachments: attachedFile ? [{ type: attachedFile.file.type, name: attachedFile.file.name }] : undefined
+    };
     
-    setMessages(updatedMessages);
-    const historyKey = `${currentView}-${agentMode}`;
-    setHistoryCache(prev => ({ ...prev, [historyKey]: updatedMessages }));
+    // Optimistic Update
+    const updatedMessages = [...messages, newMessage];
+    updateHistory(updatedMessages);
 
     setIsThinking(true);
 
@@ -391,18 +458,29 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
              chatRef.current = client.chats.create({ model: 'gemini-2.5-flash' });
         }
 
-        const result = await chatRef.current.sendMessage({ message: userMessage });
+        // Construct message payload with file if present
+        let messagePayload: any = userMessage;
+        
+        if (attachedFile) {
+            messagePayload = [
+                { inlineData: { mimeType: attachedFile.file.type, data: attachedFile.base64 } },
+                { text: userMessage || "Analyze this file." }
+            ];
+            // Clear attachment after sending
+            setAttachedFile(null);
+        }
+
+        const result = await chatRef.current.sendMessage(messagePayload);
         const responseText = result.text || "Processed.";
         
         const botMessage: Message = { id: (Date.now()+1).toString(), role: 'model', text: responseText, timestamp: Date.now() };
-        const finalMessages = [...updatedMessages, botMessage];
         
-        setMessages(finalMessages);
-        setHistoryCache(prev => ({ ...prev, [historyKey]: finalMessages }));
+        updateHistory([...updatedMessages, botMessage]);
         
     } catch (error) {
+      console.error(error);
       addToast('error', 'Neural Link Interrupted', 'AI Error');
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Connection unstable. Retrying neural handshake...", timestamp: Date.now() }]);
+      updateHistory([...updatedMessages, { id: Date.now().toString(), role: 'model', text: "Connection unstable. Retrying neural handshake...", timestamp: Date.now() }]);
       chatRef.current = null;
     } finally {
       setIsThinking(false);
@@ -418,19 +496,51 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   const handleRedoMessage = async (index: number) => {
       // Find the last user message before this bot message
       if (index === 0) return;
+      
       const lastUserMsg = messages[index - 1];
       if (lastUserMsg.role !== 'user') return;
 
-      // Remove current bot message
-      const newMessages = messages.slice(0, index);
-      setMessages(newMessages);
+      // Rewind history to just before the bot response (keeping user msg)
+      // Actually, standard Redo keeps the user message and tries again.
+      // But handleSend adds a user message.
+      // So we should slice up to BEFORE the user message, update history, and then call handleSend with the user text.
+      const newMessages = messages.slice(0, index - 1);
+      updateHistory(newMessages);
       
-      // Resend prompt
-      await handleSend(lastUserMsg.text);
+      // Allow state update to propagate? handleSend uses 'messages' from closure? 
+      // handleSend uses messages from state via messages variable? No, it uses cache if we modify it? 
+      // Actually we need to be careful with async state.
+      // Easiest way: manually invoke API and append to newMessages.
+      
+      setIsThinking(true);
+      try {
+          if (!chatRef.current) {
+             chatRef.current = client.chats.create({ model: 'gemini-2.5-flash', history: newMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] })) });
+          } else {
+             // If we rewind, we might need to reset history in Gemini or create new chat.
+             // Simpler to create new chat context for reliability.
+             chatRef.current = client.chats.create({ model: 'gemini-2.5-flash', history: newMessages.map(m => ({ role: m.role, parts: [{ text: m.text }] })) });
+          }
+
+          // Re-add user message for UI consistency if we stripped it
+          const reUserMsg = lastUserMsg;
+          const reHistory = [...newMessages, reUserMsg];
+          updateHistory(reHistory);
+
+          const result = await chatRef.current.sendMessage(reUserMsg.text);
+          const responseText = result.text || "Processed.";
+          
+          updateHistory([...reHistory, { id: (Date.now()+1).toString(), role: 'model', text: responseText, timestamp: Date.now() }]);
+      } catch (e) {
+          console.error(e);
+          addToast('error', 'Regeneration Failed', 'Error');
+      } finally {
+          setIsThinking(false);
+      }
   };
 
   const handleFeedback = (msgId: string, type: 'good' | 'bad') => {
-      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, feedback: type } : m));
+      updateHistory(messages.map(m => m.id === msgId ? { ...m, feedback: type } : m));
       addToast('success', isZh ? '感謝反饋' : 'Thanks for feedback', 'System');
       
       if (type === 'good') {
@@ -491,22 +601,36 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
   };
 
   const handleClearConversation = () => {
-      const historyKey = `${currentView}-${agentMode}`;
-      
-      // Clear current view messages
-      setMessages([]);
-      
-      // Clear from persistence
-      setHistoryCache(prev => {
-          const newCache = { ...prev };
-          delete newCache[historyKey];
-          return newCache;
-      });
-
-      // Reset Gemini Chat Session
+      updateHistory([]);
       chatRef.current = null; 
+      addToast('info', isZh ? '已開啟新對話' : 'New chat started', 'System');
+  };
 
-      addToast('info', isZh ? '對話記憶已清除' : 'Conversation memory cleared', 'System');
+  const handleExportPDF = () => {
+      if (!scrollLogRef.current) return;
+      const element = scrollLogRef.current;
+      const opt = {
+          margin: 10,
+          filename: `chat_export_${Date.now()}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#0f172a' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      addToast('info', isZh ? '正在匯出 PDF...' : 'Exporting PDF...', 'System');
+      html2pdf().set(opt).from(element).save().then(() => {
+          addToast('success', isZh ? '匯出完成' : 'Export Complete', 'System');
+      });
+  };
+
+  const handleScrollSuggestions = (direction: 'left' | 'right') => {
+      if (suggestionsScrollRef.current) {
+          const scrollAmount = 200;
+          suggestionsScrollRef.current.scrollBy({
+              left: direction === 'left' ? -scrollAmount : scrollAmount,
+              behavior: 'smooth'
+          });
+      }
   };
 
   const getThemeClasses = () => {
@@ -589,8 +713,11 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
         
         {/* Actions */}
         <div className="flex gap-2" onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
-            <button onClick={handleClearConversation} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-red-400 transition-colors" title={isZh ? "清除對話" : "Clear Conversation"}>
-                <Trash2 className="w-4 h-4" />
+            <button onClick={handleExportPDF} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title={isZh ? "匯出 PDF" : "Export PDF"}>
+                <Download className="w-4 h-4" />
+            </button>
+            <button onClick={handleClearConversation} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors" title={isZh ? "新對話 (清除)" : "New Chat (Clear)"}>
+                <MessageSquarePlus className="w-4 h-4" />
             </button>
             <button onClick={() => setIsOpen(false)} className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
@@ -631,6 +758,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
                         </div>
                         <p className="font-bold text-gray-300 mb-1">{isZh ? '我是您的專屬智能代理。' : `I am ${activePersona.name}.`}</p>
                         <p className="text-xs opacity-70">{activePersona.role}</p>
+                        <p className="text-[10px] mt-4 text-gray-600">History is saved locally for this view.</p>
                     </div>
                 )}
                 {messages.map((msg, idx) => (
@@ -641,6 +769,16 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
                                 ? `${theme.button} text-white rounded-br-none` 
                                 : 'bg-white/10 text-gray-100 rounded-bl-none border border-white/5'
                             }`}>
+                                {msg.attachments && (
+                                    <div className="mb-2 flex flex-col gap-1">
+                                        {msg.attachments.map((att, i) => (
+                                            <div key={i} className="flex items-center gap-2 bg-black/20 p-2 rounded text-xs">
+                                                <FileText className="w-3 h-3 opacity-70" />
+                                                <span className="truncate max-w-[150px]">{att.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 {msg.role === 'model' ? (
                                     <>
                                         <GenerativeUIRenderer content={msg.text} />
@@ -686,7 +824,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
       {/* Capabilities / Suggestions */}
       {!(currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom') && (
-          <div className="flex flex-col shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 relative z-10">
+          <div className="flex flex-col shrink-0 bg-black/20 backdrop-blur-md border-t border-white/5 relative z-10 group/suggestions">
               <div className="px-4 pt-3 pb-1 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                       <Sparkles className={`w-3 h-3 ${theme.text}`} />
@@ -696,34 +834,67 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
                   </div>
               </div>
 
-              <div className="px-4 pb-3 pt-2 flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade">
-                  {activeSuggestions.map((suggestion, idx) => {
-                      const visuals = classifySuggestion(suggestion);
-                      const CoreIcon = visuals.icon;
-                      return (
-                      <button 
-                        key={idx}
-                        onClick={() => handleSend(suggestion)}
-                        className={`
-                            flex flex-col items-start p-2 rounded-xl border transition-all min-w-[140px] max-w-[200px] gap-1 group relative overflow-hidden shrink-0 hover:scale-105
-                            ${visuals.border} ${visuals.bg} hover:brightness-110 hover:shadow-lg
-                        `}
-                      >
-                          <div className={`flex items-center gap-1.5 opacity-80 ${visuals.color}`}>
-                              <CoreIcon className="w-3 h-3" />
-                              <span className="text-[9px] uppercase tracking-wider font-bold">{visuals.core}</span>
-                          </div>
-                          <span className="text-xs text-left font-medium text-gray-200 group-hover:text-white leading-tight w-full truncate">
-                              {suggestion}
-                          </span>
-                      </button>
-                  )})}
+              <div className="relative flex items-center group/suggestions">
+                  <button 
+                    onClick={() => handleScrollSuggestions('left')}
+                    className="absolute left-0 z-10 p-1 bg-slate-900/80 hover:bg-slate-800 text-gray-400 rounded-r-lg border-y border-r border-white/10 h-full opacity-0 group-hover/suggestions:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                      <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <div 
+                    ref={suggestionsScrollRef}
+                    className="px-4 pb-3 pt-2 flex gap-2 overflow-x-auto no-scrollbar mask-linear-fade scroll-smooth w-full"
+                  >
+                      {activeSuggestions.map((suggestion, idx) => {
+                          const visuals = classifySuggestion(suggestion);
+                          const CoreIcon = visuals.icon;
+                          return (
+                          <button 
+                            key={idx}
+                            onClick={() => handleSend(suggestion)}
+                            className={`
+                                flex flex-col items-start p-2 rounded-xl border transition-all min-w-[140px] max-w-[200px] gap-1 group relative overflow-hidden shrink-0 hover:scale-105
+                                ${visuals.border} ${visuals.bg} hover:brightness-110 hover:shadow-lg
+                            `}
+                          >
+                              <div className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md text-[9px] uppercase tracking-wider font-bold mb-1 w-fit ${visuals.color} bg-white/5`}>
+                                  <CoreIcon className="w-3 h-3" />
+                                  {visuals.core}
+                              </div>
+                              <span className="text-xs text-left font-medium text-gray-200 group-hover:text-white leading-tight w-full line-clamp-2">
+                                  {suggestion}
+                              </span>
+                          </button>
+                      )})}
+                  </div>
+
+                  <button 
+                    onClick={() => handleScrollSuggestions('right')}
+                    className="absolute right-0 z-10 p-1 bg-slate-900/80 hover:bg-slate-800 text-gray-400 rounded-l-lg border-y border-l border-white/10 h-full opacity-0 group-hover/suggestions:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                      <ArrowRight className="w-4 h-4" />
+                  </button>
               </div>
           </div>
       )}
 
       {/* Input Area */}
       <div className={`p-4 border-t bg-white/5 ${theme.border} shrink-0 relative z-10`}>
+         
+         {/* Attachment Preview */}
+         {attachedFile && (
+             <div className="flex items-center gap-2 mb-2 px-2">
+                 <div className="bg-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-white border border-white/10">
+                     <FileText className="w-3 h-3" />
+                     <span className="truncate max-w-[200px]">{attachedFile.file.name}</span>
+                     <button onClick={() => setAttachedFile(null)} className="hover:text-red-400 ml-1">
+                         <X className="w-3 h-3" />
+                     </button>
+                 </div>
+             </div>
+         )}
+
          <div className="flex gap-2 items-end">
             <textarea 
                 ref={textareaRef}
@@ -749,6 +920,22 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
                 rows={1}
             />
             
+            {/* File Upload Button */}
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handleFileSelect}
+                accept="image/*,application/pdf"
+            />
+            <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 rounded-xl transition-all mb-0.5 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+                title={isZh ? "上傳文件/圖片" : "Upload File/Image"}
+            >
+                <Paperclip className="w-5 h-5" />
+            </button>
+
             {/* Mic Button */}
             <button 
                 onClick={handleVoiceInput}
@@ -760,7 +947,7 @@ export const AiAssistant: React.FC<AiAssistantProps> = ({ language, onNavigate, 
 
             <button 
                 onClick={() => handleSend()} 
-                disabled={isThinking || !input.trim()}
+                disabled={isThinking || (!input.trim() && !attachedFile)}
                 className={`p-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 ${theme.button} text-white shadow-lg hover:scale-105`}
             >
                 {currentView === View.UNIVERSAL_AGENT && agentMode === 'phantom' ? <Terminal className="w-5 h-5"/> : <Send className="w-5 h-5"/>}

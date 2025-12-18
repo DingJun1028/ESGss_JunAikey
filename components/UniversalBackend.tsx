@@ -6,14 +6,13 @@ import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy
 import { useUniversalAgent } from '../contexts/UniversalAgentContext';
 import { useToast } from '../contexts/ToastContext';
 
-// ... (CoreNodeBase and MetricCard components remain the same) ...
-// Re-declaring for context completeness in the replace block
 interface CoreNodeProps extends InjectedProxyProps {
-    evolutionStage: number;
+    // Fixed: renamed evolutionStage to avoid conflict with InjectedProxyProps.evolutionStage
+    stageVersion: number;
 }
 
 const CoreNodeBase: React.FC<CoreNodeProps> = ({ 
-    evolutionStage, adaptiveTraits, isAgentActive, trackInteraction 
+    stageVersion, adaptiveTraits, isAgentActive, trackInteraction 
 }) => {
     const isLearning = isAgentActive || adaptiveTraits?.includes('learning');
     const isEvolved = adaptiveTraits?.includes('evolution');
@@ -35,7 +34,7 @@ const CoreNodeBase: React.FC<CoreNodeProps> = ({
                     {isLearning ? 'Optimizing' : 'System Stage'}
                 </div>
                 <div className={`text-6xl font-bold tracking-tighter drop-shadow-lg transition-colors ${isLearning ? 'text-celestial-gold' : 'text-white'}`}>
-                    v{evolutionStage}
+                    v{stageVersion}
                 </div>
                 <div className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                     <span className="relative flex h-2 w-2">
@@ -82,25 +81,20 @@ const MetricCard = React.memo(({ icon, label, value, subtext, color, progress }:
   );
 });
 
-// ----------------------------------------------------------------------
-// Main Component
-// ----------------------------------------------------------------------
-
 const UniversalBackend: React.FC = () => {
   const [vitals, setVitals] = useState<SystemVital | null>(null);
   const [registry, setRegistry] = useState<MCPRegistryItem[]>([]);
   const [activeTab, setActiveTab] = useState<'monitor' | 'registry' | 'evolution'>('monitor');
   
-  // Time Machine State
   const { evolutionPlan } = useUniversalAgent();
   const [snapshotIndex, setSnapshotIndex] = useState(0);
   const { addToast } = useToast();
 
   useEffect(() => {
     const sub1 = universalIntelligence.vitals$.subscribe(setVitals);
+    // Fixed: mcpRegistry$ is now correctly defined in kernel
     const sub2 = universalIntelligence.mcpRegistry$.subscribe(setRegistry);
     
-    // Init Time Machine to current version
     const currentIdx = evolutionPlan.findIndex(e => e.status === 'current');
     if (currentIdx !== -1) setSnapshotIndex(currentIdx);
 
@@ -120,11 +114,8 @@ const UniversalBackend: React.FC = () => {
 
   return (
     <div className="relative w-full min-h-screen bg-[#020617] overflow-hidden font-mono text-cyan-400 selection:bg-cyan-500/30 flex flex-col">
-      
-      {/* Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.05)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
 
-      {/* Header */}
       <div className="flex items-center gap-4 p-8 pb-0 z-10 shrink-0">
           <div className="p-3 bg-celestial-gold/10 rounded-xl border border-celestial-gold/20">
               <BrainCircuit className="w-8 h-8 text-celestial-gold" />
@@ -138,7 +129,6 @@ const UniversalBackend: React.FC = () => {
           </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex gap-4 border-b border-white/10 px-8 py-4 z-10 shrink-0">
           <button 
               onClick={() => setActiveTab('monitor')}
@@ -164,10 +154,11 @@ const UniversalBackend: React.FC = () => {
         
         {activeTab === 'monitor' && (
             <div className="flex flex-col items-center">
+                {/* Fixed: using stageVersion instead of evolutionStage */}
                 <CoreNode 
                     id="AIOS_Core_Monitor"
                     label="Nexus Core"
-                    evolutionStage={vitals.evolutionStage} 
+                    stageVersion={vitals.evolutionStage} 
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl mb-12">
                     <MetricCard 
@@ -252,11 +243,8 @@ const UniversalBackend: React.FC = () => {
             </div>
         )}
 
-        {/* Evolution Report Tab */}
         {activeTab === 'evolution' && (
             <div className="w-full max-w-7xl mx-auto animate-fade-in space-y-8">
-                
-                {/* Time Machine Header */}
                 <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-4">
                     <div>
                         <h3 className="text-2xl font-bold text-white mb-1 flex items-center gap-3">
@@ -273,9 +261,7 @@ const UniversalBackend: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Time Machine Display */}
                 <div className="glass-panel p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900 to-black relative overflow-hidden group">
-                    {/* Background Ambience based on status */}
                     <div className={`absolute inset-0 opacity-20 pointer-events-none transition-colors duration-1000
                         ${currentSnapshot.status === 'completed' ? 'bg-emerald-900' : 
                           currentSnapshot.status === 'current' ? 'bg-cyan-900' : 'bg-purple-900'}
@@ -283,7 +269,6 @@ const UniversalBackend: React.FC = () => {
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay" />
 
                     <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
-                        {/* Interactive Slider */}
                         <div className="w-full md:w-1/3 space-y-6">
                             <div className="flex justify-between text-xs font-mono text-gray-500 uppercase tracking-widest">
                                 <span>Genesis (v1.0)</span>
@@ -304,7 +289,6 @@ const UniversalBackend: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Holographic Snapshot Card */}
                         <div className="flex-1 w-full relative perspective-1000">
                             <div className={`p-8 rounded-2xl border-2 backdrop-blur-xl transition-all duration-500 transform
                                 ${currentSnapshot.status === 'current' 
@@ -362,7 +346,6 @@ const UniversalBackend: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Timeline List (Detailed) */}
                 <div className="glass-panel p-8 rounded-2xl border border-emerald-500/20 bg-slate-900/50">
                     <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
                         <Zap className="w-5 h-5 text-emerald-400" />

@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { 
   DashboardWidget, AuditLogEntry, EsgCard, Quest, ToDoItem, NoteItem, BookmarkItem, 
   UserTier, CarbonData, MasteryLevel, Badge, WidgetType, AppFile, IntelligenceItem,
-  UniversalCrystal, UserJournalEntry, Role, Permission
+  UniversalCrystal, UserJournalEntry, Role, Permission, UniversalTag
 } from '../../types';
 import { UNIVERSAL_CORES, ROLE_DEFINITIONS } from '../../constants';
 import { universalIntelligence } from '../../services/evolutionEngine';
@@ -13,6 +13,15 @@ const INITIAL_QUESTS: Quest[] = [
   { id: 'q1', title: 'Upload Electricity Bill', desc: 'Upload PDF invoice for HQ.', type: 'Daily', rarity: 'Common', xp: 100, status: 'active', requirement: 'image_upload' },
   { id: 'q2', title: 'Supplier Engagement', desc: 'Send survey to Tier 1 suppliers.', type: 'Weekly', rarity: 'Rare', xp: 300, status: 'active', requirement: 'manual' },
   { id: 'q3', title: 'Carbon Neutral Day', desc: 'Achieve net zero emissions for 24h.', type: 'Challenge', rarity: 'Legendary', xp: 1000, status: 'active', requirement: 'manual' }
+];
+
+// Initial Universal Tags with Hidden Attributes and Dual Language
+const INITIAL_TAGS: UniversalTag[] = [
+    { id: 'ut-1', label: 'CEO Persona', labelZh: '執行長人格', labelEn: 'CEO Persona', hiddenPrompt: 'Act as a visionary CEO. Focus on strategic growth, long-term value, and high-level decision making. Use authoritative yet inspiring tone.', theme: 'gold', description: 'Strategy & Leadership' },
+    { id: 'ut-2', label: 'Critic', labelZh: '嚴厲評論家', labelEn: 'Critic', hiddenPrompt: 'Act as a rigorous auditor. Critique the content for logical fallacies, missing data, and potential risks. Be harsh but fair.', theme: 'rose', description: 'Risk & Audit' },
+    { id: 'ut-3', label: 'ELI5', labelZh: '五歲聽得懂', labelEn: 'ELI5', hiddenPrompt: 'Explain Like I am 5. Simplify all concepts to their absolute core. Use analogies and simple language. Avoid jargon.', theme: 'blue', description: 'Simplification' },
+    { id: 'ut-4', label: 'Socratic', labelZh: '蘇格拉底式', labelEn: 'Socratic', hiddenPrompt: 'Do not answer directly. Instead, ask guiding questions to help the user discover the answer themselves. Foster deep thinking.', theme: 'purple', description: 'Deep Thinking' },
+    { id: 'ut-5', label: 'Green Washer', labelZh: '漂綠偵測', labelEn: 'Green Washer', hiddenPrompt: 'Analyze for Greenwashing risks. Flag any vague claims, unsubstantiated data, or overly positive spin on environmental impact.', theme: 'emerald', description: 'Compliance Check' },
 ];
 
 interface CompanyContextType {
@@ -67,7 +76,7 @@ interface CompanyContextType {
   deleteTodo: (id: number) => void;
   
   universalNotes: NoteItem[];
-  addNote: (content: string, tags?: string[], title?: string) => void; 
+  addNote: (content: string, tags?: string[], title?: string, universalTags?: string[]) => void; 
   updateNote: (id: string, content: string, title?: string, tags?: string[]) => void;
   deleteNote: (id: string) => void;
   
@@ -124,6 +133,11 @@ interface CompanyContextType {
   // User Journal
   journal: UserJournalEntry[];
   addJournalEntry: (title: string, impact: string, xp: number, type: 'milestone' | 'action' | 'insight', tags: string[]) => void;
+
+  // Universal Tag System
+  universalTags: UniversalTag[];
+  addUniversalTag: (tag: Omit<UniversalTag, 'id'>) => void;
+  deleteUniversalTag: (id: string) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
@@ -168,6 +182,9 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       { id: 'j1', timestamp: Date.now() - 86400000, title: 'System Initialization', impact: 'ESGss Platform Activated', xpGained: 100, type: 'milestone', tags: ['System'] },
       { id: 'j2', timestamp: Date.now() - 43200000, title: 'Carbon Data Synced', impact: 'Scope 1 & 2 baseline established', xpGained: 50, type: 'action', tags: ['Operation'] }
   ]);
+
+  // Universal Tags
+  const [universalTags, setUniversalTags] = useState<UniversalTag[]>(INITIAL_TAGS);
 
   // Productivity & Files
   const [todos, setTodos] = useState<ToDoItem[]>([
@@ -279,6 +296,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
         setIsAiToolsUnlocked(data.isAiToolsUnlocked || false);
         if(data.crystals) setCrystals(data.crystals);
         if(data.journal) setJournal(data.journal);
+        if(data.universalTags) setUniversalTags(data.universalTags);
       } catch (e) { console.error("Failed to load state", e); }
     }
   }, []);
@@ -289,10 +307,10 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       userName, userRole, companyName, tier, xp, goodwillBalance, esgScores, carbonData,
       budget, carbonCredits, collectedCards, purifiedCards, cardMastery, auditLogs,
       todos, universalNotes, bookmarks, files, myIntelligence, lastBriefingDate, customWidgets, myEsgWidgets, palaceWidgets,
-      isAiToolsUnlocked, crystals, journal
+      isAiToolsUnlocked, crystals, journal, universalTags
     };
     localStorage.setItem('esgss_state_v5', JSON.stringify(state));
-  }, [userName, userRole, companyName, tier, xp, goodwillBalance, esgScores, carbonData, budget, carbonCredits, collectedCards, purifiedCards, cardMastery, auditLogs, todos, universalNotes, bookmarks, files, myIntelligence, lastBriefingDate, customWidgets, myEsgWidgets, palaceWidgets, isAiToolsUnlocked, crystals, journal]);
+  }, [userName, userRole, companyName, tier, xp, goodwillBalance, esgScores, carbonData, budget, carbonCredits, collectedCards, purifiedCards, cardMastery, auditLogs, todos, universalNotes, bookmarks, files, myIntelligence, lastBriefingDate, customWidgets, myEsgWidgets, palaceWidgets, isAiToolsUnlocked, crystals, journal, universalTags]);
 
   // Actions wrapped in useCallback for performance
   const addJournalEntry = useCallback((title: string, impact: string, xpGain: number, type: 'milestone' | 'action' | 'insight', tags: string[]) => {
@@ -378,7 +396,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     setTodos(prev => prev.filter(t => t.id !== id));
   }, []);
   
-  const addNote = useCallback((content: string, tags: string[] = [], title?: string) => {
+  const addNote = useCallback((content: string, tags: string[] = [], title?: string, universalTags?: string[]) => {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const generatedTitle = title || `${dateStr} - New Note`;
     const newId = Date.now().toString();
@@ -387,7 +405,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
         id: newId, 
         title: generatedTitle,
         content, 
-        tags, 
+        tags,
+        universalTags: universalTags || [],
         createdAt: Date.now(), 
         source: 'manual',
         backlinks: []
@@ -417,11 +436,10 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   const updateNote = useCallback((id: string, content: string, title?: string, tags?: string[]) => {
     setUniversalNotes(prev => {
-        let notes = prev.map(n => n.id === id ? { ...n, content, title: title || n.title, tags: tags || n.tags } : n);
-        
-        // Additive Backlinking Logic
         const linkRegex = /\[\[(.*?)\]\]/g;
         const links = [...content.matchAll(linkRegex)].map(m => m[1]);
+
+        let notes = prev.map(n => n.id === id ? { ...n, content, title: title || n.title, tags: tags || n.tags } : n);
         
         if (links.length > 0) {
             notes = notes.map(n => {
@@ -610,6 +628,15 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       }));
   }, [addJournalEntry]);
 
+  const addUniversalTag = useCallback((tag: Omit<UniversalTag, 'id'>) => {
+      const newTag = { ...tag, id: `ut-${Date.now()}` };
+      setUniversalTags(prev => [...prev, newTag as UniversalTag]);
+  }, []);
+
+  const deleteUniversalTag = useCallback((id: string) => {
+      setUniversalTags(prev => prev.filter(t => t.id !== id));
+  }, []);
+
   // Optimized Context Value
   const contextValue = useMemo(() => ({
       userName, setUserName, userRole, setUserRole, roleTitle, companyName, setCompanyName, tier, upgradeTier, hasPermission,
@@ -628,7 +655,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       myIntelligence, saveIntelligence,
       isAiToolsUnlocked, unlockAiTools,
       crystals, collectCrystalFragment, restoreCrystal,
-      journal, addJournalEntry
+      journal, addJournalEntry,
+      universalTags, addUniversalTag, deleteUniversalTag
   }), [
       userName, userRole, companyName, tier, xp, level, goodwillBalance, esgScores, totalScore,
       carbonData, budget, carbonCredits, quests, auditLogs, collectedCards, purifiedCards, cardMastery,
@@ -639,7 +667,8 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       addTodo, toggleTodo, deleteTodo, addNote, updateNote, deleteNote, toggleBookmark,
       markBriefingRead, addCustomWidget, removeCustomWidget, addPalaceWidget, removePalaceWidget, checkBadges, resetData,
       addFile, removeFile, updateFile, saveIntelligence, unlockAiTools, collectCrystalFragment, restoreCrystal, addJournalEntry,
-      addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize, hasPermission, roleTitle
+      addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize, hasPermission, roleTitle,
+      universalTags, addUniversalTag, deleteUniversalTag
   ]);
 
   return (

@@ -7,7 +7,7 @@ import { performWebSearch } from '../services/ai-service';
 import { marked } from 'marked';
 import { useCompany } from './providers/CompanyProvider';
 import { UniversalPageHeader } from './UniversalPageHeader';
-import GenerativeUIRenderer from './GenerativeUIRenderer';
+import { GenerativeUIRenderer } from './GenerativeUIRenderer';
 
 interface BusinessIntelProps {
   language: Language;

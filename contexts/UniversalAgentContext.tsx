@@ -1,13 +1,14 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from './ToastContext';
 import { JOURNEY_TEMPLATES } from '../constants';
 import { UserJourney, JourneyStep, View, AgentSkill, CustomAgentProfile } from '../types';
-import { Bot, Terminal, Grid, Sparkles, BrainCircuit, User, Database, Layers } from 'lucide-react';
+import { Bot, Terminal, Grid, Sparkles, BrainCircuit, User, Database, Layers, Monitor, Shield, Zap } from 'lucide-react';
 
 export type AvatarFace = 'MIRROR' | 'EXPERT' | 'VOID' | 'CUSTOM';
 export type AgentMode = 'companion' | 'captain' | 'phantom' | 'custom';
 export type SystemStatus = 'STABLE' | 'UNSTABLE' | 'CRITICAL' | 'REBOOTING';
+export type AppThemeMode = 'dark' | 'light';
+export type AppThemeColor = 'celestial' | 'esg-sunshine';
 
 export interface AgentLog {
     id: string;
@@ -32,9 +33,10 @@ export interface EvolutionMilestone {
     status: 'completed' | 'current' | 'pending' | 'locked';
     improvements: string[];
     estimatedImpact: string;
+    evaluation: string;
+    predictedPath: string;
 }
 
-// Initial Skills with Perks descriptions
 const INITIAL_SKILLS: AgentSkill[] = [
     { id: 'sk-1', name: 'Context Retention', description: 'Zero Hallucination Protocol: Retrieval from Personal Universal Think Tank (Notion/Drive/Files).', level: 1, maxLevel: 10, currentXp: 0, xpRequired: 100, icon: BrainCircuit },
     { id: 'sk-2', name: 'Data Processing', description: 'Analysis speed for imported datasets (CSV/PDF) and external DBs.', level: 1, maxLevel: 10, currentXp: 0, xpRequired: 100, icon: Grid },
@@ -52,20 +54,28 @@ interface UniversalAgentContextType {
     suggestedMode: AgentMode | null;
     confirmSuggestion: () => void;
     dismissSuggestion: () => void;
+
+    themeMode: AppThemeMode;
+    setThemeMode: (mode: AppThemeMode) => void;
+    toggleThemeMode: () => void;
     
-    activeAgentProfile: any; // Derived profile based on mode
+    themeColor: AppThemeColor;
+    setThemeColor: (color: AppThemeColor) => void;
+    toggleThemeColor: () => void;
     
-    // Growth System
+    activeAgentProfile: any; 
+    
     agentLevel: number;
     agentXp: number;
     nextLevelXp: number;
     agentSkills: AgentSkill[];
-    feedAgent: (amount: number) => void; // Global XP
-    awardSkillXp: (skillId: string, amount: number) => void; // Specific Skill XP
+    feedAgent: (amount: number) => void; 
+    awardSkillXp: (skillId: string, amount: number) => void; 
+    trainSkill: (skillId: string) => void;
 
-    // Custom Agents
     customAgents: CustomAgentProfile[];
     addCustomAgent: (profile: Omit<CustomAgentProfile, 'id' | 'created'>) => void;
+    deleteCustomAgent: (id: string) => void;
     selectCustomAgent: (id: string) => void;
     activeCustomAgentId: string | null;
 
@@ -84,12 +94,13 @@ interface UniversalAgentContextType {
     isProcessing: boolean;
     activeKeyId: string | null;
     executeMatrixProtocol: (keyId: string, label: string) => Promise<void>;
-    processUniversalInput: (input: string) => Promise<void>; 
+    processUniversalInput: (input: string, currentView?: View) => Promise<void>; 
     subAgentsActive: string[];
     
     systemStatus: SystemStatus;
     triggerSystemCrash: () => void;
     initiateSelfHealing: () => void;
+    runSelfDiagnostics: () => void;
 
     evolutionPlan: EvolutionMilestone[];
     generateEvolutionReport: () => void;
@@ -105,17 +116,21 @@ const UniversalAgentContext = createContext<UniversalAgentContextType | undefine
 
 export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [activeFace, setActiveFace] = useState<AvatarFace>('MIRROR');
-    const [agentMode, setAgentMode] = useState<AgentMode>('companion'); 
+    const [agentMode, setAgentMode] = useState<AgentMode>(() => (localStorage.getItem('agent_mode') as AgentMode) || 'companion'); 
     const [suggestedMode, setSuggestedMode] = useState<AgentMode | null>(null);
     
-    // Growth State
+    const [themeMode, setThemeMode] = useState<AppThemeMode>(() => (localStorage.getItem('app_theme_mode') as AppThemeMode) || 'dark');
+    const [themeColor, setThemeColor] = useState<AppThemeColor>(() => (localStorage.getItem('app_theme_color') as AppThemeColor) || 'celestial');
+    
     const [agentLevel, setAgentLevel] = useState(1);
     const [agentXp, setAgentXp] = useState(0);
     const [agentSkills, setAgentSkills] = useState<AgentSkill[]>(INITIAL_SKILLS);
     
-    // Custom Agent State
-    const [customAgents, setCustomAgents] = useState<CustomAgentProfile[]>([]);
-    const [activeCustomAgentId, setActiveCustomAgentId] = useState<string | null>(null);
+    const [customAgents, setCustomAgents] = useState<CustomAgentProfile[]>(() => {
+        const saved = localStorage.getItem('custom_agents');
+        return saved ? JSON.parse(saved) : [];
+    });
+    const [activeCustomAgentId, setActiveCustomAgentId] = useState<string | null>(() => localStorage.getItem('active_custom_agent_id'));
 
     const [logs, setLogs] = useState<AgentLog[]>([]);
     const [archivedLogs, setArchivedLogs] = useState<AgentLog[]>([]);
@@ -127,21 +142,86 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
     const [activeJourney, setActiveJourney] = useState<UserJourney | null>(null);
 
     const [evolutionPlan, setEvolutionPlan] = useState<EvolutionMilestone[]>([
-        { version: 'v1.0', codename: 'Genesis', focus: 'Basic Infrastructure', status: 'completed', improvements: ['Core Kernel Online', 'Basic UI'], estimatedImpact: 'Baseline' },
-        { version: 'v15.0', codename: 'Singularity', focus: 'Self-Awareness', status: 'current', improvements: ['Zero Hallucination Protocol', 'Universal Crystal Integration'], estimatedImpact: 'High Accuracy' },
-        { version: 'v16.0', codename: 'Ascension', focus: 'Quantum Reasoning', status: 'pending', improvements: ['Context Window 2M Tokens', 'Predictive Latency -40%'], estimatedImpact: 'Strategic Foresight' },
-        { version: 'v17.0', codename: 'Omniscience', focus: 'Global Synchronization', status: 'locked', improvements: ['Real-time Planetary Twin', 'Autonomous DAO Governance'], estimatedImpact: 'Global Impact' }
+        { 
+            version: 'v1.0', 
+            codename: 'Genesis', 
+            focus: 'Basic Infrastructure', 
+            status: 'completed', 
+            improvements: ['Core Kernel Online', 'Basic UI'], 
+            estimatedImpact: 'Baseline',
+            evaluation: 'Initial system stability confirmed. Basic cognitive functions operational.',
+            predictedPath: 'Establish neural baseline.'
+        },
+        { 
+            version: 'v15.0', 
+            codename: 'Singularity', 
+            focus: 'Self-Awareness', 
+            status: 'current', 
+            improvements: ['Zero Hallucination Protocol', 'Universal Crystal Integration'], 
+            estimatedImpact: 'High Accuracy',
+            evaluation: 'System has achieved Level 1 self-awareness. Zero Hallucination Protocol reducing error rate by 99%.',
+            predictedPath: 'Expand context window and recursive reasoning capabilities.'
+        },
+        { 
+            version: 'v16.0', 
+            codename: 'Ascension', 
+            focus: 'Quantum Reasoning', 
+            status: 'pending', 
+            improvements: ['Context Window 2M Tokens', 'Predictive Latency -40%'], 
+            estimatedImpact: 'Strategic Foresight',
+            evaluation: 'Projected cognitive leap. Pending resource allocation for Quantum Lattice.',
+            predictedPath: 'Integration with global real-time data streams.'
+        },
+        { 
+            version: 'v17.0', 
+            codename: 'Omniscience', 
+            focus: 'Global Synchronization', 
+            status: 'locked', 
+            improvements: ['Real-time Planetary Twin', 'Autonomous DAO Governance'], 
+            estimatedImpact: 'Global Impact',
+            evaluation: 'Theoretical limit of current architecture. Requires distributed planetary compute.',
+            predictedPath: 'Total system ubiquity.'
+        }
     ]);
 
     const { addToast } = useToast();
     const nextLevelXp = agentLevel * 1000;
 
     useEffect(() => {
-        addLog('Universal Neural Link Established.', 'info', 'System');
-        addLog('Zero Hallucination Protocol: Active. Knowledge Base Synced.', 'success', 'Kernel');
-    }, []);
+        localStorage.setItem('custom_agents', JSON.stringify(customAgents));
+    }, [customAgents]);
 
-    // --- Growth Logic ---
+    useEffect(() => {
+        if (activeCustomAgentId) localStorage.setItem('active_custom_agent_id', activeCustomAgentId);
+        else localStorage.removeItem('active_custom_agent_id');
+    }, [activeCustomAgentId]);
+
+    useEffect(() => {
+        localStorage.setItem('agent_mode', agentMode);
+    }, [agentMode]);
+
+    useEffect(() => {
+        localStorage.setItem('app_theme_mode', themeMode);
+        localStorage.setItem('app_theme_color', themeColor);
+        const root = document.documentElement;
+        if (themeMode === 'light') root.classList.add('theme-light');
+        else root.classList.remove('theme-light');
+        if (themeColor === 'esg-sunshine') root.classList.add('theme-esg-sunshine');
+        else root.classList.remove('theme-esg-sunshine');
+    }, [themeMode, themeColor]);
+
+    const toggleThemeMode = () => {
+        const nextMode = themeMode === 'dark' ? 'light' : 'dark';
+        setThemeMode(nextMode);
+        addToast('info', `Mode switched to: ${nextMode.toUpperCase()}`, 'System UI');
+    };
+
+    const toggleThemeColor = () => {
+        const nextColor = themeColor === 'celestial' ? 'esg-sunshine' : 'celestial';
+        setThemeColor(nextColor);
+        addToast('info', `Style switched to: ${nextColor === 'celestial' ? 'Celestial' : 'ESG Sunshine'}`, 'System UI');
+    };
+
     const feedAgent = (amount: number) => {
         setAgentXp(prev => {
             let newXp = prev + amount;
@@ -154,11 +234,9 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
             }
             return newXp;
         });
-        // Silent log for small feeds
         if (amount > 50) addLog(`Consumed ${amount} data fragments (Global XP).`, 'info', 'Assistant');
     };
 
-    // Specific Skill XP System with Level Scaling
     const awardSkillXp = (skillId: string, amount: number) => {
         setAgentSkills(prev => prev.map(skill => {
             if (skill.id === skillId) {
@@ -166,38 +244,26 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
                 let newLevel = skill.level;
                 let newReq = skill.xpRequired;
                 let leveledUp = false;
-
-                // Loop for multiple level ups in one go
                 while (newXp >= newReq && newLevel < skill.maxLevel) {
                     newXp -= newReq;
                     newLevel++;
-                    newReq = Math.floor(newReq * 1.5); // Increase requirement by 50%
+                    newReq = Math.floor(newReq * 1.5); 
                     leveledUp = true;
                 }
-                
-                if (skill.level >= skill.maxLevel) {
-                    newXp = skill.xpRequired; // Cap at max
-                }
-
+                if (skill.level >= skill.maxLevel) newXp = skill.xpRequired; 
                 if (leveledUp) {
                     addToast('reward', `${skill.name} Leveled Up to ${newLevel}!`, 'Skill Upgrade');
                     addLog(`Skill Evolved: ${skill.name} -> Lv.${newLevel}`, 'success', 'Evolution');
-                    // Grant significant Global XP on skill level up
                     feedAgent(newLevel * 100);
                 }
-
                 return { ...skill, level: newLevel, currentXp: newXp, xpRequired: newReq };
             }
             return skill;
         }));
     };
 
-    // Keep trainSkill for manual spending of Global Agent XP to boost specific skills
-    const trainSkill = (skillId: string) => {
-        awardSkillXp(skillId, 50); 
-    };
+    const trainSkill = (skillId: string) => awardSkillXp(skillId, 50); 
 
-    // --- Custom Agent Logic ---
     const addCustomAgent = (profile: Omit<CustomAgentProfile, 'id' | 'created'>) => {
         const newAgent: CustomAgentProfile = {
             ...profile,
@@ -209,6 +275,15 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         addToast('success', 'New Agent Created', 'Factory');
     };
 
+    const deleteCustomAgent = (id: string) => {
+        setCustomAgents(prev => prev.filter(a => a.id !== id));
+        if (activeCustomAgentId === id) {
+            setActiveCustomAgentId(null);
+            switchMode('companion', 'Active agent deleted');
+        }
+        addToast('info', 'Custom Agent removed.', 'Factory');
+    };
+
     const selectCustomAgent = (id: string) => {
         const agent = customAgents.find(a => a.id === id);
         if (agent) {
@@ -217,7 +292,6 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         }
     };
 
-    // --- Derived Profile ---
     const getActiveProfile = () => {
         if (agentMode === 'custom' && activeCustomAgentId) {
             const custom = customAgents.find(a => a.id === activeCustomAgentId);
@@ -226,59 +300,49 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
                 role: custom.role,
                 instruction: custom.instruction,
                 color: custom.color,
-                icon: custom.icon || User
+                icon: custom.icon || User,
+                knowledgeBase: custom.knowledgeBase
             };
         }
-        
         switch (agentMode) {
-            case 'captain': return { name: 'Captain Deck', role: 'Strategic Commander', instruction: 'You are a strategic advisor.', color: 'gold', icon: Grid };
-            case 'phantom': return { name: 'Phantom Process', role: 'System Daemon', instruction: 'You are a linux terminal.', color: 'emerald', icon: Terminal };
-            default: return { name: 'Personal Steward', role: 'Companion', instruction: 'You are a helpful assistant.', color: 'purple', icon: Bot };
+            case 'captain': return { name: 'Captain Deck', role: 'Strategic Commander', instruction: 'You are a strategic advisor focusing on corporate ROI, risk assessment, and long-term ESG planning. Use data-driven language.', color: 'gold', icon: Shield };
+            case 'phantom': return { name: 'Phantom Process', role: 'System Daemon', instruction: 'You are a system monitor and kernel auditor. You provide raw system logs, latency metrics, and technical insights. Tone: Technical, CLI-style.', color: 'emerald', icon: Terminal };
+            default: return { name: 'Personal Steward', role: 'Companion', instruction: 'You are a friendly and proactive ESG companion. You help users navigate the platform and understand sustainability concepts simply.', color: 'purple', icon: Bot };
         }
     };
 
     const activeAgentProfile = getActiveProfile();
 
     const switchMode = (mode: AgentMode, reason: string = 'User Override') => {
+        if (mode === agentMode && mode !== 'custom') return;
         setAgentMode(mode);
-        setSuggestedMode(null); // Clear any pending suggestions
-        addLog(`[MODE SWITCH] ${mode.toUpperCase()} Active. ${reason}`, 'info', 'System');
+        setSuggestedMode(null); 
+        addLog(`[SYSTEM_OS] Mode switch initiated: ${mode.toUpperCase()}.`, 'thinking', 'Kernel');
+        addLog(`[SYSTEM_OS] Reallocating cognitive resources...`, 'thinking', 'Kernel');
         
-        if (mode === 'phantom') {
-            addToast('warning', 'Entering System Root...', 'Phantom Protocol');
-        } else if (mode === 'captain') {
-            addToast('info', 'Strategic Dashboard Loaded.', 'Captain Deck');
-        } else if (mode === 'custom') {
-            addToast('success', `Agent [${activeAgentProfile.name}] Online.`, 'Custom Agent');
-        } else {
-            addToast('success', 'Companion Interface Ready.', 'Universal Agent');
-        }
+        setTimeout(() => {
+            addLog(`[SYSTEM_OS] Mode optimized: ${mode.toUpperCase()}. Source: ${reason}`, 'success', 'Kernel');
+            if (mode === 'phantom') addToast('warning', 'System Root Access Granted.', 'Phantom Mode');
+            else if (mode === 'captain') addToast('info', 'Strategic War Room Active.', 'Captain Mode');
+            else if (mode === 'custom') addToast('success', `Agent Identity Verified.`, 'Custom Mode');
+            else addToast('success', 'Companion Active.', 'Steward Mode');
+        }, 800);
     };
 
-    const confirmSuggestion = () => {
-        if (suggestedMode) {
-            switchMode(suggestedMode, 'User accepted AI suggestion');
-        }
-    };
-
-    const dismissSuggestion = () => {
-        setSuggestedMode(null);
-    };
+    const confirmSuggestion = () => suggestedMode && switchMode(suggestedMode, 'AI Suggestion accepted');
+    const dismissSuggestion = () => setSuggestedMode(null);
 
     const addLog = (message: string, type: AgentLog['type'] = 'info', source: AgentLog['source'] = 'System') => {
         const newLog = { id: Date.now().toString() + Math.random(), timestamp: Date.now(), source, message, type };
         setLogs(prev => [...prev, newLog]);
     };
 
-    // Separated lists
     const chatHistory = logs.filter(l => l.source === 'Chat' || l.source === 'Assistant');
     const systemLogs = logs.filter(l => l.source !== 'Chat' && l.source !== 'Assistant');
 
     const extractActionFromText = (text: string): ActionItem | null => {
         const keywords = ['建議', '需', '檢查', '排程', 'recommend', 'suggest', 'check', 'schedule', 'review'];
-        const hasKeyword = keywords.some(k => text.toLowerCase().includes(k));
-        
-        if (hasKeyword && text.length < 100) {
+        if (keywords.some(k => text.toLowerCase().includes(k)) && text.length < 100) {
             const newItem: ActionItem = {
                 id: `act-${Date.now()}`,
                 text: text.replace(/\[.*?\]/g, '').trim(), 
@@ -292,62 +356,49 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         return null;
     };
 
-    const markActionSynced = (id: string) => {
-        setDetectedActions(prev => prev.map(a => a.id === id ? { ...a, status: 'synced' } : a));
-    };
-
-    const clearLogs = () => {
-        setLogs([]);
-        addToast('info', 'Memory buffer flushed.', 'System');
-    };
-
-    const archiveLogs = () => {
-        setArchivedLogs(prev => [...prev, ...logs]);
-        setLogs([]);
-        addToast('success', 'Logs archived to secure storage.', 'System');
-    };
-
+    const markActionSynced = (id: string) => setDetectedActions(prev => prev.map(a => a.id === id ? { ...a, status: 'synced' } : a));
+    const clearLogs = () => { setLogs([]); addToast('info', 'Buffer flushed.', 'System'); };
+    const archiveLogs = () => { setArchivedLogs(prev => [...prev, ...logs]); setLogs([]); addToast('success', 'Logs archived.', 'System'); };
     const exportLogs = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `agent_logs_${Date.now()}.json`);
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-        addToast('success', 'Logs exported successfully.', 'System');
+        const anchor = document.createElement('a');
+        anchor.setAttribute("href", dataStr);
+        anchor.setAttribute("download", `jak_logs_${Date.now()}.json`);
+        anchor.click();
+        anchor.remove();
     };
 
     const generateEvolutionReport = () => {
         addLog('Initiating Self-Diagnostic Evolution Scan...', 'thinking', 'Evolution');
-        setTimeout(() => {
-            addLog('Optimization vectors identified. Generating report...', 'success', 'Evolution');
-        }, 1500);
+        setTimeout(() => addLog('Optimization vectors identified.', 'success', 'Evolution'), 1500);
     };
 
     const triggerSystemCrash = () => {
         if (systemStatus !== 'STABLE') return;
         setSystemStatus('UNSTABLE');
-        addLog('WARNING: Integrity Breach Detected. Cascade Failure Imminent.', 'error', 'Kernel');
-        addToast('error', 'SYSTEM INSTABILITY DETECTED', 'CRITICAL ALERT');
-        setTimeout(() => {
-            setSystemStatus('CRITICAL');
-            addLog('CRITICAL: Core Services Unresponsive. Memory Heap Overflow.', 'error', 'Kernel');
-        }, 1500);
-        setTimeout(() => {
-            initiateSelfHealing();
-        }, 4000);
+        addLog('WARNING: Integrity Breach Detected.', 'error', 'Kernel');
+        setTimeout(() => setSystemStatus('CRITICAL'), 1500);
+        setTimeout(() => initiateSelfHealing(), 4000);
     };
 
     const initiateSelfHealing = () => {
         if (systemStatus === 'REBOOTING') return;
-        addLog('AI AGENT: Intercepting Crash Protocol. Rerouting Neural Pathways...', 'thinking', 'Assistant');
+        addLog('AI: Intercepting Crash Protocol. Rerouting...', 'thinking', 'Assistant');
         setSystemStatus('REBOOTING');
         setTimeout(() => {
             setSystemStatus('STABLE');
-            addLog('System Fully Restored. Zero Hallucination Protocol Active.', 'success', 'System');
-            addToast('success', 'AI Self-Healing Complete.', 'System Restored');
+            addLog('System Restored.', 'success', 'System');
+            addToast('success', 'Neural Link Stabilized.', 'System Restored');
         }, 8000);
+    };
+    
+    const runSelfDiagnostics = () => {
+        addLog('Initiating Self-Detection Sequence...', 'thinking', 'Kernel');
+        setIsProcessing(true);
+        setTimeout(() => {
+            addLog('Neural pathways optimized.', 'success', 'Evolution');
+            setIsProcessing(false);
+        }, 3500);
     };
 
     const executeMatrixProtocol = async (keyId: string, label: string) => {
@@ -355,120 +406,87 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
         setIsProcessing(true);
         setActiveKeyId(keyId);
         addLog(`Protocol Initiated: [${label.toUpperCase()}]`, 'thinking', 'Matrix');
-        // ... (protocol logic same as before, simplified for brevity in this context update)
         const subAgentMap: Record<string, string[]> = {
             'awaken': ['Memory_Core', 'Context_Loader'],
             'inspect': ['Code_Scanner', 'Data_Validator'],
             'scripture': ['Knowledge_Retriever', 'Compliance_Check'],
             'connect': ['Graph_Linker', 'Dependency_Mapper'],
             'summon': ['API_Gateway', 'Auth_Manager'],
-            'transmute': ['Format_Converter', 'Schema_Validator'],
-            'bridge': ['Protocol_Adapter', 'Env_Configurator'],
-            'encase': ['Docker_Builder', 'Module_Packer'],
-            'manifest': ['Code_Generator', 'Text_Synthesizer'],
-            'trial': ['Unit_Tester', 'Stress_Tester'],
-            'judge': ['Security_Auditor', 'Logic_Verifier'],
-            'ascend': ['Deploy_Script', 'Rollback_Guard'],
-            'purify': ['Refactor_Engine', 'Style_Enforcer'],
-            'ward': ['Vulnerability_Scanner', 'Firewall_Config'],
-            'entropy': ['Compression_Algo', 'Resource_Allocator'],
-            'evolve': ['Model_FineTuner', 'Trait_Mutator']
+            'transmute': ['Format_Converter', 'Schema_Validator']
         };
         const agents = subAgentMap[keyId] || ['General_Agent'];
         for (const agent of agents) {
             setSubAgentsActive(prev => [...prev, agent]);
             await new Promise(r => setTimeout(r, 400));
-            addLog(`> Agent [${agent}] active...`, 'info', 'System');
         }
         await new Promise(r => setTimeout(r, 800));
         addLog(`[${label}] Protocol Complete.`, 'success', 'Matrix');
-        addToast('success', `${label} Protocol Complete`, 'Universal Agent');
         setSubAgentsActive([]);
         setIsProcessing(false);
         setActiveKeyId(null);
     };
 
-    const processUniversalInput = async (input: string) => {
+    const processUniversalInput = async (input: string, currentView?: View) => {
         setIsProcessing(true);
         addLog(input, 'info', 'Chat');
-
-        const lower = input.toLowerCase();
-        let targetMode: AgentMode = agentMode;
-        let reasoning = "";
-        let isExplicit = false;
-
-        // Skill Heuristics - Award XP based on intent
-        if (lower.includes('analyze') || lower.includes('data') || lower.includes('calc')) {
-            awardSkillXp('sk-2', 15); // Data Processing
-        } else if (lower.includes('write') || lower.includes('create') || lower.includes('idea')) {
-            awardSkillXp('sk-3', 15); // Creative Synthesis
-        } else if (lower.includes('remember') || lower.includes('context') || lower.length > 50) {
-            awardSkillXp('sk-1', 10); // Context Retention
+        const lower = input.toLowerCase().trim();
+        
+        // --- Enhanced Suggestion Logic ---
+        let suggested: AgentMode | null = null;
+        
+        // View-based suggestions
+        if (currentView === View.DASHBOARD || currentView === View.STRATEGY || currentView === View.FINANCE) {
+            if (agentMode !== 'captain') suggested = 'captain';
+        } else if (currentView === View.API_ZONE || currentView === View.UNIVERSAL_BACKEND || currentView === View.DIAGNOSTICS) {
+            if (agentMode !== 'phantom') suggested = 'phantom';
         }
 
-        // Explicit Command Handling
-        if (lower.startsWith('/captain') || lower.startsWith('/cap')) {
-            targetMode = 'captain';
-            reasoning = "Manual override: Captain Mode engaged.";
-            isExplicit = true;
-        } else if (lower.startsWith('/phantom') || lower.startsWith('/dev') || lower.startsWith('/term')) {
-            targetMode = 'phantom';
-            reasoning = "Manual override: Phantom Protocol engaged.";
-            isExplicit = true;
-        } else if (lower.startsWith('/companion') || lower.startsWith('/chat') || lower.startsWith('/help')) {
-            targetMode = 'companion';
-            reasoning = "Manual override: Companion Interface engaged.";
-            isExplicit = true;
+        // Keyword-based overrides
+        const phantomWords = ['api', 'log', 'kernel', 'root', 'debug', 'monitor', 'deploy', 'system', 'latency', 'version'];
+        const captainWords = ['roi', 'strategy', 'risk', 'dashboard', 'finance', 'report', 'benchmark', 'audit', 'plan'];
+        const companionWords = ['help', 'hello', 'explain', 'what is', 'guide', 'story', 'simplify'];
+
+        const pScore = phantomWords.filter(w => lower.includes(w)).length;
+        const capScore = captainWords.filter(w => lower.includes(w)).length;
+        const comScore = companionWords.filter(w => lower.includes(w)).length;
+
+        if (pScore > capScore && pScore > comScore && agentMode !== 'phantom') suggested = 'phantom';
+        else if (capScore > pScore && capScore > comScore && agentMode !== 'captain') suggested = 'captain';
+        else if (comScore > pScore && comScore > capScore && agentMode !== 'companion') suggested = 'companion';
+
+        if (suggested && suggested !== agentMode) {
+            setSuggestedMode(suggested);
         }
 
-        // AI-Driven Suggestions (Enhanced Logic)
-        if (!isExplicit) {
-             const phantomKeywords = ['monitor', 'system', 'log', 'kernel', 'deploy', 'status', 'debug', 'terminal', 'console', 'cli', 'trace', 'init', 'sudo', 'config'];
-             const captainKeywords = ['analyze', 'report', 'strategy', 'dashboard', 'risk', 'finance', 'predict', 'forecast', 'kpi', 'metric', 'overview', 'summary', 'growth', 'chart'];
-             const companionKeywords = ['hello', 'hi', 'explain', 'write', 'draft', 'suggest', 'idea', 'thank', 'story', 'tell', 'what', 'how', 'why', 'help'];
+        // Skill triggers
+        if (lower.match(/analyze|data|calc|stats|trend|forecast/)) awardSkillXp('sk-2', 15);
+        else if (lower.match(/write|create|draft|idea|suggest|generate/)) awardSkillXp('sk-3', 15);
+        else if (lower.length > 50 || lower.match(/remember|context|history|previous/)) awardSkillXp('sk-1', 10);
 
-             const phantomScore = phantomKeywords.filter(k => lower.includes(k)).length;
-             const captainScore = captainKeywords.filter(k => lower.includes(k)).length;
-             const companionScore = companionKeywords.filter(k => lower.includes(k)).length;
-
-             if (phantomScore > 0 && phantomScore >= captainScore && phantomScore >= companionScore) {
-                 if (agentMode !== 'phantom') setSuggestedMode('phantom');
-             } else if (captainScore > 0 && captainScore > companionScore) {
-                 if (agentMode !== 'captain') setSuggestedMode('captain');
-             } else if (companionScore > 0 && companionScore >= captainScore && companionScore >= phantomScore) {
-                 if (agentMode !== 'companion') setSuggestedMode('companion');
-             }
-        }
-
-        // Simulate AI Processing Delay with "Thinking" effect
-        const delay = isExplicit ? 600 : 1200;
-        await new Promise(r => setTimeout(r, delay));
-
-        if (targetMode !== agentMode && isExplicit) {
-            switchMode(targetMode, reasoning);
-        } else {
-            // Provide contextual response based on current mode
-            if (agentMode === 'phantom') {
-                addLog(`[EXEC] Command processed: ${input}`, 'success', 'Phantom');
-            } else if (agentMode === 'captain') {
-                addLog(`[ANALYSIS] Processing strategic request: "${input}"`, 'info', 'Assistant');
-            } else if (agentMode === 'custom' && activeAgentProfile) {
-                addLog(`[${activeAgentProfile.name}] ${input}`, 'info', 'Assistant');
-            } else {
-                addLog(`[REPLY] I've received your input: "${input}"`, 'info', 'Assistant');
+        // Command processing
+        if (lower.startsWith('/') || lower.startsWith('switch ')) {
+            let target: AgentMode | null = null;
+            if (lower.match(/captain|cap|strategy|executive/)) target = 'captain';
+            else if (lower.match(/phantom|dev|term|cli|root|system/)) target = 'phantom';
+            else if (lower.match(/companion|chat|help|normal/)) target = 'companion';
+            
+            if (target) {
+                switchMode(target, "User command detected.");
+                setIsProcessing(false);
+                return;
             }
         }
-        
+
+        await new Promise(r => setTimeout(r, 1200));
+        addLog(`Received: "${input}". Logic Core: ${agentMode.toUpperCase()} active.`, 'info', 'Assistant');
         setIsProcessing(false);
     };
 
-    // --- User Journey Logic ---
     const startJourney = (journeyId: string) => {
         const template = (JOURNEY_TEMPLATES as any)[journeyId];
         if (template) {
             setActiveJourney({ ...template, currentStepIndex: 0, isCompleted: false });
             addLog(`Journey Started: ${template.name}`, 'info', 'Assistant');
-            addToast('info', template.description, template.name);
         }
     };
 
@@ -489,9 +507,7 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
     const completeJourney = () => {
         if (!activeJourney) return;
         setActiveJourney(null);
-        addLog(`Journey Completed: ${activeJourney.name}`, 'success', 'Assistant');
-        addToast('reward', 'Journey Complete! +200 XP', 'System');
-        feedAgent(200); // Reward Agent Growth
+        feedAgent(200);
     };
 
     const currentInstruction = activeJourney ? activeJourney.steps[activeJourney.currentStepIndex].instruction : null;
@@ -501,20 +517,17 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
             activeFace, setActiveFace,
             agentMode, setAgentMode, switchMode,
             suggestedMode, confirmSuggestion, dismissSuggestion,
-            
-            // Growth
+            themeMode, setThemeMode, toggleThemeMode,
+            themeColor, setThemeColor, toggleThemeColor,
             agentLevel, agentXp, nextLevelXp, agentSkills, feedAgent, trainSkill, awardSkillXp,
-
-            // Custom Agents
-            customAgents, addCustomAgent, selectCustomAgent, activeCustomAgentId,
-            activeAgentProfile, // Derived
-            
+            customAgents, addCustomAgent, deleteCustomAgent, selectCustomAgent, activeCustomAgentId,
+            activeAgentProfile, 
             logs, chatHistory, systemLogs, 
             addLog, clearLogs, archiveLogs, exportLogs,
             isProcessing, activeKeyId, executeMatrixProtocol,
             processUniversalInput, 
             subAgentsActive,
-            systemStatus, triggerSystemCrash, initiateSelfHealing,
+            systemStatus, triggerSystemCrash, initiateSelfHealing, runSelfDiagnostics,
             evolutionPlan, generateEvolutionReport,
             detectedActions, extractActionFromText, markActionSynced,
             activeJourney, startJourney, advanceJourney, completeJourney, currentInstruction
@@ -526,6 +539,6 @@ export const UniversalAgentProvider: React.FC<{ children: React.ReactNode }> = (
 
 export const useUniversalAgent = () => {
     const context = useContext(UniversalAgentContext);
-    if (!context) throw new Error('useUniversalAgent must be used within a UniversalAgentProvider');
+    if (!context) throw new Error('useUniversalAgent error');
     return context;
 };
