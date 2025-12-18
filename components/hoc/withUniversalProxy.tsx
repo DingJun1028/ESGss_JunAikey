@@ -22,7 +22,7 @@ export const withUniversalProxy = <P extends object>(
   WrappedComponent: React.ComponentType<P & InjectedProxyProps>,
   config: ProxyConfig = { enableTelemetry: true, enableEvolution: true }
 ) => {
-  const ComponentWithProxy = (props: P & { id?: string; label?: string | UniversalLabel; value?: any }) => {
+  const ComponentWithProxy = (props: P & { id?: string; label?: string | UniversalLabel; value?: any; className?: string; style?: React.CSSProperties }) => {
     const idRef = useRef(props.id || (typeof props.label === 'string' ? props.label : props.label?.id) || `anon-${Math.random().toString(36).substr(2,9)}`);
     const componentId = idRef.current;
     
@@ -40,7 +40,6 @@ export const withUniversalProxy = <P extends object>(
             setEvolutionStage(node.evolutionStage);
         }
 
-        // Fixed: added import for filter
         const sub = universalIntelligence.neuralBus$
             .pipe(filter(e => e.type === 'EVOLUTION_UPGRADE' && e.payload.componentId === componentId))
             .subscribe(({ payload }) => {
@@ -75,7 +74,7 @@ export const withUniversalProxy = <P extends object>(
     const EvoIcon = visuals.icon;
 
     return (
-        <div className="relative group/proxy">
+        <div className={`relative group/proxy ${props.className || ''}`} style={props.style}>
             {/* Evolution Pulse Marker */}
             <div 
                 className={`absolute -top-2 -left-2 z-30 p-1 bg-slate-900 rounded-full border border-white/10 ${visuals.color} ${visuals.glow} cursor-help hover:scale-110 transition-all`}
@@ -99,7 +98,7 @@ export const withUniversalProxy = <P extends object>(
                         </div>
                         <div className="h-[1px] bg-white/5" />
                         <div className="text-[10px] text-gray-400 leading-relaxed italic">
-                            "This agent has manifested through {universalIntelligence.getNode(componentId)?.interactionCount || 0} logic interactions and achieved 99.8% structural coherence."
+                            "This agent has manifested through {universalIntelligence.getNode(componentId)?.interactionCount || 0} logic interactions."
                         </div>
                     </div>
                 </div>

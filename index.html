@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ESGss x JunAiKey: 善向永續萬能系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ESGss x JunAiKey: 萬能永續決策系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -12,38 +12,41 @@
           extend: {
             colors: {
               celestial: {
-                900: 'var(--bg-base)', 
-                800: 'var(--bg-panel)',
-                emerald: 'var(--color-green)',
-                gold: 'var(--color-gold)',
-                lightGold: 'var(--color-light-gold)',
-                purple: 'var(--color-purple)',
-                blue: 'var(--color-blue)',
-                glass: 'var(--glass-bg)',
-                glassBorder: 'var(--glass-border)',
+                900: '#010613', 
+                800: '#0a1125',
+                emerald: '#10b981',
+                gold: '#fbbf24',
+                purple: '#8b5cf6',
+                blue: '#3b82f6',
               }
             },
             fontFamily: {
-              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+              sans: ['Inter', 'Noto Sans TC', 'system-ui', 'sans-serif'],
               mono: ['JetBrains Mono', 'monospace'],
             },
             animation: {
-              'blob': 'blob 20s infinite',
-              'ai-pulse': 'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'float': 'float 6s ease-in-out infinite',
-              'fade-in': 'fadeIn 0.5s ease-out forwards',
-              'spin-slow': 'spin 10s linear infinite',
+              'scan': 'scan 3s linear infinite',
+              'liquid-flow': 'liquid 8s ease-in-out infinite',
+              'glass-shine': 'shine 3s ease-in-out infinite',
             },
             keyframes: {
-              blob: {
-                '0%': { transform: 'translate(0px, 0px) scale(1)' },
-                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
-                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
-                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
               },
-              fadeIn: {
-                '0%': { opacity: '0', transform: 'translateY(10px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
+              scan: {
+                '0%': { transform: 'translateY(-100%)' },
+                '100%': { transform: 'translateY(100%)' },
+              },
+              liquid: {
+                '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+                '50%': { borderRadius: '30% 60% 70% 30% / 50% 60% 30% 60%' },
+              },
+              shine: {
+                '0%': { backgroundPosition: '-200% 0' },
+                '100%': { backgroundPosition: '200% 0' },
               }
             }
           }
@@ -52,88 +55,93 @@
     </script>
     <style>
       :root {
-        /* Default: Dark Theme (Deep Space) */
-        --bg-base: #010a1a;
-        --bg-panel: rgba(10, 25, 47, 0.8);
-        --text-main: #f1f5f9;
-        --text-muted: #94a3b8;
-        --color-blue: #3b82f6;
-        --color-purple: #8b5cf6;
-        --color-green: #10b981;
-        --color-gold: #fbbf24;
-        --color-light-gold: #fef3c7;
-        --glass-bg: rgba(15, 23, 42, 0.8);
-        --glass-border: rgba(255, 255, 255, 0.1);
-        --shadow-main: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-      }
-
-      /* 精細調優的亮色模式：以 Apple-Style 乾淨感為核心 */
-      .theme-light {
-        --bg-base: #F8FAFC; /* 極淺灰藍，減少視疲勞 */
-        --bg-panel: rgba(255, 255, 255, 0.7);
-        --text-main: #1E293B; /* 質感深灰藍而非純黑 */
-        --text-muted: #64748B;
-        --color-blue: #0ABAB5;   /* 通透青 (ESG 核心色) */
-        --color-purple: #0056B3; /* 誠信藍 (替代紫色，增加企業感) */
-        --color-green: #4CAF50;  /* 永續綠 */
-        --color-gold: #D4AF37;   /* 榮耀金 */
-        --color-light-gold: #FDE68A;
-        --glass-bg: rgba(255, 255, 255, 0.85);
-        --glass-border: rgba(0, 0, 0, 0.08);
-        --shadow-main: 0 10px 30px -10px rgba(10, 186, 181, 0.15); /* 帶有品牌色的柔和陰影 */
+        --bg-singularity: #01040a;
+        --glass-high: rgba(15, 23, 42, 0.5);
+        --glass-border: rgba(255, 255, 255, 0.12);
+        --ios-glass: rgba(255, 255, 255, 0.05);
       }
 
       body {
-        background-color: var(--bg-base);
-        color: var(--text-main);
-        transition: background-color 0.5s ease, color 0.3s ease;
+        background-color: var(--bg-singularity);
+        color: #f8fafc;
+        overflow-x: hidden;
       }
-      
-      .glass-panel {
-        background: var(--glass-bg);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+
+      /* iOS 26 Liquid Glass 2.0 - Ultra Saturated & Thick */
+      .liquid-glass {
+        background: var(--glass-high);
+        backdrop-filter: blur(60px) saturate(250%);
+        -webkit-backdrop-filter: blur(60px) saturate(250%);
         border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-main);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      
-      .glass-panel:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+        box-shadow: 
+          inset 0 0 40px rgba(255,255,255,0.03),
+          0 25px 60px rgba(0,0,0,0.7);
       }
 
-      .theme-light .glass-panel {
-        background: rgba(255, 255, 255, 0.8);
+      .ios-pill {
+        background: rgba(20, 30, 50, 0.3);
+        backdrop-filter: blur(50px) saturate(200%);
+        -webkit-backdrop-filter: blur(50px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.45);
+        transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
       }
 
-      /* 優化按鈕與標籤的質感 */
-      .btn-primary {
-        background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
-        box-shadow: 0 4px 14px 0 rgba(10, 186, 181, 0.3);
+      .ios-pill:active {
+        transform: scale(0.92);
+        background: rgba(20, 30, 50, 0.5);
       }
 
-      .theme-light .text-gradient-gold {
-        background: linear-gradient(to right, #B8860B, #D4AF37);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(30px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        transition: all 0.5s cubic-bezier(0.15, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
       }
 
-      /* 客製化捲軸 */
-      ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.1);
-        border-radius: 10px;
+      .glass-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
       }
-      .theme-light ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.05); }
 
+      /* Shine Effect Overlay */
+      .glass-card::after {
+        content: "";
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+        transition: 0.5s;
+        pointer-events: none;
+      }
+      .glass-card:hover::after {
+        left: 100%;
+        transition: 0.8s;
+      }
+
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+      .neural-bg {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-image: 
+          radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
+          radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
+          radial-gradient(circle at 50% 50%, #0c1222 0%, #01040a 100%);
+        z-index: -1;
+      }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script type="importmap">
 {
   "imports": {
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.474.0",
     "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
@@ -141,24 +149,24 @@
     "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
     "marked": "https://aistudiocdn.com/marked@^15.0.0",
     "html2pdf.js": "https://aistudiocdn.com/html2pdf.js@^0.10.1",
-    "react-virtuoso": "https://aistudiocdn.com/react-virtuoso@^4.6.2",
     "rxjs": "https://aistudiocdn.com/rxjs@^7.8.1",
     "rxjs/": "https://esm.sh/rxjs@^7.8.2/",
-    "dotenv": "https://esm.sh/dotenv@^17.2.3",
-    "path": "https://esm.sh/path@^0.12.7",
-    "fs": "https://esm.sh/fs@^0.0.1-security",
     "axios": "https://esm.sh/axios@^1.13.2",
-    "react-native-gesture-handler": "https://esm.sh/react-native-gesture-handler@^2.29.1",
     "react-native": "https://esm.sh/react-native@^0.83.0",
-    "ora": "https://esm.sh/ora@^9.0.0",
+    "react-native-gesture-handler": "https://esm.sh/react-native-gesture-handler@^2.29.1",
     "react-native-paper": "https://esm.sh/react-native-paper@^5.14.5",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
+    "path": "https://esm.sh/path@^0.12.7",
     "chalk": "https://esm.sh/chalk@^5.6.2",
-    "inquirer": "https://esm.sh/inquirer@^13.1.0"
+    "inquirer": "https://esm.sh/inquirer@^13.1.0",
+    "ora": "https://esm.sh/ora@^9.0.0",
+    "dotenv": "https://esm.sh/dotenv@^17.2.3"
   }
 }
 </script>
   </head>
   <body>
+    <div class="neural-bg"></div>
     <div id="root"></div>
   </body>
 </html>

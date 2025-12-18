@@ -28,10 +28,8 @@ const CultureBot = lazy(() => import('./components/CultureBot').then(module => (
 const FinanceSim = lazy(() => import('./components/FinanceSim').then(module => ({ default: module.FinanceSim })));
 const AuditTrail = lazy(() => import('./components/AuditTrail').then(module => ({ default: module.AuditTrail })));
 const GoodwillCoin = lazy(() => import('./components/GoodwillCoin').then(module => ({ default: module.GoodwillCoin })));
-// Import Split Components
 const UniversalRestoration = lazy(() => import('./components/Gamification').then(module => ({ default: module.UniversalRestoration })));
 const CardGameArenaView = lazy(() => import('./components/Gamification').then(module => ({ default: module.CardGameArenaView })));
-
 const Settings = lazy(() => import('./components/Settings').then(module => ({ default: module.Settings })));
 const YangBoZone = lazy(() => import('./components/YangBoZone').then(module => ({ default: module.YangBoZone })));
 const BusinessIntel = lazy(() => import('./components/BusinessIntel').then(module => ({ default: module.BusinessIntel })));
@@ -46,6 +44,7 @@ const GoodwillLibrary = lazy(() => import('./components/GoodwillLibrary').then(m
 const UserJournal = lazy(() => import('./components/UserJournal').then(module => ({ default: module.UserJournal })));
 const UniversalAgentZone = lazy(() => import('./components/UniversalAgentZone').then(module => ({ default: module.UniversalAgentZone })));
 const ContactUs = lazy(() => import('./components/ContactUs').then(module => ({ default: module.ContactUs })));
+const CardGame = lazy(() => import('./components/CardGame').then(module => ({ default: module.CardGame })));
 
 const ProtectedModule: React.FC<{ view: View; children: React.ReactNode; onNavigate: (view: View) => void }> = ({ view, children, onNavigate }) => {
     const { hasPermission } = useCompany();
@@ -57,22 +56,13 @@ const ProtectedModule: React.FC<{ view: View; children: React.ReactNode; onNavig
     return <>{children}</>;
 };
 
-const AppContent: React.FC = () => {
+interface AppContentProps {
+    language: Language;
+    onToggleLanguage: () => void;
+}
+
+const AppContent: React.FC<AppContentProps> = ({ language, onToggleLanguage }) => {
   const [currentView, setCurrentView] = useState<View>(View.MY_ESG);
-  const [language, setLanguage] = useState<Language>('zh-TW');
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem('app_language') as Language;
-    if (savedLang) {
-      setLanguage(savedLang);
-    }
-  }, []);
-
-  const handleToggleLanguage = () => {
-    const newLang = language === 'zh-TW' ? 'en-US' : 'zh-TW';
-    setLanguage(newLang);
-    localStorage.setItem('app_language', newLang);
-  };
 
   const wrap = (node: React.ReactNode) => (
       <ProtectedModule view={currentView} onNavigate={setCurrentView}>
@@ -82,12 +72,12 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-        <OnboardingSystem />
+        <OnboardingSystem language={language} />
         <Layout 
           currentView={currentView} 
           onNavigate={setCurrentView}
           language={language}
-          onToggleLanguage={handleToggleLanguage}
+          onToggleLanguage={onToggleLanguage}
         >
           <ErrorBoundary>
             <Suspense fallback={<LoadingScreen message="Loading Module Resource..." />}>
@@ -98,7 +88,6 @@ const AppContent: React.FC = () => {
                   case View.RESTORATION: return wrap(<UniversalRestoration language={language} />);
                   case View.CARD_GAME_ARENA: return wrap(<CardGameArenaView language={language} />);
                   case View.USER_JOURNAL: return wrap(<UserJournal language={language} />);
-                  
                   case View.FUNDRAISING: return wrap(<Fundraising language={language} />);
                   case View.ABOUT_US: return wrap(<AboutUs language={language} />);
                   case View.CONTACT_US: return wrap(<ContactUs language={language} />);
@@ -124,6 +113,7 @@ const AppContent: React.FC = () => {
                   case View.ALUMNI_ZONE: return wrap(<AlumniZone language={language} />);
                   case View.LIBRARY: return wrap(<GoodwillLibrary language={language} />);
                   case View.UNIVERSAL_AGENT: return wrap(<UniversalAgentZone language={language} />);
+                  case View.CARD_GAME: return wrap(<CardGame language={language} />);
                   default: return wrap(<MyEsg language={language} onNavigate={setCurrentView} />);
                 }
               })()}
@@ -136,21 +126,35 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // Language moved to AppContent or managed via context if needed globally before login, 
-  // but for login screen simplicity kept here for now or duplicate. 
-  // Ideally LoginScreen should just take a callback.
-  const [language, setLanguage] = useState<Language>('zh-TW'); 
+  const [language, setLanguage] = useState<Language>('zh-TW');
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem('app_language') as Language;
+    if (savedLang) {
+      setLanguage(savedLang);
+    }
+  }, []);
+
+  const handleToggleLanguage = () => {
+    const newLang = language === 'zh-TW' ? 'en-US' : 'zh-TW';
+    setLanguage(newLang);
+    localStorage.setItem('app_language', newLang);
+  };
 
   return (
     <ToastProvider>
       <UniversalAgentProvider>
         {!isLoggedIn ? (
           <ErrorBoundary>
-             <LoginScreen onLogin={() => setIsLoggedIn(true)} language={language} />
+             <LoginScreen 
+                onLogin={() => setIsLoggedIn(true)} 
+                language={language} 
+                onToggleLanguage={handleToggleLanguage}
+             />
           </ErrorBoundary>
         ) : (
           <CompanyProvider>
-             <AppContent />
+             <AppContent language={language} onToggleLanguage={handleToggleLanguage} />
           </CompanyProvider>
         )}
         <ToastContainer />

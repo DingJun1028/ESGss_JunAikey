@@ -90,7 +90,7 @@ const EternalPalace: React.FC<{ isZh: boolean }> = ({ isZh }) => {
                             <div className="glass-panel p-4 rounded-xl border border-white/5 hover:border-white/20 transition-all">
                                 <div className="text-xs text-gray-500 mb-1">{new Date(entry.timestamp).toLocaleString()}</div>
                                 <h4 className={`font-bold ${entry.type === 'milestone' ? 'text-celestial-gold' : 'text-white'}`}>{entry.title}</h4>
-                                <p className="text-sm text-gray-400 mt-1">{entry.impact}</p>
+                                <p className="text-sm text-gray-300 mt-1">{entry.impact}</p>
                                 <div className="mt-2 flex gap-2">
                                     {entry.tags.map(tag => (
                                         <span key={tag} className="text-[10px] px-2 py-0.5 bg-white/5 rounded border border-white/5 text-gray-400">{tag}</span>
@@ -234,7 +234,6 @@ const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
     const { crystals, restoreCrystal, collectCrystalFragment } = useCompany();
     const { addToast } = useToast();
     
-    // Updated: Only 'crystals' tab, nursery moved to Universal Agent
     const totalRestored = crystals.filter(c => c.state === 'Restored' || c.state === 'Perfected').length;
     const systemLevel = Math.floor((totalRestored / crystals.length) * 100);
 
@@ -258,10 +257,10 @@ const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
         <div className="space-y-8 animate-fade-in relative min-h-screen pb-12">
             <UniversalPageHeader 
                 icon={Hexagon}
-                title={{ zh: '萬能核心修復計畫', en: 'Universal Core Restoration' }}
-                description={{ zh: '收集記憶碎片，重塑 JunAiKey 的完美型態 (Zero Hallucination)。', en: 'Collect fragments to restore JunAiKey to its perfect form.' }}
+                title={{ zh: '萬能代理核心計畫', en: 'Universal Agent Core Project' }}
+                description={{ zh: '收集記憶碎片，重塑萬能代理的完美型態 (Zero Hallucination)。', en: 'Collect fragments to restore the Universal Agent to its perfect form.' }}
                 language={isZh ? 'zh-TW' : 'en-US'}
-                tag={{ zh: '系統修復', en: 'System Restore' }}
+                tag={{ zh: '代理修復', en: 'Agent Restore' }}
             />
 
             <div className="glass-panel p-6 rounded-2xl border border-white/10 -mt-6 mb-8 flex items-center gap-6">
@@ -269,7 +268,7 @@ const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-sm font-bold text-white flex items-center gap-2">
                             <Shield className="w-4 h-4 text-emerald-400" />
-                            {isZh ? '系統完整度 (System Integrity)' : 'System Integrity'}
+                            {isZh ? '代理核心完整度' : 'Agent Core Integrity'}
                         </span>
                         <span className="text-lg font-mono font-bold text-emerald-400">{systemLevel}%</span>
                     </div>
@@ -319,8 +318,8 @@ const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
                     </h3>
                     <p className="text-gray-300 leading-relaxed mb-4">
                         {isZh 
-                            ? 'JunAiKey 核心具備自我監控能力。當「核心完整度」低於 70% 時，AI 輸出可能出現幻覺。系統將自動鎖定高風險功能，直到您透過「稽核 (Audit)」或「外部驗證 (Oracle)」修復水晶。' 
-                            : 'JunAiKey monitors integrity. If < 70%, AI might hallucinate. High-risk features lock until crystal stabilization via Audit/Oracle.'}
+                            ? '萬能代理核心具備自我監控能力。當「核心完整度」低於 70% 時，AI 輸出可能出現幻覺。系統將自動鎖定高風險功能，直到您透過「稽核 (Audit)」或「外部驗證 (Oracle)」修復水晶。' 
+                            : 'The Universal Agent monitors integrity. If < 70%, AI might hallucinate. High-risk features lock until stabilization via Audit/Oracle.'}
                     </p>
                     <div className="flex gap-2">
                         <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold border border-emerald-500/30 flex items-center gap-1">
@@ -332,7 +331,7 @@ const RestorationProject: React.FC<{ isZh: boolean }> = ({ isZh }) => {
                 <div className="glass-panel p-8 rounded-2xl border border-white/10 bg-gradient-to-bl from-slate-900 to-transparent">
                     <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                         <Layers className="w-5 h-5 text-celestial-purple" />
-                        {isZh ? '如何收集碎片？' : 'How to Collect Fragments?'}
+                        {isZh ? '如何修復核心？' : 'How to Restore Cores?'}
                     </h3>
                     <ul className="space-y-3 text-sm text-gray-300">
                         <li className="flex items-center gap-3">

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Language, CarbonData } from '../types';
 import { useCompany } from './providers/CompanyProvider';
@@ -35,13 +36,12 @@ export const CarbonAsset: React.FC<CarbonAssetProps> = ({ language }) => {
       const s1 = calcForm.fuel * 2.68; 
       const s2 = calcForm.electricity * 0.49; 
       
-      // Fixed: included missing scope3 property required by CarbonData type
-      const newData: CarbonData = {
+      const newData = {
+          ...carbonData,
           fuelConsumption: calcForm.fuel,
           electricityConsumption: calcForm.electricity,
           scope1: parseFloat((s1 / 1000).toFixed(2)),
           scope2: parseFloat((s2 / 1000).toFixed(2)),
-          scope3: carbonData.scope3,
           lastUpdated: Date.now()
       };
 
@@ -122,6 +122,28 @@ export const CarbonAsset: React.FC<CarbonAssetProps> = ({ language }) => {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
+                {/* 數據單元現在內建偵錯能力 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <OmniEsgCell 
+                        mode="card" 
+                        label="Scope 1 Emissions" 
+                        value={carbonData.scope1} 
+                        subValue="tCO2e" 
+                        color="emerald" 
+                        verified={true}
+                        confidence={carbonData.scope1 > 1000 ? 'medium' : 'high'}
+                    />
+                    <OmniEsgCell 
+                        mode="card" 
+                        label="Scope 2 Emissions" 
+                        value={carbonData.scope2} 
+                        subValue="tCO2e" 
+                        color="blue" 
+                        verified={true}
+                        confidence="high"
+                    />
+                </div>
+
                 <div className="glass-panel p-6 rounded-2xl border border-white/10 bg-slate-900/50">
                     <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-celestial-gold" />

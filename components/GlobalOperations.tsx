@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { OmniEsgCell } from './OmniEsgCell';
-import { MapPin, Wind, Zap, AlertTriangle, Factory } from 'lucide-react';
+import { MapPin, Wind, Zap, AlertTriangle, Factory, BrainCircuit, RefreshCw, Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy';
+import { useToast } from '../contexts/ToastContext';
 
 interface Location {
   id: string;
@@ -36,8 +36,8 @@ interface MapPinProps extends InjectedProxyProps {
 const MapPinBase: React.FC<MapPinProps> = ({ location, onClick, adaptiveTraits, trackInteraction, isAgentActive }) => {
     
     // Agent Traits Visuals
-    const isEvolved = adaptiveTraits?.includes('evolution'); // High interaction
-    const isOptimizing = adaptiveTraits?.includes('optimization'); // AI Working
+    const isEvolved = adaptiveTraits?.includes('evolution'); 
+    const isOptimizing = adaptiveTraits?.includes('optimization'); 
     
     const statusColor = location.status === 'critical' ? 'bg-red-500' : location.status === 'warning' ? 'bg-amber-500' : 'bg-emerald-500';
     
@@ -53,10 +53,10 @@ const MapPinBase: React.FC<MapPinProps> = ({ location, onClick, adaptiveTraits, 
           style={{ left: `${location.x}%`, top: `${location.y}%` }}
           onClick={handleClick}
         >
-          {/* Pulse Ring (Agent Activity) */}
+          {/* Pulse Ring */}
           <div className={`absolute inset-0 rounded-full animate-ping opacity-75 ${statusColor} ${isOptimizing ? 'duration-500' : 'duration-1000'}`} />
           
-          {/* Core Dot (Physical Manifestation) */}
+          {/* Core Dot */}
           <div className={`
               relative rounded-full border-2 border-white shadow-lg transition-transform 
               ${statusColor}
@@ -64,14 +64,16 @@ const MapPinBase: React.FC<MapPinProps> = ({ location, onClick, adaptiveTraits, 
           `} />
 
           {/* AI Awareness Indicator */}
-          {isAgentActive && (
-              <div className="absolute -top-2 -right-2 w-2 h-2 bg-celestial-purple rounded-full border border-white animate-bounce" />
+          {(isAgentActive || location.status === 'critical') && (
+              <div className="absolute -top-3 -right-3 p-1 bg-slate-900 rounded-full border border-white/20 shadow-xl">
+                 <BrainCircuit className="w-3 h-3 text-celestial-gold animate-pulse" />
+              </div>
           )}
 
           {/* Label */}
           <div className={`
               absolute top-6 left-1/2 -translate-x-1/2 whitespace-nowrap transition-opacity bg-black/80 px-2 py-1 rounded text-[10px] text-white border border-white/20 backdrop-blur-md z-20
-              ${isEvolved ? 'opacity-100' : 'opacity-0 group-hover/marker:opacity-100'}
+              ${isEvolved || location.status === 'critical' ? 'opacity-100' : 'opacity-0 group-hover/marker:opacity-100'}
           `}>
               {location.name}
           </div>
@@ -87,11 +89,24 @@ const GeoSpatialAgent = withUniversalProxy(MapPinBase);
 
 export const GlobalOperations: React.FC = () => {
   const [selectedLoc, setSelectedLoc] = useState<Location | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const { addToast } = useToast();
+
+  const handleVerifyAnomaly = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsVerifying(true);
+      addToast('info', 'Connecting to Sector 7 IoT Gateway...', 'JunAiKey Scanner');
+      
+      setTimeout(() => {
+          setIsVerifying(false);
+          addToast('success', 'Correlation Found: Air handling unit #S7-A2 is operating at 30% efficiency.', 'AI Diagnosis');
+      }, 2500);
+  };
 
   return (
     <div className="w-full h-[500px] relative rounded-2xl overflow-hidden bg-slate-900 border border-white/10 group select-none">
       
-      {/* Map Background (Abstract Dot Matrix) */}
+      {/* Map Background */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
          <svg width="100%" height="100%" className="fill-celestial-blue">
             <pattern id="dot-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -99,21 +114,20 @@ export const GlobalOperations: React.FC = () => {
             </pattern>
             <rect x="0" y="0" width="100%" height="100%" fill="url(#dot-pattern)" />
          </svg>
-         {/* Simplified World Map Shape (SVG Path) */}
          <svg viewBox="0 0 1000 500" className="absolute inset-0 w-full h-full text-white/10 fill-current">
              <path d="M150,150 Q200,100 250,150 T350,150 T450,100 T550,150 T650,120 T750,150 T850,200 T950,250 V400 H50 V200 Q100,180 150,150 Z" /> 
-             <text x="500" y="250" textAnchor="middle" className="text-[100px] font-bold opacity-5 pointer-events-none">GLOBAL OPS</text>
+             <text x="500" y="250" textAnchor="middle" className="text-[100px] font-bold opacity-5 pointer-events-none uppercase tracking-widest">Quantum Ops</text>
          </svg>
       </div>
 
       {/* Radar Scan Effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-celestial-emerald/5 to-transparent w-[50%] h-full animate-[scan_4s_linear_infinite] pointer-events-none border-r border-celestial-emerald/20 blur-sm" />
 
-      {/* Location Markers - Now Agents */}
+      {/* Location Markers */}
       {LOCATIONS.map((loc) => (
         <GeoSpatialAgent 
             key={loc.id}
-            id={`geo-${loc.id}`} // Brain ID
+            id={`geo-${loc.id}`}
             label={loc.name}
             location={loc}
             onClick={setSelectedLoc}
@@ -122,22 +136,22 @@ export const GlobalOperations: React.FC = () => {
 
       {/* Data Overlay Panel */}
       {selectedLoc && (
-        <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 glass-panel p-4 rounded-xl border-white/20 animate-fade-in backdrop-blur-xl bg-slate-900/90 z-30">
-            <div className="flex justify-between items-start mb-4">
+        <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 glass-panel p-4 rounded-2xl border-white/20 animate-fade-in backdrop-blur-xl bg-slate-900/90 z-30 shadow-2xl">
+            <div className="flex justify-between items-start mb-4 border-b border-white/5 pb-3">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/10 rounded-lg">
+                    <div className="p-2.5 bg-gradient-to-br from-white/10 to-transparent rounded-xl border border-white/10">
                         <Factory className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-white">{selectedLoc.name}</h4>
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <h4 className="font-bold text-white text-sm">{selectedLoc.name}</h4>
+                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500 uppercase font-mono">
                             <MapPin className="w-3 h-3" />
                             {selectedLoc.region}
                         </div>
                     </div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); setSelectedLoc(null); }} className="text-gray-400 hover:text-white">
-                    ×
+                <button onClick={(e) => { e.stopPropagation(); setSelectedLoc(null); }} className="p-1 hover:bg-white/10 rounded-lg text-gray-500 transition-colors">
+                    <ArrowRight className="w-4 h-4 rotate-45" />
                 </button>
             </div>
 
@@ -162,14 +176,29 @@ export const GlobalOperations: React.FC = () => {
                     subValue="Peak Load"
                 />
                 {selectedLoc.status !== 'optimal' && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                        <div>
-                            <div className="text-xs font-bold text-red-400">Anomaly Detected</div>
-                            <p className="text-[10px] text-red-200 leading-tight mt-1">
-                                Unusual energy spike detected in Sector 7. Recommendation: Check HVAC systems.
-                            </p>
+                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex flex-col gap-3 relative overflow-hidden group/alert">
+                        <div className="absolute -top-4 -right-4 w-12 h-12 bg-red-500/10 rounded-full blur-xl group-hover/alert:scale-150 transition-transform duration-1000" />
+                        
+                        <div className="flex items-start gap-3 relative z-10">
+                            <div className="p-1.5 bg-red-500/20 rounded-lg">
+                                <AlertTriangle className="w-4 h-4 text-red-400 animate-pulse" />
+                            </div>
+                            <div>
+                                <div className="text-xs font-black text-red-400 uppercase tracking-widest">Logic Anomaly: Sector 7</div>
+                                <p className="text-[10px] text-red-200/70 leading-relaxed mt-1">
+                                    Correlated energy spike (March period) detected. Potential HVAC inefficiency.
+                                </p>
+                            </div>
                         </div>
+
+                        <button 
+                            onClick={handleVerifyAnomaly}
+                            disabled={isVerifying}
+                            className="w-full py-2 bg-red-500/20 hover:bg-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-red-500/30 transition-all flex items-center justify-center gap-2"
+                        >
+                            {isVerifying ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            {isVerifying ? 'Scanning Sector 7...' : 'Verify HVAC Integrity'}
+                        </button>
                     </div>
                 )}
             </div>
@@ -178,9 +207,12 @@ export const GlobalOperations: React.FC = () => {
 
       {/* HUD Overlay Elements */}
       <div className="absolute top-4 left-4 flex gap-4 text-[10px] text-celestial-blue font-mono opacity-70">
-          <div>LAT: 24.08 N</div>
-          <div>LNG: 120.55 E</div>
-          <div className="animate-pulse">SIGNAL: ONLINE</div>
+          <div className="bg-black/40 px-2 py-1 rounded border border-white/5 backdrop-blur-sm">LAT: 24.08 N</div>
+          <div className="bg-black/40 px-2 py-1 rounded border border-white/5 backdrop-blur-sm">LNG: 120.55 E</div>
+          <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded border border-white/5 backdrop-blur-sm">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             SIGNAL: NOMINAL
+          </div>
       </div>
     </div>
   );

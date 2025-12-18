@@ -1,58 +1,15 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
-  BarChart3, TrendingUp, TrendingDown, Minus, LucideIcon, 
-  Activity, Puzzle, Tag, HelpCircle
+  ShieldCheck, Zap, RefreshCw, Activity, 
+  ChevronRight, ArrowUpRight, Search, GitBranch
 } from 'lucide-react';
-import { OmniEsgTrait, OmniEsgDataLink, OmniEsgMode, OmniEsgConfidence, OmniEsgColor, UniversalLabel } from '../types';
-import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy';
-import { analyzeDataAnomaly } from '../services/ai-service';
-import { useToast } from '../contexts/ToastContext';
-import { GLOBAL_GLOSSARY } from '../constants';
+/* Added OmniEsgTrait to imports */
+import { OmniEsgConfidence, OmniEsgDataLink, OmniEsgMode, OmniEsgColor, UniversalLabel, OmniEsgTrait } from '../types';
 import { useUniversalAgent } from '../contexts/UniversalAgentContext';
-
-import { DataLinkIndicator } from './minimal/DataLinkIndicator';
 import { ConfidenceIndicator } from './minimal/ConfidenceIndicator';
-import { QuantumAiTrigger } from './minimal/QuantumAiTrigger';
-import { QuantumValueEditor } from './minimal/QuantumValueEditor';
-import { InsightTooltip } from './minimal/InsightTooltip';
 
-const THEMES = {
-  emerald: { 
-    border: 'hover:border-emerald-500/40', 
-    text: 'text-emerald-600', 
-    iconBg: 'bg-emerald-50',
-    lightText: 'text-emerald-700'
-  },
-  gold: { 
-    border: 'hover:border-amber-500/40', 
-    text: 'text-amber-600', 
-    iconBg: 'bg-amber-50',
-    lightText: 'text-amber-700'
-  },
-  purple: { 
-    border: 'hover:border-blue-600/40', 
-    text: 'text-blue-700', 
-    iconBg: 'bg-blue-50',
-    lightText: 'text-blue-800'
-  },
-  blue: { 
-    border: 'hover:border-cyan-500/40', 
-    text: 'text-cyan-600', 
-    iconBg: 'bg-cyan-50',
-    lightText: 'text-cyan-700'
-  },
-  slate: { 
-    border: 'hover:border-slate-400/40', 
-    text: 'text-slate-600', 
-    iconBg: 'bg-slate-50',
-    lightText: 'text-slate-700'
-  },
-};
-
-const getTheme = (color: OmniEsgColor) => THEMES[color] || THEMES.emerald;
-
-interface OmniEsgCellBaseProps {
+interface OmniEsgCellProps {
   id?: string;
   mode: OmniEsgMode;
   label?: string | UniversalLabel;
@@ -62,9 +19,10 @@ interface OmniEsgCellBaseProps {
   verified?: boolean;
   loading?: boolean;
   dataLink?: OmniEsgDataLink;
-  traits?: OmniEsgTrait[];
   tags?: string[];
-  icon?: LucideIcon;
+  /* Added traits property to interface */
+  traits?: OmniEsgTrait[];
+  icon?: any;
   color?: OmniEsgColor;
   className?: string;
   trend?: { value: number; direction: 'up' | 'down' | 'neutral'; };
@@ -72,112 +30,100 @@ interface OmniEsgCellBaseProps {
   onClick?: () => void;
 }
 
-type OmniEsgCellProps = OmniEsgCellBaseProps & InjectedProxyProps;
-
-const resolveLabel = (label: string | UniversalLabel): UniversalLabel => {
-    if (typeof label === 'object') return label;
-    if (GLOBAL_GLOSSARY[label]) {
-         const entry = GLOBAL_GLOSSARY[label];
-         return { text: label, definition: entry.definition, formula: entry.formula, rationale: entry.rationale };
-    }
-    return { text: label };
-};
-
-const OmniEsgCellBase: React.FC<OmniEsgCellProps> = (props) => {
-  const { 
+export const OmniEsgCell: React.FC<OmniEsgCellProps> = ({ 
+    /* Destructured traits from props */
     mode, label, value, subValue, confidence = 'high', verified = false, 
-    loading = false, dataLink, traits = [], tags = [], icon: Icon, color = 'emerald', className = '', trend, onClick, onAiAnalyze,
-    adaptiveTraits = [], trackInteraction, isHighFrequency, isAgentActive
-  } = props;
-  
-  const { addToast } = useToast();
-  const { themeMode } = useUniversalAgent();
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+    loading = false, dataLink, tags = [], traits = [], icon: Icon, color = 'emerald', className = '', trend, onClick
+}) => {
+  const [showInference, setShowInference] = useState(false);
+  const { agentMode } = useUniversalAgent();
 
-  const resolvedLabel = useMemo(() => resolveLabel(label || 'Unknown'), [label]);
-  const labelText = resolvedLabel.text;
-  const isRichLabel = !!(resolvedLabel.definition || resolvedLabel.formula || resolvedLabel.rationale);
-  const theme = getTheme(color);
+  const labelText = typeof label === 'string' ? label : label?.text || 'Unknown Node';
 
-  if (loading) return <div className={`h-24 w-full bg-slate-100 animate-pulse rounded-2xl ${className}`} />;
+  if (loading) return (
+    <div className="h-full w-full bg-white/5 animate-pulse rounded-2xl border border-white/5" />
+  );
 
-  const isLight = themeMode === 'light';
-
-  const wrapperClasses = `
-    group relative overflow-visible transition-all duration-400 glass-panel
-    ${isLight ? 'bg-white border-slate-200 shadow-sm hover:shadow-xl' : 'bg-slate-900/40 border-white/5 shadow-lg'}
-    ${theme.border}
-    ${onClick ? 'cursor-pointer hover:-translate-y-1' : ''}
-    ${className}
-  `;
+  const colors = {
+    emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    gold: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+    purple: 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    rose: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+    slate: 'text-slate-400 bg-slate-500/10 border-slate-500/20',
+    orange: 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+    indigo: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+    pink: 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+    cyan: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+  };
 
   if (mode === 'card') {
     return (
-      <div className={wrapperClasses} onClick={onClick}>
-        <div className="relative z-10 p-6 flex flex-col h-full justify-between">
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-               <div className="flex items-center gap-2">
-                  <span className={`text-sm font-semibold tracking-wide ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {labelText}
-                  </span>
-                  <QuantumAiTrigger onClick={onAiAnalyze} label={labelText} />
-               </div>
-               <div className="flex flex-wrap gap-2">
-                 {dataLink && <DataLinkIndicator type={dataLink} />}
-               </div>
+      <div 
+        onClick={onClick}
+        className={`group relative glass-card p-5 rounded-[1.5rem] flex flex-col justify-between h-full cursor-pointer overflow-hidden transition-all duration-500 ${className}`}
+      >
+        <div className="absolute inset-0 bg-white/[0.02] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-white/40 transition-all" />
+        
+        <div className="flex justify-between items-start mb-4 relative z-10">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              {/* HIGH LUMINANCE LABEL */}
+              <span className="text-[11px] font-black uppercase tracking-wider text-white drop-shadow-md">{labelText}</span>
+              {verified && <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />}
             </div>
-            <div className={`p-3 rounded-xl ${isLight ? theme.iconBg + ' ' + theme.text : 'bg-white/5 text-inherit'} transition-all`}>
-               {Icon ? <Icon className="w-5 h-5" /> : <BarChart3 className="w-5 h-5" />}
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-black text-white tracking-tighter">{value ?? '---'}</span>
+              <span className="text-[10px] font-mono text-gray-400">{subValue}</span>
             </div>
           </div>
+          <div className={`p-2.5 rounded-xl ${colors[color]} border shadow-inner transition-transform group-hover:scale-110 group-hover:rotate-3`}>
+            {Icon ? <Icon className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
+          </div>
+        </div>
 
-          <div className="mt-6 mb-2">
-             <QuantumValueEditor 
-                value={value || 0} 
-                theme={theme} 
-                onUpdate={(val) => addToast('success', `Value updated to ${val}`)}
-             />
-          </div>
-          
-          <div className="flex items-end justify-between pt-4 border-t border-inherit">
-             <div>
-                {subValue && <p className="text-[11px] text-slate-500 font-medium mb-1 uppercase tracking-wider">{subValue}</p>}
-                {trend && (
-                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold ${trend.direction === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
-                    {trend.direction === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    {Math.abs(trend.value)}%
-                  </span>
-                )}
-             </div>
-             <ConfidenceIndicator level={confidence} verified={verified} />
-          </div>
+        <div className="flex items-center justify-between mt-2 pt-3 border-t border-white/5 relative z-10">
+            <div className="flex items-center gap-3">
+              {trend && (
+                <div className={`flex items-center gap-1 text-[10px] font-bold ${trend.direction === 'up' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {trend.direction === 'up' ? <ArrowUpRight className="w-3 h-3" /> : '↓'}
+                  {trend.value}%
+                </div>
+              )}
+              <ConfidenceIndicator level={confidence} compact />
+            </div>
+            <div className="flex gap-1">
+               {tags.slice(0, 1).map(tag => (
+                 <span key={tag} className="text-[9px] font-mono bg-white/5 px-2 py-0.5 rounded border border-white/5 text-gray-300 uppercase">{tag}</span>
+               ))}
+            </div>
         </div>
       </div>
     );
   }
 
-  if (mode === 'list') {
-    return (
-      <div className={`${wrapperClasses} p-4 rounded-xl flex items-center justify-between`} onClick={onClick}>
-          <div className="flex items-center gap-4">
-              <div className={`p-2.5 rounded-lg ${isLight ? theme.iconBg + ' ' + theme.text : 'bg-white/5'}`}>
-                  {Icon ? <Icon className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
-              </div>
-              <div>
-                  <div className="text-sm font-bold text-inherit">{labelText}</div>
-                  {subValue && <div className="text-[10px] text-slate-500 uppercase tracking-widest">{subValue}</div>}
-              </div>
-          </div>
-          <div className="text-right">
-              <div className={`text-base font-black font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>{value}</div>
-              <ConfidenceIndicator level={confidence} compact />
-          </div>
+  return (
+    <div 
+      onClick={onClick}
+      className={`group glass-card px-4 py-3 rounded-xl flex items-center gap-4 hover:border-celestial-purple/30 cursor-pointer ${className}`}
+    >
+      <div className={`p-2 rounded-lg ${colors[color]} border shrink-0`}>
+        {Icon ? <Icon className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
       </div>
-    );
-  }
-
-  return null;
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-center mb-0.5">
+          <span className="text-[11px] font-bold text-white truncate">{labelText}</span>
+          <span className="text-sm font-black text-white">{value ?? '---'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-gray-400 uppercase tracking-wider">{subValue}</span>
+          <div className="flex items-center gap-1">
+             <ConfidenceIndicator level={confidence} compact />
+          </div>
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-gray-500 group-hover:text-celestial-purple group-hover:translate-x-1 transition-all" />
+    </div>
+  );
 };
-
-export const OmniEsgCell = withUniversalProxy(OmniEsgCellBase);

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useMemo } from 'react';
 import { useCompany } from './providers/CompanyProvider';
 import { generateReportChapter, auditReportContent } from '../services/ai-service';
@@ -14,7 +13,7 @@ import { useToast } from '../contexts/ToastContext';
 import { withUniversalProxy, InjectedProxyProps } from './hoc/withUniversalProxy';
 import { LockedFeature } from './LockedFeature';
 import { SubscriptionModal } from './SubscriptionModal';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 import { UniversalPageHeader } from './UniversalPageHeader';
@@ -192,7 +191,6 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
       } catch (e) { addToast('error', 'Generation Failed', 'Error'); } finally { setIsGeneratingMaster(false); }
   };
 
-  // Fix: element was missing in truncated file content
   const handleExportPDF = (elementRef: React.RefObject<HTMLDivElement>, filename: string) => {
       if (!elementRef.current) return;
       const element = elementRef.current;
@@ -470,8 +468,12 @@ export const ReportGen: React.FC<ReportGenProps> = ({ language }) => {
                                             <YAxis stroke="#94a3b8" />
                                             <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }} />
                                             <Legend />
-                                            <Area type="monotone" dataKey="emissions" name="Total Emissions (tCO2e)" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={3} />
-                                            <Area type="monotone" dataKey="intensity" name="Emission Intensity" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} strokeWidth={2} />
+                                            <Area type="monotone" dataKey="emissions" name="Total Emissions (tCO2e)" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={3}>
+                                                <LabelList dataKey="emissions" position="top" fill="#10b981" fontSize={10} offset={10} />
+                                            </Area>
+                                            <Area type="monotone" dataKey="intensity" name="Emission Intensity" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.1} strokeWidth={2}>
+                                                <LabelList dataKey="intensity" position="top" fill="#8b5cf6" fontSize={10} offset={10} />
+                                            </Area>
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>

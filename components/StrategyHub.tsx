@@ -141,7 +141,14 @@ export const StrategyHub: React.FC<StrategyHubProps> = ({ language }) => {
       
       try {
           addToast('info', isZh ? '正在召集 AI 代理 (CFO vs CSO)...' : 'Summoning AI Agents (CFO vs CSO)...', 'Multi-Agent System');
-          const script = await generateAgentDebate(riskName, language);
+          const rawScript = await generateAgentDebate(riskName, language);
+          // Fix: map the raw script to ensure objects match the DebateMessage interface including id and timestamp
+          const script: DebateMessage[] = (rawScript as any[]).map((msg, idx) => ({
+              id: `msg-${Date.now()}-${idx}`,
+              role: (msg.role === 'CFO' || msg.role === 'CSO') ? msg.role : 'JunAiKey',
+              text: msg.text || '',
+              timestamp: Date.now()
+          }));
           setIsGenerating(false);
           runDebate(script);
       } catch (e) {

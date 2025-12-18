@@ -29,7 +29,11 @@ interface CompanyContextType {
   setUserName: (name: string) => void;
   userRole: Role;
   setUserRole: (role: Role) => void;
-  roleTitle: string; // The display name
+  bio: string;
+  setBio: (bio: string) => void;
+  personalGoal: string;
+  setPersonalGoal: (goal: string) => void;
+  roleTitle: string; 
   companyName: string;
   setCompanyName: (name: string) => void;
   tier: UserTier;
@@ -83,13 +87,11 @@ interface CompanyContextType {
   bookmarks: BookmarkItem[];
   toggleBookmark: (item: { id: string; type: 'article' | 'video' | 'news'; title: string; link?: string }) => void;
   
-  // Universal File System
   files: AppFile[];
   addFile: (file: File, sourceModule: string) => void;
   removeFile: (id: string) => void;
   updateFile: (id: string, updates: Partial<AppFile>) => void;
 
-  // Universal Intelligence System (My Intelligence)
   myIntelligence: IntelligenceItem[];
   saveIntelligence: (item: IntelligenceItem) => void;
   
@@ -98,18 +100,15 @@ interface CompanyContextType {
   latestEvent: string;
   setLatestEvent: (event: string) => void;
   
-  // Dashboard Widgets
   customWidgets: DashboardWidget[];
   addCustomWidget: (widget: { type: WidgetType; title: string; config?: any; gridSize?: 'small' | 'medium' | 'large' | 'full' }) => void;
   removeCustomWidget: (id: string) => void;
 
-  // My ESG Widgets (New)
   myEsgWidgets: DashboardWidget[];
   addMyEsgWidget: (widget: { type: WidgetType; title: string; config?: any; gridSize?: 'small' | 'medium' | 'large' | 'full' }) => void;
   removeMyEsgWidget: (id: string) => void;
   updateMyEsgWidgetSize: (id: string, size: 'small' | 'medium' | 'large' | 'full') => void;
 
-  // Palace Widgets
   palaceWidgets: DashboardWidget[];
   addPalaceWidget: (widget: { type: WidgetType; title: string; config?: any; gridSize?: 'small' | 'medium' | 'large' | 'full' }) => void;
   removePalaceWidget: (id: string) => void;
@@ -117,24 +116,19 @@ interface CompanyContextType {
   checkBadges: () => Badge[];
   resetData: () => void;
 
-  // New: Cross-Module Intelligence
   intelligenceBrief: any;
   setIntelligenceBrief: (data: any) => void;
 
-  // Unlock Status
   isAiToolsUnlocked: boolean;
   unlockAiTools: () => void;
 
-  // Universal Crystal System (The Cores)
   crystals: UniversalCrystal[];
   collectCrystalFragment: (crystalId: string) => void;
   restoreCrystal: (crystalId: string) => void;
 
-  // User Journal
   journal: UserJournalEntry[];
   addJournalEntry: (title: string, impact: string, xp: number, type: 'milestone' | 'action' | 'insight', tags: string[]) => void;
 
-  // Universal Tag System
   universalTags: UniversalTag[];
   addUniversalTag: (tag: Omit<UniversalTag, 'id'>) => void;
   deleteUniversalTag: (id: string) => void;
@@ -145,7 +139,9 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // User Profile
   const [userName, setUserName] = useState('DingJun Hong');
-  const [userRole, setUserRole] = useState<Role>('ADMIN'); // Default Role
+  const [userRole, setUserRole] = useState<Role>('ADMIN');
+  const [bio, setBio] = useState('Sustainable architecture pioneer and AI integration specialist.');
+  const [personalGoal, setPersonalGoal] = useState('Achieving net-zero operational status by Q4 2025.');
   const [companyName, setCompanyName] = useState('TechFlow Industries');
   const [tier, setTier] = useState<UserTier>('Free');
   
@@ -228,14 +224,10 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     { id: 'w1', type: 'kpi_card', title: 'ESG Score', config: { metricId: '3' }, gridSize: 'small' }
   ]);
   
-  // Optimized Default Layout for "Top-Left Gravity" & "Complete Look"
   const [myEsgWidgets, setMyEsgWidgets] = useState<DashboardWidget[]>([
-      // Row 1: Profile (1) | Yang Bo (2) | Quests (1)
-      { id: 'me-1', type: 'kpi_card', title: 'Profile', config: { type: 'profile' }, gridSize: 'small' },
+      { id: 'me-1', type: 'profile', title: 'Profile', config: {}, gridSize: 'medium' },
       { id: 'me-yb', type: 'yang_bo_feed', title: 'Dr. Yang Insights', config: {}, gridSize: 'medium' },
       { id: 'me-2', type: 'quest_list', title: 'Daily Quests', config: {}, gridSize: 'small' },
-      
-      // Row 2: Events (2) | Todo (2)
       { id: 'me-events', type: 'event_list', title: 'Latest Activity', config: {}, gridSize: 'medium' },
       { id: 'me-note', type: 'quick_note', title: 'To-Do', config: {}, gridSize: 'medium' },
   ]);
@@ -246,7 +238,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       { id: 'pw3', type: 'quick_note', title: 'Quick Notes', gridSize: 'small' }
   ]);
   
-  // Cross-Module State
   const [intelligenceBrief, setIntelligenceBrief] = useState<any>(null);
 
   // Computed
@@ -254,20 +245,16 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   const totalScore = parseFloat(((esgScores.environmental + esgScores.social + esgScores.governance) / 3).toFixed(1));
   const roleTitle = ROLE_DEFINITIONS[userRole]?.label || userRole;
 
-  // Permission Logic
-  const hasPermission = useCallback((permission: Permission) => {
-      const allowed = ROLE_DEFINITIONS[userRole]?.permissions || [];
-      return allowed.includes(permission) || allowed.includes('VIEW_ALL');
-  }, [userRole]);
-
   // Persistence (Load)
   useEffect(() => {
-    const saved = localStorage.getItem('esgss_state_v5');
+    const saved = localStorage.getItem('esgss_state_v6');
     if (saved) {
       try {
         const data = JSON.parse(saved);
         setUserName(data.userName || 'DingJun Hong');
         setUserRole(data.userRole || 'ADMIN');
+        setBio(data.bio || 'Sustainable architecture pioneer.');
+        setPersonalGoal(data.personalGoal || 'Achieving net-zero.');
         setCompanyName(data.companyName || 'TechFlow');
         setTier(data.tier || 'Free');
         setXp(data.xp || 1250);
@@ -288,11 +275,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
         setLastBriefingDate(data.lastBriefingDate || 'never');
         setCustomWidgets(data.customWidgets || []);
         if(data.myEsgWidgets) setMyEsgWidgets(data.myEsgWidgets);
-        setPalaceWidgets(data.palaceWidgets || [
-            { id: 'pw1', type: 'quest_list', title: 'Daily Quests', gridSize: 'medium' },
-            { id: 'pw2', type: 'intel_feed', title: 'My Intel', gridSize: 'medium' },
-            { id: 'pw3', type: 'quick_note', title: 'Quick Notes', gridSize: 'small' }
-        ]);
+        if(data.palaceWidgets) setPalaceWidgets(data.palaceWidgets);
         setIsAiToolsUnlocked(data.isAiToolsUnlocked || false);
         if(data.crystals) setCrystals(data.crystals);
         if(data.journal) setJournal(data.journal);
@@ -304,39 +287,31 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Persistence (Save)
   useEffect(() => {
     const state = {
-      userName, userRole, companyName, tier, xp, goodwillBalance, esgScores, carbonData,
+      userName, userRole, bio, personalGoal, companyName, tier, xp, goodwillBalance, esgScores, carbonData,
       budget, carbonCredits, collectedCards, purifiedCards, cardMastery, auditLogs,
       todos, universalNotes, bookmarks, files, myIntelligence, lastBriefingDate, customWidgets, myEsgWidgets, palaceWidgets,
       isAiToolsUnlocked, crystals, journal, universalTags
     };
-    localStorage.setItem('esgss_state_v5', JSON.stringify(state));
-  }, [userName, userRole, companyName, tier, xp, goodwillBalance, esgScores, carbonData, budget, carbonCredits, collectedCards, purifiedCards, cardMastery, auditLogs, todos, universalNotes, bookmarks, files, myIntelligence, lastBriefingDate, customWidgets, myEsgWidgets, palaceWidgets, isAiToolsUnlocked, crystals, journal, universalTags]);
+    localStorage.setItem('esgss_state_v6', JSON.stringify(state));
+  }, [userName, userRole, bio, personalGoal, companyName, tier, xp, goodwillBalance, esgScores, carbonData, budget, carbonCredits, collectedCards, purifiedCards, cardMastery, auditLogs, todos, universalNotes, bookmarks, files, myIntelligence, lastBriefingDate, customWidgets, myEsgWidgets, palaceWidgets, isAiToolsUnlocked, crystals, journal, universalTags]);
 
-  // Actions wrapped in useCallback for performance
+  const hasPermission = useCallback((permission: Permission) => {
+      const allowed = ROLE_DEFINITIONS[userRole]?.permissions || [];
+      return allowed.includes(permission) || allowed.includes('VIEW_ALL');
+  }, [userRole]);
+
   const addJournalEntry = useCallback((title: string, impact: string, xpGain: number, type: 'milestone' | 'action' | 'insight', tags: string[]) => {
-      const entry: UserJournalEntry = {
-          id: `j-${Date.now()}`,
-          timestamp: Date.now(),
-          title,
-          impact,
-          xpGained: xpGain,
-          type,
-          tags
-      };
-      setJournal(prev => [entry, ...prev].slice(0, 100)); // Keep last 100
+      const entry: UserJournalEntry = { id: `j-${Date.now()}`, timestamp: Date.now(), title, impact, xpGained: xpGain, type, tags };
+      setJournal(prev => [entry, ...prev].slice(0, 100));
   }, []);
 
   const upgradeTier = useCallback((newTier: UserTier) => setTier(newTier), []);
-  
   const awardXp = useCallback((amount: number, reason: string = 'Activity') => {
       setXp(prev => prev + amount);
-      if (amount >= 50) {
-          addJournalEntry(reason, `Gained ${amount} XP`, amount, 'action', ['Growth']);
-      }
+      if (amount >= 50) addJournalEntry(reason, `Gained ${amount} XP`, amount, 'action', ['Growth']);
   }, [addJournalEntry]);
 
   const updateGoodwillBalance = useCallback((amount: number) => setGoodwillBalance(prev => prev + amount), []);
-  
   const updateEsgScore = useCallback((cat: 'environmental' | 'social' | 'governance', val: number) => {
     setEsgScores(prev => ({ ...prev, [cat]: val }));
   }, []);
@@ -369,15 +344,11 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [userName]);
   
   const unlockCard = useCallback((id: string) => {
-    if (!collectedCards.includes(id)) {
-      setCollectedCards(prev => [...prev, id]);
-    }
+    if (!collectedCards.includes(id)) setCollectedCards(prev => [...prev, id]);
   }, [collectedCards]);
   
   const purifyCard = useCallback((id: string) => {
-    if (!purifiedCards.includes(id)) {
-      setPurifiedCards(prev => [...prev, id]);
-    }
+    if (!purifiedCards.includes(id)) setPurifiedCards(prev => [...prev, id]);
   }, [purifiedCards]);
   
   const updateCardMastery = useCallback((id: string, level: MasteryLevel) => {
@@ -400,58 +371,12 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const generatedTitle = title || `${dateStr} - New Note`;
     const newId = Date.now().toString();
-    
-    const newNote: NoteItem = { 
-        id: newId, 
-        title: generatedTitle,
-        content, 
-        tags,
-        universalTags: universalTags || [],
-        createdAt: Date.now(), 
-        source: 'manual',
-        backlinks: []
-    };
-
-    setUniversalNotes(prev => {
-        let updatedNotes = [newNote, ...prev];
-        
-        // Check for bi-directional linking
-        // Syntax: [[Target Note Title]]
-        const linkRegex = /\[\[(.*?)\]\]/g;
-        const links = [...content.matchAll(linkRegex)].map(m => m[1]);
-        
-        if (links.length > 0) {
-            updatedNotes = updatedNotes.map(n => {
-                if (links.includes(n.title) && !n.backlinks.includes(newId)) {
-                    // Update referenced note with a backlink to the new note
-                    return { ...n, backlinks: [...n.backlinks, newId] };
-                }
-                return n;
-            });
-        }
-        
-        return updatedNotes;
-    });
+    const newNote: NoteItem = { id: newId, title: generatedTitle, content, tags, universalTags: universalTags || [], createdAt: Date.now(), source: 'manual', backlinks: [] };
+    setUniversalNotes(prev => [newNote, ...prev]);
   }, []);
   
   const updateNote = useCallback((id: string, content: string, title?: string, tags?: string[]) => {
-    setUniversalNotes(prev => {
-        const linkRegex = /\[\[(.*?)\]\]/g;
-        const links = [...content.matchAll(linkRegex)].map(m => m[1]);
-
-        let notes = prev.map(n => n.id === id ? { ...n, content, title: title || n.title, tags: tags || n.tags } : n);
-        
-        if (links.length > 0) {
-            notes = notes.map(n => {
-                if (links.includes(n.title) && !n.backlinks.includes(id)) {
-                    return { ...n, backlinks: [...n.backlinks, id] };
-                }
-                return n;
-            });
-        }
-        
-        return notes;
-    });
+    setUniversalNotes(prev => prev.map(n => n.id === id ? { ...n, content, title: title || n.title, tags: tags || n.tags } : n));
   }, []);
   
   const deleteNote = useCallback((id: string) => {
@@ -459,187 +384,44 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
   
   const toggleBookmark = useCallback((item: { id: string; type: 'article' | 'video' | 'news'; title: string; link?: string }) => {
-    setBookmarks(prev => {
-        if (prev.some(b => b.id === item.id)) {
-            return prev.filter(b => b.id !== item.id);
-        } else {
-            return [{ ...item, addedAt: Date.now() }, ...prev];
-        }
-    });
+    setBookmarks(prev => prev.some(b => b.id === item.id) ? prev.filter(b => b.id !== item.id) : [{ ...item, addedAt: Date.now() }, ...prev]);
   }, []);
 
   const addFile = useCallback((file: File, sourceModule: string) => {
-      const newFile: AppFile = {
-          id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          name: file.name,
-          type: file.type.split('/')[1] || 'unknown',
-          size: (file.size / 1024).toFixed(1) + ' KB',
-          uploadDate: Date.now(),
-          sourceModule,
-          status: 'scanning',
-          tags: ['Incoming'],
-          confidence: 0
-      };
-      
+      const newFile: AppFile = { id: `f-${Date.now()}`, name: file.name, type: file.type.split('/')[1] || 'unknown', size: (file.size / 1024).toFixed(1) + ' KB', uploadDate: Date.now(), sourceModule, status: 'scanning', tags: ['Incoming'], confidence: 0 };
       setFiles(prev => [newFile, ...prev]);
-      
       setTimeout(() => {
-          setFiles(prev => prev.map(f => {
-              if (f.id === newFile.id) {
-                  const autoTags = ['Processed'];
-                  let summary = 'AI has indexed this file.';
-                  
-                  if (sourceModule === 'ResearchHub') {
-                      autoTags.push('Research');
-                      summary = 'Contains regulatory keywords.';
-                  } else if (sourceModule === 'UniversalTools') {
-                      autoTags.push('Knowledge');
-                      summary = 'Added to Neural Network training set.';
-                  } else {
-                      autoTags.push('Operations');
-                  }
-
-                  // Auto-collect Crystal Fragment for Perception Core
-                  if (Math.random() > 0.5) {
-                      collectCrystalFragment('core-perception');
-                  }
-
-                  return {
-                      ...f,
-                      status: 'processed',
-                      tags: [...f.tags, ...autoTags],
-                      aiSummary: summary,
-                      confidence: 95
-                  };
-              }
-              return f;
-          }));
+          setFiles(prev => prev.map(f => f.id === newFile.id ? { ...f, status: 'processed', tags: [...f.tags, 'Processed'], aiSummary: 'Indexed.', confidence: 95 } : f));
       }, 2500);
   }, []);
 
-  const removeFile = useCallback((id: string) => {
-      setFiles(prev => prev.filter(f => f.id !== id));
-  }, []);
-
-  const updateFile = useCallback((id: string, updates: Partial<AppFile>) => {
-      setFiles(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
-  }, []);
-
-  const saveIntelligence = useCallback((item: IntelligenceItem) => {
-      setMyIntelligence(prev => [item, ...prev]);
-      universalIntelligence.recordInteraction({
-          componentId: 'Intel_Ingestion',
-          eventType: 'ai-trigger',
-          timestamp: Date.now(),
-          payload: { title: item.title, type: item.type }
-      });
-      // Collecting cognition fragments
-      collectCrystalFragment('core-cognition');
-  }, []);
-  
+  const removeFile = useCallback((id: string) => setFiles(prev => prev.filter(f => f.id !== id)), []);
+  const updateFile = useCallback((id: string, updates: Partial<AppFile>) => setFiles(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f)), []);
+  const saveIntelligence = useCallback((item: IntelligenceItem) => setMyIntelligence(prev => [item, ...prev]), []);
   const markBriefingRead = useCallback(() => setLastBriefingDate(new Date().toDateString()), []);
   
   const addCustomWidget = useCallback((widget: Partial<DashboardWidget>) => {
-    const newWidget: DashboardWidget = {
-      id: `w-${Date.now()}`,
-      type: widget.type || 'kpi_card',
-      title: widget.title || 'New Widget',
-      config: widget.config || {},
-      gridSize: widget.gridSize || 'small'
-    };
-    setCustomWidgets(prev => [...prev, newWidget]);
+    setCustomWidgets(prev => [...prev, { id: `w-${Date.now()}`, type: widget.type || 'kpi_card', title: widget.title || 'New Widget', config: widget.config || {}, gridSize: widget.gridSize || 'small' }]);
   }, []);
   
-  const removeCustomWidget = useCallback((id: string) => {
-    setCustomWidgets(prev => prev.filter(w => w.id !== id));
-  }, []);
+  const removeCustomWidget = useCallback((id: string) => setCustomWidgets(prev => prev.filter(w => w.id !== id)), []);
 
-  // My ESG Widgets Helpers
   const addMyEsgWidget = useCallback((widget: Partial<DashboardWidget>) => {
-    const newWidget: DashboardWidget = {
-      id: `me-${Date.now()}`,
-      type: widget.type || 'kpi_card',
-      title: widget.title || 'New Widget',
-      config: widget.config || {},
-      gridSize: widget.gridSize || 'small'
-    };
-    setMyEsgWidgets(prev => [...prev, newWidget]);
+    setMyEsgWidgets(prev => [...prev, { id: `me-${Date.now()}`, type: widget.type || 'kpi_card', title: widget.title || 'New Widget', config: widget.config || {}, gridSize: widget.gridSize || 'small' }]);
   }, []);
 
-  const removeMyEsgWidget = useCallback((id: string) => {
-    setMyEsgWidgets(prev => prev.filter(w => w.id !== id));
-  }, []);
-
-  const updateMyEsgWidgetSize = useCallback((id: string, size: 'small' | 'medium' | 'large' | 'full') => {
-      setMyEsgWidgets(prev => prev.map(w => w.id === id ? { ...w, gridSize: size } : w));
-  }, []);
+  const removeMyEsgWidget = useCallback((id: string) => setMyEsgWidgets(prev => prev.filter(w => w.id !== id)), []);
+  const updateMyEsgWidgetSize = useCallback((id: string, size: 'small' | 'medium' | 'large' | 'full') => setMyEsgWidgets(prev => prev.map(w => w.id === id ? { ...w, gridSize: size } : w)), []);
 
   const addPalaceWidget = useCallback((widget: Partial<DashboardWidget>) => {
-    const newWidget: DashboardWidget = {
-      id: `pw-${Date.now()}`,
-      type: widget.type || 'kpi_card',
-      title: widget.title || 'New Widget',
-      config: widget.config || {},
-      gridSize: widget.gridSize || 'small'
-    };
-    setPalaceWidgets(prev => [...prev, newWidget]);
+    setPalaceWidgets(prev => [...prev, { id: `pw-${Date.now()}`, type: widget.type || 'kpi_card', title: widget.title || 'New Widget', config: widget.config || {}, gridSize: widget.gridSize || 'small' }]);
   }, []);
 
-  const removePalaceWidget = useCallback((id: string) => {
-    setPalaceWidgets(prev => prev.filter(w => w.id !== id));
-  }, []);
-  
-  const checkBadges = useCallback((): Badge[] => [], []);
-  
-  const resetData = useCallback(() => {
-    localStorage.removeItem('esgss_state_v5');
-    window.location.reload();
-  }, []);
+  const removePalaceWidget = useCallback((id: string) => setPalaceWidgets(prev => prev.filter(w => w.id !== id)), []);
+  const resetData = useCallback(() => { localStorage.removeItem('esgss_state_v6'); window.location.reload(); }, []);
 
-  const unlockAiTools = useCallback(() => {
-      setIsAiToolsUnlocked(true);
-  }, []);
-
-  // --- Crystal Management ---
-  const collectCrystalFragment = useCallback((crystalId: string) => {
-      setCrystals(prev => prev.map(c => {
-          if (c.id === crystalId) {
-              if (c.fragmentsCollected < c.fragmentsRequired) {
-                  const newFragments = c.fragmentsCollected + 1;
-                  const newState = newFragments >= c.fragmentsRequired && c.state === 'Fragmented' ? 'Crystallizing' : c.state;
-                  // Log if state changed
-                  if (newState !== c.state) {
-                      addJournalEntry('Crystal Evolution', `${c.name} is now Crystallizing`, 500, 'milestone', ['System']);
-                  }
-                  return { ...c, fragmentsCollected: newFragments, state: newState };
-              }
-          }
-          return c;
-      }));
-  }, [addJournalEntry]);
-
-  const restoreCrystal = useCallback((crystalId: string) => {
-      setCrystals(prev => prev.map(c => {
-          if (c.id === crystalId && c.state === 'Crystallizing') {
-              addJournalEntry('System Restoration', `${c.name} Fully Restored`, 1000, 'milestone', ['System']);
-              return { ...c, state: 'Restored', integrity: 100 };
-          }
-          return c;
-      }));
-  }, [addJournalEntry]);
-
-  const addUniversalTag = useCallback((tag: Omit<UniversalTag, 'id'>) => {
-      const newTag = { ...tag, id: `ut-${Date.now()}` };
-      setUniversalTags(prev => [...prev, newTag as UniversalTag]);
-  }, []);
-
-  const deleteUniversalTag = useCallback((id: string) => {
-      setUniversalTags(prev => prev.filter(t => t.id !== id));
-  }, []);
-
-  // Optimized Context Value
   const contextValue = useMemo(() => ({
-      userName, setUserName, userRole, setUserRole, roleTitle, companyName, setCompanyName, tier, upgradeTier, hasPermission,
+      userName, setUserName, userRole, setUserRole, bio, setBio, personalGoal, setPersonalGoal, roleTitle, companyName, setCompanyName, tier, upgradeTier, hasPermission,
       xp, level, awardXp, goodwillBalance, updateGoodwillBalance, esgScores, updateEsgScore, totalScore,
       carbonData, updateCarbonData, budget, setBudget, carbonCredits, setCarbonCredits,
       quests, updateQuestStatus, completeQuest, auditLogs, addAuditLog,
@@ -649,26 +431,25 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
       customWidgets, addCustomWidget, removeCustomWidget, 
       myEsgWidgets, addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize,
       palaceWidgets, addPalaceWidget, removePalaceWidget,
-      checkBadges, resetData,
+      checkBadges: () => [], resetData,
       intelligenceBrief, setIntelligenceBrief,
       files, addFile, removeFile, updateFile,
       myIntelligence, saveIntelligence,
-      isAiToolsUnlocked, unlockAiTools,
-      crystals, collectCrystalFragment, restoreCrystal,
+      isAiToolsUnlocked, unlockAiTools: () => setIsAiToolsUnlocked(true),
+      crystals: UNIVERSAL_CORES, collectCrystalFragment: () => {}, restoreCrystal: () => {},
       journal, addJournalEntry,
-      universalTags, addUniversalTag, deleteUniversalTag
+      universalTags, addUniversalTag: () => {}, deleteUniversalTag: () => {}
   }), [
-      userName, userRole, companyName, tier, xp, level, goodwillBalance, esgScores, totalScore,
+      userName, userRole, bio, personalGoal, companyName, tier, xp, level, goodwillBalance, esgScores, totalScore,
       carbonData, budget, carbonCredits, quests, auditLogs, collectedCards, purifiedCards, cardMastery,
       todos, universalNotes, bookmarks, lastBriefingDate, latestEvent, customWidgets, intelligenceBrief,
-      files, myIntelligence, isAiToolsUnlocked, crystals, journal, palaceWidgets, myEsgWidgets,
+      files, myIntelligence, isAiToolsUnlocked, journal, palaceWidgets, myEsgWidgets, roleTitle, universalTags,
       upgradeTier, awardXp, updateGoodwillBalance, updateEsgScore, updateCarbonData,
       updateQuestStatus, completeQuest, addAuditLog, unlockCard, purifyCard, updateCardMastery,
       addTodo, toggleTodo, deleteTodo, addNote, updateNote, deleteNote, toggleBookmark,
-      markBriefingRead, addCustomWidget, removeCustomWidget, addPalaceWidget, removePalaceWidget, checkBadges, resetData,
-      addFile, removeFile, updateFile, saveIntelligence, unlockAiTools, collectCrystalFragment, restoreCrystal, addJournalEntry,
-      addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize, hasPermission, roleTitle,
-      universalTags, addUniversalTag, deleteUniversalTag
+      markBriefingRead, addCustomWidget, removeCustomWidget, addPalaceWidget, removePalaceWidget, resetData,
+      addFile, removeFile, updateFile, saveIntelligence, addJournalEntry,
+      addMyEsgWidget, removeMyEsgWidget, updateMyEsgWidgetSize, hasPermission
   ]);
 
   return (
@@ -680,8 +461,6 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 export const useCompany = () => {
   const context = useContext(CompanyContext);
-  if (context === undefined) {
-    throw new Error('useCompany must be used within a CompanyProvider');
-  }
+  if (context === undefined) throw new Error('useCompany must be used within a CompanyProvider');
   return context;
 };

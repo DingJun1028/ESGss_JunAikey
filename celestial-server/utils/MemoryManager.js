@@ -1,17 +1,15 @@
-
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 
 class MemoryManager {
   constructor(apiKey) {
     if (!apiKey) throw new Error("MemoryManager requires a valid Gemini API Key");
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    // 使用輕量模型執行摘要，成本低且速度快
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    /* Always use GoogleGenAI with named parameter apiKey */
+    this.ai = new GoogleGenAI({ apiKey: apiKey });
     
-    // 定價參考 (需隨官方更新，單位: USD per 1M tokens)
+    /* Using recommended models from guidelines; prohibited 1.5-flash replaced with 3-flash */
     this.pricing = {
-      "gemini-1.5-flash": { input: 0.35, output: 1.05 }, 
-      "gemini-1.5-pro": { input: 3.50, output: 10.50 }
+      "gemini-3-flash-preview": { input: 0.35, output: 1.05 }, 
+      "gemini-3-pro-preview": { input: 3.50, output: 10.50 }
     };
   }
 
@@ -57,8 +55,13 @@ class MemoryManager {
     `;
 
     try {
-        const result = await this.model.generateContent(summaryPrompt);
-        const summaryText = result.response.text();
+        /* Use ai.models.generateContent directly to comply with guidelines */
+        const response = await this.ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: [{ role: 'user', parts: [{ text: summaryPrompt }] }]
+        });
+        /* Access response text via .text property as required */
+        const summaryText = response.text;
 
         console.log(`[ENTROPY] Compression complete. Summary: ${summaryText.substring(0, 50)}...`);
 
@@ -89,8 +92,8 @@ class MemoryManager {
    * 簡單的成本估算
    */
   calculateCost(modelName, inputTokens, outputTokens) {
-    let price = this.pricing["gemini-1.5-flash"];
-    if (modelName && modelName.includes("pro")) price = this.pricing["gemini-1.5-pro"];
+    let price = this.pricing["gemini-3-flash-preview"];
+    if (modelName && modelName.includes("pro")) price = this.pricing["gemini-3-pro-preview"];
 
     const cost = (inputTokens / 1000000 * price.input) + (outputTokens / 1000000 * price.output);
     return cost.toFixed(6);

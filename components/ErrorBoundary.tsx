@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -14,38 +15,37 @@ interface ErrorBoundaryState {
 /**
  * ErrorBoundary catches runtime exceptions in its child component tree.
  */
-// Fix: Inherit from Component directly to ensure state, setState and props are correctly inherited and recognized by TypeScript
-export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Explicitly initialize state to ensure the instance property is recognized
-  state: ErrorBoundaryState = {
-    hasError: false,
-    error: undefined
-  };
-
+/* Explicitly extending React.Component and using a constructor ensures that state, props, and setState are correctly typed and available on the instance. */
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    this.state = {
+      hasError: false,
+      error: undefined
+    };
   }
 
-  // Update state so the next render shows the fallback UI.
+  /* Update state so the next render shows the fallback UI. */
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  // Fix: Use setState from the Component base class to clear the error state
-  handleRetry = () => {
+  /* Use arrow function for correct 'this' binding. */
+  public handleRetry = () => {
+    /* Using the setState method inherited from the React.Component base class. */
     this.setState({ hasError: false, error: undefined });
   };
 
-  handleReload = () => {
+  public handleReload = () => {
     window.location.reload();
   };
 
-  render(): ReactNode {
-    // Fix: Correctly access state and props from the Component instance
+  public render(): ReactNode {
+    /* Destructuring state and props which are now correctly recognized through explicit base class extension. */
     const { hasError, error } = this.state;
     const { fallback, children } = this.props;
 
@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               System Reboot
             </button>
           </div>
-          {/* Fix: Safely access error details from the class instance state */}
+          {/* Safely display error string for diagnostic purposes */}
           {error && (
              <div className="mt-8 p-4 bg-black/40 rounded-lg border border-white/5 text-left w-full max-w-lg overflow-auto max-h-32">
                  <code className="text-[10px] font-mono text-red-300">

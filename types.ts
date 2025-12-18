@@ -37,6 +37,32 @@ export enum View {
     CARD_GAME = 'card_game' 
 }
 
+// --- Agentic Flow / Universal Flow Extensions ---
+
+export interface FlowStep {
+    id: string;
+    agentId: string; // 指定執行的化身人格
+    action: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    output?: string;
+}
+
+export interface UniversalWorkforce {
+    id: string;
+    name: string;
+    members: string[]; // 代理化身 ID 列表
+    activeFlowId?: string;
+    status: 'idle' | 'deployed';
+}
+
+export interface AgentFlow {
+    id: string;
+    title: string;
+    description: string;
+    steps: FlowStep[];
+    coherenceScore: number;
+}
+
 export type EvolutionStage = 'Seed' | 'Structure' | 'Optimized' | 'Autonomous' | 'Infinite';
 
 export interface EvolutionMilestone {
@@ -372,6 +398,7 @@ export interface CustomAgentProfile {
     name: string;
     role: string;
     instruction: string;
+    prompt?: string;
     color: string;
     knowledgeBase: string[];
     icon: any;

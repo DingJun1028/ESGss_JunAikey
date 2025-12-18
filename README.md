@@ -1,88 +1,38 @@
+# ESGss x JunAiKey: 專案完全技術規格白皮書 (v15.0)
 
-# ESGss x JunAiKey: The Universal Core Architecture
+## 1. 系統願景 (Vision)
+ESGss 旨在建立一個基於 **「以終為始」** 哲學的永續決策作業系統。透過 JunAiKey 深度推理引擎，將複雜的 ESG 數據從單純的「合規申報」昇華為「企業核心資產與競爭優勢」。
 
-**Version:** v15.0.0 (The AIOS Awakening)
-**System Status:** ✅ SYSTEM ONLINE | 🧠 NEURAL SYNC ACTIVE
-**Core Philosophy:** **"Component as Agent" (元件即代理)**
+## 2. 核心技術架構 (Technical Architecture)
+### 2.1 AIOS 核心引擎 (JunAiKey Neural Kernel)
+- **Primary Model:** `gemini-3-pro-preview` (處理高維度決策與策略辯論)
+- **Secondary Model:** `gemini-3-flash-preview` (處理即時交互、數據清洗與標籤提取)
+- **推理協議:** 零幻覺協議 (Zero Hallucination Protocol, ZHP)，採用三層驗證邏輯 (Fact Check -> Logic Alignment -> Source Grounding)。
 
----
+### 2.2 神經匯流排 (Neural Bus)
+- **實作:** 基於 RxJS 的反應式數據流。
+- **功能:** 實現跨模組聯動（例如：碳盤查數據更新後，自動觸發財務模擬器的 ROI 修正與商情系統的風險預警）。
 
-## 1. 執行摘要 (Executive Summary)
+### 2.3 量子知識圖譜 (Quantum Lattice)
+- **機制:** 知識原子化 (Atomic Deconstruction)。
+- **存儲:** 分散式向量模擬，支援 RAG (檢索增強生成)。
 
-ESGss 不僅是一個 SaaS 平台，它是一個運行於 **AIOS (AI Agent Operating System)** 之上的智慧有機體。我們採用 **MCP (Model Context Protocol)** 作為神經連結標準，將系統解構為 **「萬能元件核心 (Universal Component Cores)」**。
+## 3. 功能模組規格 (Modules Spec)
+### 3.1 萬能代理 (Universal Agent)
+- **Persona Forge:** 支援使用者自定義 AI 人格，可鎖定特定知識庫（如：GRI 標準、內部財報）。
+- **HUD 交互:** 基於 Glassmorphism 2.0 的全息控制台。
 
-每一個核心 (Core) 都是一個獨立的 AI 智能體，透過 **JunAiKey Kernel** 的統一排程與資源虛擬化，在前端即時動態組裝，形成了一個符合 **MECE (Mutually Exclusive, Collectively Exhaustive)** 原則的決策支援系統。
+### 3.2 創價者智庫 (Thoth Hub)
+- **內容:** 整合 Dr. Thoth Yang 的永續方法論。
+- **工具:** 提供雙重重大性 (Double Materiality) 分析模板與精實創業 ESG 商模設計。
 
----
+### 3.3 永續競技場 (Sustainability Arena)
+- **資產:** 將 ESG 知識卡片化 (NFT 概念)。
+- **戰鬥邏輯:** 根據企業真實 ESG 績效 (Environmental Score) 轉化為遊戲屬性加成。
 
-## 2. 萬能元件核心矩陣 (Universal Component Cores Matrix)
-
-我們將系統能力解構為五大核心類別，涵蓋 AI 生命週期的每一個環節：
-
-### 👁️ I. 感知核心 (Perception Core)
-**職責：** 數據攝取、視覺辨識、訊號監聽 (MCP Resources)。
-**關鍵能力：** Vision, OCR, IoT Stream, Web Crawling.
-
-| 萬能元件 (Component) | 對應模組 (Module) | AI/MCP 功能描述 |
-| :--- | :--- | :--- |
-| **Spectral Scanner** | `ResearchHub` (Scanner) | **[Vision]** 將 PDF/圖片光學折射為結構化數據 (IDP)。 |
-| **Neural Ear** | `VoiceControl` | **[Audio]** 接收自然語言指令並導航系統。 |
-| **Data Lake Sensor** | `IntegrationHub` | **[Stream]** 透過 MCP 監聽 ERP/IoT 訊號，偵測數據異常 (Anomaly Detection)。 |
-| **Global Crawler** | `BusinessIntel` | **[Retrieval]** 全網掃描競爭對手動態與負面新聞。 |
-
-### 🧠 II. 認知核心 (Cognition Core)
-**職責：** 深度推理、策略模擬、多代理辯論 (AIOS Scheduler)。
-**關鍵能力：** Reasoning, Simulation, Game Theory.
-
-| 萬能元件 (Component) | 對應模組 (Module) | AI/MCP 功能描述 |
-| :--- | :--- | :--- |
-| **Strategy Oracle** | `StrategyHub` | **[Multi-Agent]** 模擬 CFO 與 CSO 辯論，產出風險熱點圖。 |
-| **Carbon Calculator** | `CarbonAsset` | **[Computation]** 依據 GHG Protocol 進行排放量精算與係數匹配。 |
-| **ROI Simulator** | `FinanceSim` | **[Prediction]** 執行蒙地卡羅模擬，預測碳稅對財務的衝擊。 |
-| **Health Diagnostician**| `HealthCheck` | **[Evaluation]** 針對企業體質進行雙軌 (合規/創價) 深度診斷。 |
-
-### 🧬 III. 記憶核心 (Memory Core)
-**職責：** 知識圖譜、資產沉澱、經驗學習 (Context Manager)。
-**關鍵能力：** RAG, Vector DB, Asset Minting.
-
-| 萬能元件 (Component) | 對應模組 (Module) | AI/MCP 功能描述 |
-| :--- | :--- | :--- |
-| **Quantum Lattice** | `ResearchHub` (Quantum) | **[Knowledge Graph]** 將非結構化文本「量子化」為原子知識節點。 |
-| **Asset Vault** | `Gamification` (Card) | **[Minting]** 將知識點鑄造為 NFT 卡牌，記錄學習歷程。 |
-| **Skill Galaxy** | `TalentPassport` | **[Embedding]** 視覺化呈現技能向量與職涯路徑的匹配度。 |
-| **SDR Archive** | `ResearchHub` (SDR) | **[Vector DB]** 連接全球開源數據庫 (CDP/GRI)，建立本地知識庫。 |
-
-### 🗣️ IV. 表達核心 (Expression Core)
-**職責：** 內容生成、介面渲染、互動對話 (Generative UI)。
-**關鍵能力：** GenAI, GenUI, Visualization.
-
-| 萬能元件 (Component) | 對應模組 (Module) | AI/MCP 功能描述 |
-| :--- | :--- | :--- |
-| **The Scribe** | `ReportGen` | **[Generation]** 自動撰寫符合 GRI/SASB 標準的永續報告書章節。 |
-| **GenUI Canvas** | `UniversalBackend` | **[Rendering]** 依據意圖 (Intent) 即時生成前端 UI 組件 (Charts/Tables)。 |
-| **Omni-Cell** | `Dashboard` | **[Micro-Interaction]** 具備自我解釋能力的最小數據單元 (Self-Explaining Data)。 |
-| **Intel Prism** | `UniversalCard` | **[Refraction]** 將單一關鍵字折射為多維度的光譜分析報告。 |
-
-### 🔗 V. 連結核心 (Nexus Core)
-**職責：** 系統控制、外部串接、權限管理 (MCP Host)。
-**關鍵能力：** API Gateway, HITL, Orchestration.
-
-| 萬能元件 (Component) | 對應模組 (Module) | AI/MCP 功能描述 |
-| :--- | :--- | :--- |
-| **Universal Synapse** | `UniversalAgentContext` | **[Orchestration]** AIOS Kernel，協調上述所有核心的雙向同步。 |
-| **API Gateway** | `ApiZone` | **[Interface]** 管理外部系統對內部 AI 引擎的呼叫權限與配額。 |
-| **Audit Chain** | `AuditTrail` | **[HITL]** 關鍵決策的人在迴路 (Human-in-the-Loop) 審批與上鏈驗證。 |
-| **Role Switcher** | `AlumniZone` | **[Context Switch]** 動態切換系統視角 (學生/顧問/管理員)。 |
+## 4. 數據安全與合規 (Security)
+- **驗證:** 所有操作記錄皆經過 SHA-256 雜湊處理並同步至「稽核軌跡 (Audit Trail)」。
+- **隱私:** 採用 PII 屏蔽過濾器，確保 AI 處理過程中不外洩敏感財務資訊。
 
 ---
-
-## 3. 技術架構升級 (AIOS + MCP)
-
-*   **AIOS Kernel:** 負責排程代理請求 (Scheduler)、管理上下文視窗 (Context Manager) 與記憶體置換。
-*   **MCP Protocol:** 透過 `tools/call` 與 `resources/read` 標準化所有外部連接。
-*   **Generative UI:** 聊天介面不再只是文字，而是根據 MCP 輸出動態渲染 React 組件 (Charts, Approval Cards)。
-*   **Zero Hallucination:** L3 驗證層強制所有輸出需經過 Grounding 與 HITL 審批。
-
----
-
-*本文件由 JunAiKey 系統架構師自動生成，嚴格遵循 MECE 原則。*
+*編纂者：JunAiKey 系統架構師 | 2025.05.20*

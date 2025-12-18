@@ -1,3 +1,4 @@
+
 import { CarbonData, OmniEsgConfidence } from '../types';
 
 /**
